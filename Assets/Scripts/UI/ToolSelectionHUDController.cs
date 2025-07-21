@@ -10,7 +10,7 @@ namespace KowloonBreak.UI
     {
         [Header("UI References")]
         [SerializeField] private HorizontalLayoutGroup toolSlotsLayout;
-        [SerializeField] private GameObject toolSlotPrefab;
+        [SerializeField] private Transform toolSlotsParent;
         
         [Header("Settings")]
         [SerializeField] private int displayToolCount = 8;
@@ -30,12 +30,16 @@ namespace KowloonBreak.UI
         public InventorySlot SelectedTool => resourceManager?.GetToolSlot(selectedToolIndex);
         
         public System.Action<int, InventorySlot> OnToolSelected;
+        public System.Action<int, InventorySlot> OnToolUsed;
         
         private void Awake()
         {
             // デフォルトの参照を設定
             if (toolSlotsLayout == null)
                 toolSlotsLayout = GetComponent<HorizontalLayoutGroup>();
+            
+            if (toolSlotsParent == null)
+                toolSlotsParent = toolSlotsLayout != null ? toolSlotsLayout.transform : transform;
             
             if (toolSlotsLayout == null)
                 toolSlotsLayout = gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -81,6 +85,25 @@ namespace KowloonBreak.UI
                 }
             }
             
+            // 矢印キーでフォーカス移動
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                int newIndex = selectedToolIndex - 1;
+                if (newIndex < 0) newIndex = displayToolCount - 1;
+                SelectTool(newIndex);
+            }
+            else if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                int newIndex = (selectedToolIndex + 1) % displayToolCount;
+                SelectTool(newIndex);
+            }
+            
+            // Enterキーまたはスペースキーで選択されたツールを使用
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
+            {
+                UseTool(selectedToolIndex);
+            }
+            
             // マウスホイールで道具選択
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             if (scroll != 0f)
@@ -97,177 +120,42 @@ namespace KowloonBreak.UI
         {
             if (resourceManager == null) return;
             
-            // 既存のスロットをクリア
-            foreach (var slot in toolSlots)
-            {
-                if (slot != null)
-                    DestroyImmediate(slot.gameObject);
-            }
             toolSlots.Clear();
             
-            // 新しいスロットを作成
-            for (int i = 0; i < displayToolCount; i++)
+            // シーンに配置されたスロットを取得
+            ItemSlotUI[] existingSlots = toolSlotsParent.GetComponentsInChildren<ItemSlotUI>(true);
+            
+            // displayToolCountまでのスロットを使用
+            int slotsToUse = Mathf.Min(existingSlots.Length, displayToolCount);
+            
+            for (int i = 0; i < slotsToUse; i++)
             {
-                GameObject slotObj = CreateToolSlotObject(i);
-                ItemSlotUI slotUI = slotObj.GetComponent<ItemSlotUI>();
+                ItemSlotUI slotUI = existingSlots[i];
                 
                 if (slotUI != null)
                 {
                     slotUI.Initialize(i);
                     slotUI.OnSlotClicked += OnToolSlotClicked;
                     toolSlots.Add(slotUI);
+                    
+                    // スロットをアクティブにする
+                    slotUI.gameObject.SetActive(true);
                 }
             }
+            
+            // 足りない場合は警告を出す
+            if (existingSlots.Length < displayToolCount)
+            {
+                Debug.LogWarning($"Not enough tool slots in scene. Found: {existingSlots.Length}, Required: {displayToolCount}");
+            }
+            
+            // 余分なスロットは非アクティブにする
+            for (int i = slotsToUse; i < existingSlots.Length; i++)
+            {
+                existingSlots[i].gameObject.SetActive(false);
+            }
         }
         
-        private GameObject CreateToolSlotObject(int index)
-        {
-            GameObject slotObj;
-            
-            if (toolSlotPrefab != null)
-            {
-                slotObj = Instantiate(toolSlotPrefab, toolSlotsLayout.transform);
-            }
-            else
-            {
-                slotObj = CreateDefaultToolSlot(index);
-            }
-            
-            // サイズ設定
-            RectTransform rectTransform = slotObj.GetComponent<RectTransform>();
-            rectTransform.sizeDelta = new Vector2(slotSize, slotSize);
-            
-            return slotObj;
-        }
-        
-        private GameObject CreateDefaultToolSlot(int index)
-        {
-            GameObject slotObj = new GameObject($"ToolSlot_{index}");
-            slotObj.transform.SetParent(toolSlotsLayout.transform);
-            
-            // Image (背景)
-            Image background = slotObj.AddComponent<Image>();
-            background.color = normalColor;
-            
-            // Button
-            Button button = slotObj.AddComponent<Button>();
-            
-            // ItemSlotUI
-            ItemSlotUI slotUI = slotObj.AddComponent<ItemSlotUI>();
-            
-            // アイコン用のGameObject
-            GameObject iconObj = new GameObject("ItemIcon");
-            iconObj.transform.SetParent(slotObj.transform);
-            Image icon = iconObj.AddComponent<Image>();
-            icon.raycastTarget = false;
-            
-            // 数量テキスト (道具スロットでは通常非表示)
-            GameObject quantityObj = new GameObject("QuantityText");
-            quantityObj.transform.SetParent(slotObj.transform);
-            var quantityText = quantityObj.AddComponent<Text>();
-            quantityText.text = "";
-            quantityText.fontSize = 12;
-            quantityText.color = Color.white;
-            quantityText.alignment = TextAnchor.LowerRight;
-            quantityText.raycastTarget = false;
-            
-            // 耐久度バー
-            GameObject durabilityObj = new GameObject("DurabilityBar");
-            durabilityObj.transform.SetParent(slotObj.transform);
-            Image durabilityBar = durabilityObj.AddComponent<Image>();
-            durabilityBar.color = Color.green;
-            durabilityBar.type = Image.Type.Filled;
-            durabilityBar.raycastTarget = false;
-            
-            // 選択フレーム
-            GameObject frameObj = new GameObject("SelectionFrame");
-            frameObj.transform.SetParent(slotObj.transform);
-            Image frame = frameObj.AddComponent<Image>();
-            frame.color = selectedColor;
-            frame.raycastTarget = false;
-            frameObj.SetActive(false);
-            
-            // キー番号表示
-            GameObject keyNumberObj = new GameObject("KeyNumber");
-            keyNumberObj.transform.SetParent(slotObj.transform);
-            var keyNumberText = keyNumberObj.AddComponent<Text>();
-            keyNumberText.text = (index + 1).ToString();
-            keyNumberText.fontSize = 10;
-            keyNumberText.color = Color.white;
-            keyNumberText.alignment = TextAnchor.UpperLeft;
-            keyNumberText.raycastTarget = false;
-            
-            // RectTransformの設定
-            RectTransform rectTransform = slotObj.GetComponent<RectTransform>();
-            rectTransform.localScale = Vector3.one;
-            rectTransform.anchorMin = Vector2.zero;
-            rectTransform.anchorMax = Vector2.one;
-            rectTransform.offsetMin = Vector2.zero;
-            rectTransform.offsetMax = Vector2.zero;
-            
-            // 子オブジェクトの配置
-            SetupChildTransforms(slotObj);
-            
-            return slotObj;
-        }
-        
-        private void SetupChildTransforms(GameObject slotObj)
-        {
-            // アイコンの配置
-            Transform iconTransform = slotObj.transform.Find("ItemIcon");
-            if (iconTransform != null)
-            {
-                RectTransform iconRect = iconTransform.GetComponent<RectTransform>();
-                iconRect.anchorMin = new Vector2(0.1f, 0.1f);
-                iconRect.anchorMax = new Vector2(0.9f, 0.9f);
-                iconRect.offsetMin = Vector2.zero;
-                iconRect.offsetMax = Vector2.zero;
-            }
-            
-            // 数量テキストの配置
-            Transform quantityTransform = slotObj.transform.Find("QuantityText");
-            if (quantityTransform != null)
-            {
-                RectTransform quantityRect = quantityTransform.GetComponent<RectTransform>();
-                quantityRect.anchorMin = new Vector2(0.6f, 0f);
-                quantityRect.anchorMax = new Vector2(1f, 0.4f);
-                quantityRect.offsetMin = Vector2.zero;
-                quantityRect.offsetMax = Vector2.zero;
-            }
-            
-            // 耐久度バーの配置
-            Transform durabilityTransform = slotObj.transform.Find("DurabilityBar");
-            if (durabilityTransform != null)
-            {
-                RectTransform durabilityRect = durabilityTransform.GetComponent<RectTransform>();
-                durabilityRect.anchorMin = new Vector2(0f, 0f);
-                durabilityRect.anchorMax = new Vector2(1f, 0.1f);
-                durabilityRect.offsetMin = Vector2.zero;
-                durabilityRect.offsetMax = Vector2.zero;
-            }
-            
-            // 選択フレームの配置
-            Transform frameTransform = slotObj.transform.Find("SelectionFrame");
-            if (frameTransform != null)
-            {
-                RectTransform frameRect = frameTransform.GetComponent<RectTransform>();
-                frameRect.anchorMin = Vector2.zero;
-                frameRect.anchorMax = Vector2.one;
-                frameRect.offsetMin = Vector2.zero;
-                frameRect.offsetMax = Vector2.zero;
-            }
-            
-            // キー番号の配置
-            Transform keyNumberTransform = slotObj.transform.Find("KeyNumber");
-            if (keyNumberTransform != null)
-            {
-                RectTransform keyNumberRect = keyNumberTransform.GetComponent<RectTransform>();
-                keyNumberRect.anchorMin = new Vector2(0f, 0.8f);
-                keyNumberRect.anchorMax = new Vector2(0.4f, 1f);
-                keyNumberRect.offsetMin = Vector2.zero;
-                keyNumberRect.offsetMax = Vector2.zero;
-            }
-        }
         
         private void UpdateAllSlots()
         {
@@ -304,6 +192,22 @@ namespace KowloonBreak.UI
             OnToolSelected?.Invoke(selectedToolIndex, selectedSlot);
             
             Debug.Log($"Selected tool slot {selectedToolIndex}: {selectedSlot?.ItemData?.itemName ?? "Empty"}");
+        }
+        
+        public void UseTool(int index)
+        {
+            if (index < 0 || index >= displayToolCount) return;
+            
+            var toolSlot = resourceManager?.GetToolSlot(index);
+            if (toolSlot != null && !toolSlot.IsEmpty)
+            {
+                OnToolUsed?.Invoke(index, toolSlot);
+                Debug.Log($"Used tool: {toolSlot.ItemData?.itemName ?? "Unknown"} from slot {index}");
+            }
+            else
+            {
+                Debug.Log($"No tool in slot {index} to use");
+            }
         }
         
         private void UpdateSelection()
@@ -351,9 +255,12 @@ namespace KowloonBreak.UI
         public void SetDisplayToolCount(int count)
         {
             displayToolCount = Mathf.Clamp(count, 1, 8);
-            InitializeToolSlots();
-            UpdateAllSlots();
-            UpdateSelection();
+            if (toolSlotsParent != null)
+            {
+                InitializeToolSlots();
+                UpdateAllSlots();
+                UpdateSelection();
+            }
         }
         
         public void RefreshDisplay()

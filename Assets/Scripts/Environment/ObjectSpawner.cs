@@ -179,8 +179,16 @@ namespace KowloonBreak.Environment
             // IronScrapコンポーネントを追加
             var ironScrap = obj.AddComponent<IronScrap>();
             
-            // タグを設定
-            obj.tag = "DestructibleObject";
+            // タグを設定（存在しない場合はデフォルトタグを使用）
+            try
+            {
+                obj.tag = "DestructibleObject";
+            }
+            catch (UnityException)
+            {
+                Debug.LogWarning("DestructibleObject tag not found. Using default Untagged tag.");
+                obj.tag = "Untagged";
+            }
             
             return obj;
         }

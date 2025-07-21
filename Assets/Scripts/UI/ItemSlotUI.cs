@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using KowloonBreak.Core;
 
 namespace KowloonBreak.UI
@@ -8,7 +9,7 @@ namespace KowloonBreak.UI
     {
         [Header("UI References")]
         [SerializeField] private Image itemIcon;
-        [SerializeField] private Text quantityText;
+        [SerializeField] private TextMeshProUGUI quantityText;
         [SerializeField] private Image durabilityBar;
         [SerializeField] private Image slotBackground;
         [SerializeField] private Image selectionFrame;
@@ -36,7 +37,7 @@ namespace KowloonBreak.UI
                 itemIcon = transform.Find("ItemIcon")?.GetComponent<Image>();
             
             if (quantityText == null)
-                quantityText = transform.Find("QuantityText")?.GetComponent<Text>();
+                quantityText = transform.Find("QuantityText")?.GetComponent<TextMeshProUGUI>();
             
             if (durabilityBar == null)
                 durabilityBar = transform.Find("DurabilityBar")?.GetComponent<Image>();
@@ -118,12 +119,12 @@ namespace KowloonBreak.UI
             
             if (quantityText != null)
             {
-                quantityText.text = "";
+                quantityText.transform.parent.gameObject.SetActive(false);
             }
             
             if (durabilityBar != null)
             {
-                durabilityBar.gameObject.SetActive(false);
+                durabilityBar.transform.parent.gameObject.SetActive(false);
             }
         }
         
@@ -140,10 +141,11 @@ namespace KowloonBreak.UI
                 if (currentSlot.Quantity > 1)
                 {
                     quantityText.text = currentSlot.Quantity.ToString();
+                    quantityText.transform.parent.gameObject.SetActive(true);
                 }
                 else
                 {
-                    quantityText.text = "";
+                    quantityText.transform.parent.gameObject.SetActive(false);
                 }
             }
             
@@ -151,7 +153,7 @@ namespace KowloonBreak.UI
             {
                 if (currentSlot.ItemData.IsTool())
                 {
-                    durabilityBar.gameObject.SetActive(true);
+                    durabilityBar.transform.parent.gameObject.SetActive(true);
                     float durabilityPercentage = currentSlot.GetDurabilityPercentage();
                     durabilityBar.fillAmount = durabilityPercentage;
                     
@@ -165,7 +167,7 @@ namespace KowloonBreak.UI
                 }
                 else
                 {
-                    durabilityBar.gameObject.SetActive(false);
+                    durabilityBar.transform.parent.gameObject.SetActive(false);
                 }
             }
         }

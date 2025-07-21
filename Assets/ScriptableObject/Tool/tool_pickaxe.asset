@@ -16,7 +16,7 @@ MonoBehaviour:
   description: "\u74E6\u792B\u3092\u3053\u308F\u305B\u308B"
   itemType: 0
   icon: {fileID: 21300000, guid: ab71a14cc6266524b9133dc8be96d9c6, type: 3}
-  maxStackSize: 99
+  maxStackSize: 1
   toolType: 0
   durability: 100
   attackDamage: 1
