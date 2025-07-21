@@ -74,7 +74,7 @@ namespace KowloonBreak.Managers
                 phaseDictionary[phaseData.phase] = phaseData;
             }
 
-            Debug.Log("Phase Manager Initialized");
+            // PhaseManager初期化完了
         }
 
         private void CreateDefaultPhaseConfigurations()
@@ -138,7 +138,7 @@ namespace KowloonBreak.Managers
             isTransitioning = true;
             OnPhaseTransition?.Invoke(fromPhase, toPhase);
             
-            Debug.Log($"Phase transition started: {fromPhase} -> {toPhase}");
+            // フェーズ遷移開始
             
             Invoke(nameof(CompletePhaseTransition), phaseTransitionDelay);
         }
@@ -153,7 +153,7 @@ namespace KowloonBreak.Managers
             OnPhaseEnded?.Invoke(previousPhase);
             OnPhaseStarted?.Invoke(currentPhase);
 
-            Debug.Log($"Phase transition completed: {currentPhase}");
+            // フェーズ遷移完了
         }
 
         private void TriggerPhaseTransition()

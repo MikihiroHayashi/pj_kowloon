@@ -66,7 +66,7 @@ namespace KowloonBreak.Managers
             
             CreateDefaultInfectionEvents();
             
-            Debug.Log("Infection Manager Initialized");
+            // InfectionManager初期化完了
         }
 
         private void CreateDefaultInfectionEvents()
@@ -257,8 +257,6 @@ namespace KowloonBreak.Managers
             activeOutbreaks.Add(outbreak);
             
             OnOutbreakStarted?.Invoke(outbreak);
-            
-            Debug.Log($"Outbreak started: {eventData.eventName}");
         }
 
         private void UpdateActiveOutbreaks()
@@ -272,7 +270,6 @@ namespace KowloonBreak.Managers
                 {
                     activeOutbreaks.RemoveAt(i);
                     OnOutbreakEnded?.Invoke(outbreak);
-                    Debug.Log($"Outbreak ended: {outbreak.EventName}");
                 }
             }
         }
@@ -302,13 +299,12 @@ namespace KowloonBreak.Managers
                 return false;
             }
             
-            var resourceManager = ResourceManager.Instance;
+            var resourceManager = EnhancedResourceManager.Instance;
             if (resourceManager != null && resourceManager.ConsumeResources(ResourceType.Medicine, 1))
             {
                 character.Infection.TreatInfection(treatmentEffectiveness);
                 DecreaseCharacterInfectionRisk(character.CharacterId, 0.2f);
                 
-                Debug.Log($"Treated character: {character.Name}");
                 return true;
             }
             

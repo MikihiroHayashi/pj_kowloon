@@ -20,7 +20,7 @@ namespace KowloonBreak.Managers
         [SerializeField] private int maxFacilities = 10;
 
         private Dictionary<FacilityType, BaseFacility> facilities;
-        private ResourceManager resourceManager;
+        private EnhancedResourceManager resourceManager;
 
         public int BaseLevel => baseLevel;
         public float BaseDefense => baseDefense;
@@ -48,7 +48,7 @@ namespace KowloonBreak.Managers
 
         private void Start()
         {
-            resourceManager = ResourceManager.Instance;
+            resourceManager = EnhancedResourceManager.Instance;
         }
 
         private void InitializeBaseManager()
@@ -60,7 +60,7 @@ namespace KowloonBreak.Managers
                 CreateDefaultFacilities();
             }
 
-            Debug.Log("Base Manager Initialized");
+            // BaseManager初期化完了
         }
 
         private void CreateDefaultFacilities()
@@ -173,7 +173,7 @@ namespace KowloonBreak.Managers
                 ApplyFacilityEffects(facility);
                 OnFacilityBuilt?.Invoke(facility);
                 
-                Debug.Log($"Built facility: {facilityData.name} Level 1");
+                // 施設建設完了
                 return true;
             }
 
@@ -207,7 +207,7 @@ namespace KowloonBreak.Managers
                 
                 OnFacilityUpgraded?.Invoke(facility);
                 
-                Debug.Log($"Upgraded facility: {facilityData.name} to Level {facility.Level}");
+                // 施設アップグレード完了
                 return true;
             }
 
@@ -223,7 +223,7 @@ namespace KowloonBreak.Managers
             
             OnFacilityDestroyed?.Invoke(facility);
             
-            Debug.Log($"Destroyed facility: {type}");
+            // 施設破壊完了
             return true;
         }
 
@@ -314,7 +314,7 @@ namespace KowloonBreak.Managers
             maxFacilities += 2;
             OnBaseLevelChanged?.Invoke(baseLevel);
             
-            Debug.Log($"Base upgraded to Level {baseLevel}");
+            // 拠点レベルアップ完了
         }
 
         public float GetFacilityEffectiveness(FacilityType type)

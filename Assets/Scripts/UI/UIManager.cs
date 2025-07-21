@@ -45,7 +45,7 @@ namespace KowloonBreak.UI
         private Dictionary<string, GameObject> activePanels;
         private List<GameObject> activeNotifications;
         private GameManager gameManager;
-        private ResourceManager resourceManager;
+        private EnhancedResourceManager resourceManager;
         private InfectionManager infectionManager;
 
         public bool IsAnyPanelOpen => activePanels.Count > 0;
@@ -70,7 +70,7 @@ namespace KowloonBreak.UI
         private void Start()
         {
             gameManager = GameManager.Instance;
-            resourceManager = ResourceManager.Instance;
+            resourceManager = EnhancedResourceManager.Instance;
             infectionManager = InfectionManager.Instance;
             
             SubscribeToEvents();
@@ -80,6 +80,7 @@ namespace KowloonBreak.UI
         private void Update()
         {
             UpdateHUD();
+            HandleInput();
         }
 
         private void InitializeUI()
@@ -120,6 +121,37 @@ namespace KowloonBreak.UI
             }
         }
 
+        private void HandleInput()
+        {
+            // インベントリ開閉 (I キー)
+            if (Input.GetKeyDown(KeyCode.I))
+            {
+                TogglePanel("Inventory");
+            }
+
+            // エスケープキーでパネルを閉じる
+            if (Input.GetKeyDown(KeyCode.Escape) && IsAnyPanelOpen)
+            {
+                CloseAllPanels();
+            }
+
+            // その他のUIショートカット
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                TogglePanel("Map");
+            }
+
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                TogglePanel("Companion");
+            }
+
+            if (Input.GetKeyDown(KeyCode.B))
+            {
+                TogglePanel("BaseManagement");
+            }
+        }
+
         private void UpdateTimeDisplay()
         {
             if (timeText != null)
@@ -149,7 +181,7 @@ namespace KowloonBreak.UI
         {
             if (dayText != null)
             {
-                dayText.text = $"Day {newDay}";
+                dayText.text = newDay.ToString();
             }
         }
 

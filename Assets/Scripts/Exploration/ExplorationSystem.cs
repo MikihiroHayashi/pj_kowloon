@@ -349,7 +349,7 @@ namespace KowloonBreak.Exploration
                 discoveredItems[discoveredItem.Id] = discoveredItem;
                 OnItemDiscovered?.Invoke(discoveredItem);
                 
-                var resourceManager = ResourceManager.Instance;
+                var resourceManager = EnhancedResourceManager.Instance;
                 if (resourceManager != null)
                 {
                     resourceManager.AddResources(discoveredItem.ResourceType, discoveredItem.Amount);

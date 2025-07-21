@@ -46,13 +46,12 @@ namespace KowloonBreak.Managers
 
         private void InitializeGame()
         {
-            Debug.Log("Kowloon Break - Game Initialized");
+            // ゲーム初期化処理
         }
 
         private void StartGame()
         {
             ChangePhase(GamePhase.SURVIVAL);
-            Debug.Log($"Game Started - Phase: {currentPhase}, Day: {currentDay}");
         }
 
         private void UpdateGameState()
@@ -67,7 +66,6 @@ namespace KowloonBreak.Managers
                 GamePhase previousPhase = currentPhase;
                 currentPhase = newPhase;
                 
-                Debug.Log($"Phase changed from {previousPhase} to {currentPhase}");
                 OnPhaseChanged?.Invoke(currentPhase);
                 
                 HandlePhaseTransition(previousPhase, currentPhase);
@@ -78,7 +76,6 @@ namespace KowloonBreak.Managers
         {
             currentDay++;
             OnDayChanged?.Invoke(currentDay);
-            Debug.Log($"Day advanced to: {currentDay}");
         }
 
         private void HandlePhaseTransition(GamePhase from, GamePhase to)
@@ -99,34 +96,31 @@ namespace KowloonBreak.Managers
 
         private void InitializeSurvivalPhase()
         {
-            Debug.Log("Initializing Survival Phase");
+            // サバイバルフェーズ初期化
         }
 
         private void InitializeDefensePhase()
         {
-            Debug.Log("Initializing Defense Phase");
+            // 防衛フェーズ初期化
         }
 
         private void InitializeEscapePhase()
         {
-            Debug.Log("Initializing Escape Phase");
+            // 脱出フェーズ初期化
         }
 
         public void PauseGame()
         {
             Time.timeScale = 0f;
-            Debug.Log("Game Paused");
         }
 
         public void ResumeGame()
         {
             Time.timeScale = 1f;
-            Debug.Log("Game Resumed");
         }
 
         public void QuitGame()
         {
-            Debug.Log("Game Quit");
             Application.Quit();
         }
     }
