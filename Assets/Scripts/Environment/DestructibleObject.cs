@@ -16,7 +16,7 @@ namespace KowloonBreak.Environment
         [SerializeField] protected float respawnTime = 600f; // 10分 (ゲーム時間24時間)
         
         [Header("Drop Settings")]
-        [SerializeField] protected DropItem[] dropItems;
+        [SerializeField] protected ItemDropData[] dropItems;  // ItemDataベースのドロップシステム
         [SerializeField] protected float dropRadius = 2f;
         [SerializeField] protected float dropForce = 5f;
         
@@ -67,27 +67,57 @@ namespace KowloonBreak.Environment
         
         public virtual bool CanBeDestroyedBy(ToolType toolType)
         {
-            if (isDestroyed) return false;
+            Debug.Log($"[DestructibleObject] {gameObject.name} - CanBeDestroyedBy({toolType})");
+            Debug.Log($"[DestructibleObject] {gameObject.name} - IsDestroyed: {isDestroyed}");
+            
+            if (isDestroyed) 
+            {
+                Debug.Log($"[DestructibleObject] {gameObject.name} - Object is already destroyed");
+                return false;
+            }
             
             if (allowedTools == null || allowedTools.Length == 0)
+            {
+                Debug.Log($"[DestructibleObject] {gameObject.name} - No tool restrictions, allowing all tools");
                 return true;
+            }
+            
+            Debug.Log($"[DestructibleObject] {gameObject.name} - Allowed tools: [{string.Join(", ", allowedTools)}]");
                 
             foreach (var tool in allowedTools)
             {
                 if (tool == toolType)
+                {
+                    Debug.Log($"[DestructibleObject] {gameObject.name} - Tool {toolType} is allowed");
                     return true;
+                }
             }
             
+            Debug.Log($"[DestructibleObject] {gameObject.name} - Tool {toolType} is not allowed");
             return false;
         }
         
         public virtual void TakeDamage(float damage, ToolType toolType)
         {
-            if (isDestroyed || !CanBeDestroyedBy(toolType))
+            Debug.Log($"[DestructibleObject] {gameObject.name} - TakeDamage({damage}, {toolType})");
+            Debug.Log($"[DestructibleObject] {gameObject.name} - Current health before damage: {currentHealth}/{maxHealth}");
+            
+            if (isDestroyed)
+            {
+                Debug.Log($"[DestructibleObject] {gameObject.name} - Cannot take damage, object is destroyed");
                 return;
+            }
+            
+            if (!CanBeDestroyedBy(toolType))
+            {
+                Debug.Log($"[DestructibleObject] {gameObject.name} - Cannot take damage, tool {toolType} not allowed");
+                return;
+            }
                 
             currentHealth -= damage;
             currentHealth = Mathf.Max(0, currentHealth);
+            
+            Debug.Log($"[DestructibleObject] {gameObject.name} - Health after damage: {currentHealth}/{maxHealth}");
             
             OnDamaged?.Invoke(this, damage);
             
@@ -102,6 +132,7 @@ namespace KowloonBreak.Environment
             
             if (currentHealth <= 0)
             {
+                Debug.Log($"[DestructibleObject] {gameObject.name} - Health reached zero, destroying object");
                 DestroyObject();
             }
         }
@@ -148,58 +179,55 @@ namespace KowloonBreak.Environment
         
         protected virtual void DropItems()
         {
-            if (dropItems == null || dropItems.Length == 0) return;
-            
-            foreach (var dropItem in dropItems)
+            if (dropItems == null || dropItems.Length == 0)
             {
-                if (UnityEngine.Random.Range(0f, 1f) <= dropItem.dropChance)
+                return;
+            }
+            
+            foreach (var dropData in dropItems)
+            {
+                if (!dropData.IsValid()) 
                 {
-                    int dropAmount = UnityEngine.Random.Range(dropItem.minAmount, dropItem.maxAmount + 1);
+                    continue;
+                }
+                
+                if (UnityEngine.Random.Range(0f, 1f) <= dropData.dropChance)
+                {
+                    int dropAmount = UnityEngine.Random.Range(dropData.minAmount, dropData.maxAmount + 1);
                     
                     for (int i = 0; i < dropAmount; i++)
                     {
-                        CreateDroppedItem(dropItem.itemName);
+                        CreateDroppedItem(dropData);
                     }
                 }
             }
         }
         
-        protected virtual void CreateDroppedItem(string itemName)
+        protected virtual void CreateDroppedItem(ItemDropData dropData)
         {
-            // DroppedItemプレハブが存在する場合
-            GameObject droppedItemPrefab = Resources.Load<GameObject>("Prefabs/DroppedItem");
-            if (droppedItemPrefab != null)
+            if (dropData?.itemData == null)
             {
-                Vector3 dropPosition = transform.position + UnityEngine.Random.insideUnitSphere * dropRadius;
-                dropPosition.y = transform.position.y + 0.5f;
-                
-                GameObject droppedItem = Instantiate(droppedItemPrefab, dropPosition, Quaternion.identity);
-                DroppedItem droppedItemComponent = droppedItem.GetComponent<DroppedItem>();
-                
-                if (droppedItemComponent != null)
-                {
-                    droppedItemComponent.Initialize(itemName, 1);
-                    
-                    // ドロップ時の物理的な動きを追加
-                    Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
-                    if (rb != null)
-                    {
-                        Vector3 randomDirection = UnityEngine.Random.insideUnitSphere;
-                        randomDirection.y = Mathf.Abs(randomDirection.y) + 0.5f;
-                        rb.AddForce(randomDirection * dropForce, ForceMode.Impulse);
-                    }
-                }
+                return;
             }
-            else
+            
+            GameObject prefab = dropData.GetPrefab();
+            if (prefab == null)
             {
-                // プレハブが存在しない場合は直接インベントリに追加
-                var resourceManager = EnhancedResourceManager.Instance;
-                if (resourceManager != null)
-                {
-                    resourceManager.AddItem(itemName, 1);
-                }
+                Debug.LogError($"[DestructibleObject] No prefab assigned to {dropData.GetItemName()}!");
+                return;
+            }
+            
+            // ドロップ位置を設定（オブジェクトの中心から少し上）
+            Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
+            GameObject droppedItem = Instantiate(prefab, dropPosition, Quaternion.identity);
+            
+            DroppedItem droppedItemComponent = droppedItem.GetComponent<DroppedItem>();
+            if (droppedItemComponent != null)
+            {
+                droppedItemComponent.Initialize(dropData.GetItemName(), 1);
             }
         }
+        
         
         public virtual void Respawn()
         {
@@ -240,13 +268,4 @@ namespace KowloonBreak.Environment
         }
     }
     
-    [Serializable]
-    public class DropItem
-    {
-        public string itemName;
-        public int minAmount = 1;
-        public int maxAmount = 1;
-        [Range(0f, 1f)]
-        public float dropChance = 1f;
-    }
 }

@@ -13,50 +13,82 @@ namespace KowloonBreak.Environment
         [SerializeField] private float pickupRange = 2f;
         [SerializeField] private float autoPickupDelay = 1f;
         [SerializeField] private float despawnTime = 300f; // 5分後に消滅
-        [SerializeField] private float bobSpeed = 2f;
-        [SerializeField] private float bobHeight = 0.3f;
-        [SerializeField] private float rotationSpeed = 90f;
         
-        [Header("Visual Effects")]
-        [SerializeField] private GameObject pickupEffect;
-        [SerializeField] private AudioClip pickupSound;
+        
         
         private bool canPickup = false;
         private float spawnTime;
-        private Vector3 initialPosition;
-        private AudioSource audioSource;
         private Collider itemCollider;
         private Renderer itemRenderer;
+        private Rigidbody rb;
         
         public string ItemName => itemName;
         public int Quantity => quantity;
         
         private void Awake()
         {
-            audioSource = GetComponent<AudioSource>();
-            if (audioSource == null)
+            
+            // Rigidbodyの確認（必須）
+            rb = GetComponent<Rigidbody>();
+            if (rb == null)
             {
-                audioSource = gameObject.AddComponent<AudioSource>();
+                Debug.LogError($"[DroppedItem] Rigidbody component missing on {gameObject.name}! Please add Rigidbody to the prefab.");
+                return;
             }
             
+            // 物理コライダーの確認（必須）
             itemCollider = GetComponent<Collider>();
             if (itemCollider == null)
             {
-                itemCollider = gameObject.AddComponent<SphereCollider>();
-                ((SphereCollider)itemCollider).isTrigger = true;
-                ((SphereCollider)itemCollider).radius = pickupRange;
+                Debug.LogError($"[DroppedItem] Collider component missing on {gameObject.name}! Please add Collider to the prefab.");
+                return;
             }
             
-            itemRenderer = GetComponent<Renderer>();
+            // コライダーがトリガーでないことを確認
+            if (itemCollider.isTrigger)
+            {
+                Debug.LogError($"[DroppedItem] Main collider should not be a trigger on {gameObject.name}! Please set isTrigger = false.");
+            }
             
-            // デフォルトのビジュアル設定
-            SetupDefaultVisual();
+            // ピックアップ用のトリガーコライダーを検索（Model子オブジェクトと共存可能）
+            ItemPickupTrigger pickupTrigger = GetComponentInChildren<ItemPickupTrigger>();
+            if (pickupTrigger == null)
+            {
+                Debug.LogError($"[DroppedItem] ItemPickupTrigger component missing in children of {gameObject.name}! Please add ItemPickupTrigger component to a child object (can be on Model object).");
+                return;
+            }
+            else
+            {
+                Debug.Log($"[DroppedItem] Found ItemPickupTrigger on: {pickupTrigger.name}");
+            }
+            
+            // 遅延してSetParentItemを呼び出す
+            StartCoroutine(SetupPickupTrigger(pickupTrigger));
+            
+            // Rendererの確認（子オブジェクトから検索）
+            itemRenderer = GetComponentInChildren<Renderer>();
+            
+            if (itemRenderer == null)
+            {
+                Debug.LogError($"[DroppedItem] Renderer component missing in children of {gameObject.name}! Please add a child object with Renderer component (Model).");
+            }
+            else
+            {
+                Debug.Log($"[DroppedItem] Found Renderer in child object: {itemRenderer.name}");
+            }
         }
         
         private void Start()
         {
             spawnTime = Time.time;
-            initialPosition = transform.position;
+            
+            // ItemPickupTriggerの再確認と設定
+            ItemPickupTrigger pickupTrigger = GetComponentInChildren<ItemPickupTrigger>();
+            if (pickupTrigger != null)
+            {
+                pickupTrigger.SetParentItem(this);
+                Debug.Log($"[DroppedItem] Start() - Set parent for ItemPickupTrigger on {pickupTrigger.name}");
+            }
             
             // 少し遅れてから拾得可能にする
             StartCoroutine(EnablePickupAfterDelay());
@@ -64,15 +96,6 @@ namespace KowloonBreak.Environment
         
         private void Update()
         {
-            if (!canPickup) return;
-            
-            // 浮遊アニメーション
-            float newY = initialPosition.y + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
-            transform.position = new Vector3(transform.position.x, newY, transform.position.z);
-            
-            // 回転アニメーション
-            transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
-            
             // 自動消滅チェック
             if (Time.time - spawnTime > despawnTime)
             {
@@ -80,165 +103,78 @@ namespace KowloonBreak.Environment
             }
         }
         
+        
         private IEnumerator EnablePickupAfterDelay()
         {
             yield return new WaitForSeconds(autoPickupDelay);
             canPickup = true;
         }
         
-        private void SetupDefaultVisual()
-        {
-            // メッシュがない場合はキューブプリミティブを作成
-            if (GetComponent<MeshFilter>() == null)
-            {
-                gameObject.AddComponent<MeshFilter>().mesh = CreateItemMesh();
-            }
-            
-            // レンダラーがない場合は追加
-            if (itemRenderer == null)
-            {
-                itemRenderer = gameObject.AddComponent<MeshRenderer>();
-            }
-            
-            // デフォルトマテリアルを設定
-            Material defaultMaterial = CreateDefaultMaterial();
-            itemRenderer.material = defaultMaterial;
-            
-            // サイズを小さく設定
-            transform.localScale = Vector3.one * 0.5f;
-        }
         
-        private Mesh CreateItemMesh()
-        {
-            // シンプルなキューブメッシュを作成
-            var mesh = new Mesh();
-            
-            Vector3[] vertices = new Vector3[]
-            {
-                new Vector3(-0.25f, -0.25f, -0.25f),
-                new Vector3(0.25f, -0.25f, -0.25f),
-                new Vector3(0.25f, 0.25f, -0.25f),
-                new Vector3(-0.25f, 0.25f, -0.25f),
-                new Vector3(-0.25f, -0.25f, 0.25f),
-                new Vector3(0.25f, -0.25f, 0.25f),
-                new Vector3(0.25f, 0.25f, 0.25f),
-                new Vector3(-0.25f, 0.25f, 0.25f)
-            };
-            
-            int[] triangles = new int[]
-            {
-                0, 2, 1, 0, 3, 2,
-                1, 6, 5, 1, 2, 6,
-                5, 7, 4, 5, 6, 7,
-                4, 3, 0, 4, 7, 3,
-                3, 6, 2, 3, 7, 6,
-                4, 1, 5, 4, 0, 1
-            };
-            
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
-            mesh.RecalculateNormals();
-            
-            return mesh;
-        }
-        
-        private Material CreateDefaultMaterial()
-        {
-            Material material = new Material(Shader.Find("Standard"));
-            material.color = Color.cyan;
-            
-            // Standard シェーダープロパティは SetFloat/SetColor で設定
-            material.SetFloat("_Metallic", 0.3f);
-            material.SetFloat("_Glossiness", 0.7f);
-            
-            // エミッシブ効果を追加
-            material.EnableKeyword("_EMISSION");
-            material.SetColor("_EmissionColor", Color.cyan * 0.3f);
-            
-            return material;
-        }
         
         public void Initialize(string itemName, int quantity)
         {
-            this.itemName = itemName;
-            this.quantity = quantity;
+            // 安全な文字列処理
+            this.itemName = string.IsNullOrEmpty(itemName) ? "不明なアイテム" : itemName;
+            this.quantity = Mathf.Max(1, quantity);
             
-            // アイテムに応じてビジュアルを変更
-            UpdateVisualForItem();
+            Debug.Log($"[DroppedItem] Initialize called: '{this.itemName}' x{this.quantity}");
         }
         
-        private void UpdateVisualForItem()
+        
+        
+        public void OnPlayerTriggerEnter(Collider playerCollider)
         {
-            if (itemRenderer == null) return;
+            Debug.Log($"[DroppedItem] Trigger entered by: {playerCollider.name}, Tag: {playerCollider.tag}, CanPickup: {canPickup}");
             
-            // アイテムタイプに応じてマテリアルを変更
-            Material material = itemRenderer.material;
-            
-            switch (itemName)
+            if (!canPickup) 
             {
-                case "ガラクタ":
-                    material.color = Color.gray;
-                    material.SetColor("_EmissionColor", Color.gray * 0.2f);
-                    break;
-                case "つるはし":
-                    material.color = Color.yellow;
-                    material.SetColor("_EmissionColor", Color.yellow * 0.3f);
-                    break;
-                case "鉄パイプ":
-                    material.color = Color.red;
-                    material.SetColor("_EmissionColor", Color.red * 0.3f);
-                    break;
-                default:
-                    material.color = Color.cyan;
-                    material.SetColor("_EmissionColor", Color.cyan * 0.3f);
-                    break;
+                Debug.Log($"[DroppedItem] Cannot pickup yet. Item: {itemName}");
+                return;
             }
-        }
-        
-        private void OnTriggerEnter(Collider other)
-        {
-            if (!canPickup) return;
             
             // プレイヤーのタグをチェック
-            if (other.CompareTag("Player"))
+            if (playerCollider.CompareTag("Player"))
             {
+                Debug.Log($"[DroppedItem] Player detected, attempting pickup of {itemName}");
                 TryPickup();
+            }
+            else
+            {
+                Debug.Log($"[DroppedItem] Non-player object detected: {playerCollider.name}");
             }
         }
         
         private void TryPickup()
         {
+            Debug.Log($"[DroppedItem] TryPickup called for {itemName} x{quantity}");
+            
             var resourceManager = EnhancedResourceManager.Instance;
-            if (resourceManager == null) return;
+            if (resourceManager == null) 
+            {
+                Debug.LogError("[DroppedItem] EnhancedResourceManager.Instance is null!");
+                return;
+            }
+            
+            Debug.Log($"[DroppedItem] ResourceManager found, attempting to add {itemName} x{quantity}");
             
             // インベントリに追加を試行
             if (resourceManager.AddItem(itemName, quantity))
             {
+                Debug.Log($"[DroppedItem] Successfully added {itemName} x{quantity} to inventory");
                 // 拾得成功
                 OnPickedUp();
             }
             else
             {
                 // インベントリが満杯の場合の処理
-                Debug.Log("Inventory is full!");
+                Debug.LogWarning($"[DroppedItem] Failed to add {itemName} x{quantity} to inventory - possibly full");
             }
         }
         
         private void OnPickedUp()
         {
-            // ピックアップエフェクト
-            if (pickupEffect != null)
-            {
-                Instantiate(pickupEffect, transform.position, Quaternion.identity);
-            }
-            
-            // ピックアップ音
-            if (pickupSound != null && audioSource != null)
-            {
-                audioSource.PlayOneShot(pickupSound);
-            }
-            
-            Debug.Log($"Picked up {quantity} {itemName}");
+            Debug.Log($"[DroppedItem] Successfully picked up {quantity} {itemName}");
             
             // オブジェクトを削除
             Destroy(gameObject);
@@ -253,15 +189,28 @@ namespace KowloonBreak.Environment
         public void SetPickupRange(float range)
         {
             pickupRange = range;
-            if (itemCollider is SphereCollider sphereCollider)
-            {
-                sphereCollider.radius = range;
-            }
         }
         
         public void SetDespawnTime(float time)
         {
             despawnTime = time;
+        }
+        
+        private IEnumerator SetupPickupTrigger(ItemPickupTrigger pickupTrigger)
+        {
+            // 複数フレーム待機してからSetParentItemを呼び出す
+            yield return new WaitForEndOfFrame();
+            yield return null;
+            
+            if (pickupTrigger != null)
+            {
+                pickupTrigger.SetParentItem(this);
+                Debug.Log($"[DroppedItem] SetupPickupTrigger completed for {itemName}");
+            }
+            else
+            {
+                Debug.LogError("[DroppedItem] PickupTrigger is null in SetupPickupTrigger!");
+            }
         }
         
         private void OnDrawGizmosSelected()

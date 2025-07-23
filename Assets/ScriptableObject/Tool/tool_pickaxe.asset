@@ -19,7 +19,10 @@ MonoBehaviour:
   maxStackSize: 1
   toolType: 0
   durability: 100
-  attackDamage: 1
+  attackDamage: 10
   attackRange: 1.5
   materialType: 0
   value: 1
+  droppedItemPrefab: {fileID: 4047021543740612791, guid: e71e595bc92b48343bc75200993bea6d,
+    type: 3}
+  dropWeight: 1

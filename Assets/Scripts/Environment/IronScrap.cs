@@ -25,17 +25,9 @@ namespace KowloonBreak.Environment
             // つるはしでのみ破壊可能
             allowedTools = new ToolType[] { ToolType.Pickaxe };
             
-            // ドロップアイテム設定
-            dropItems = new DropItem[]
-            {
-                new DropItem
-                {
-                    itemName = "ガラクタ",
-                    minAmount = 1,
-                    maxAmount = 3,
-                    dropChance = 1f
-                }
-            };
+            // ドロップアイテム設定（新システムではInspectorで設定を推奨）
+            // このクラスでは dropItems 配列は Inspector で設定してください
+            Debug.LogWarning("[IronScrap] Please configure dropItems in the Inspector using ItemData ScriptableObjects");
             
             objectRenderer = GetComponent<Renderer>();
             

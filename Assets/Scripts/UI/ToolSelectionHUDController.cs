@@ -191,7 +191,7 @@ namespace KowloonBreak.UI
             var selectedSlot = resourceManager?.GetToolSlot(selectedToolIndex);
             OnToolSelected?.Invoke(selectedToolIndex, selectedSlot);
             
-            Debug.Log($"Selected tool slot {selectedToolIndex}: {selectedSlot?.ItemData?.itemName ?? "Empty"}");
+            // Debug.Log($"Selected tool slot {selectedToolIndex}: {selectedSlot?.ItemData?.itemName ?? "Empty"}");
         }
         
         public void UseTool(int index)
@@ -202,11 +202,11 @@ namespace KowloonBreak.UI
             if (toolSlot != null && !toolSlot.IsEmpty)
             {
                 OnToolUsed?.Invoke(index, toolSlot);
-                Debug.Log($"Used tool: {toolSlot.ItemData?.itemName ?? "Unknown"} from slot {index}");
+                // Debug.Log($"Used tool: {toolSlot.ItemData?.itemName ?? "Unknown"} from slot {index}");
             }
             else
             {
-                Debug.Log($"No tool in slot {index} to use");
+                // Debug.Log($"No tool in slot {index} to use");
             }
         }
         

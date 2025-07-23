@@ -10,12 +10,12 @@ namespace KowloonBreak.Player
     {
         [Header("Mining Settings")]
         [SerializeField] private float miningRange = 3f;
-        [SerializeField] private float miningAngle = 45f;
+        [SerializeField] private Vector3 miningBoxSize = new Vector3(2f, 2f, 3f);
         [SerializeField] private LayerMask mineableLayerMask = -1;
         [SerializeField] private KeyCode miningKey = KeyCode.E;
         
         [Header("Visual Feedback")]
-        [SerializeField] private bool showDebugRays = true;
+        [SerializeField] private bool showDebugBox = true;
         
         private Transform playerTransform;
         private EnhancedResourceManager resourceManager;
@@ -68,23 +68,29 @@ namespace KowloonBreak.Player
         
         public void PerformMining()
         {
+            Debug.Log("[MiningSystem] PerformMining called");
+            
             // 現在選択されているツールを取得
             var currentTool = GetCurrentTool();
             if (currentTool == null || currentTool.IsEmpty)
             {
-                Debug.Log("No tool selected for mining");
+                Debug.Log("[MiningSystem] No tool selected for mining");
                 return;
             }
+            
+            Debug.Log($"[MiningSystem] Current tool: {currentTool.ItemData.itemName} (Type: {currentTool.ItemData.toolType})");
             
             // ツールが採掘に使用できるかチェック
             if (!IsToolSuitableForMining(currentTool))
             {
-                Debug.Log("Current tool is not suitable for mining");
+                Debug.Log($"[MiningSystem] Current tool {currentTool.ItemData.toolType} is not suitable for mining");
                 return;
             }
             
             // 前方の採掘可能オブジェクトを検索
             var targets = FindMineableTargets();
+            
+            Debug.Log($"[MiningSystem] Found {targets.Length} mineable targets");
             
             if (targets.Length > 0)
             {
@@ -92,12 +98,14 @@ namespace KowloonBreak.Player
                 var closestTarget = FindClosestTarget(targets);
                 if (closestTarget != null)
                 {
+                    Debug.Log($"[MiningSystem] Attempting to mine: {closestTarget}");
                     AttemptMining(closestTarget, currentTool);
                 }
             }
             else
             {
-                Debug.Log("No mineable objects in range");
+                Debug.Log("[MiningSystem] No mineable objects in range");
+                DebugMiningArea();
             }
         }
         
@@ -114,58 +122,57 @@ namespace KowloonBreak.Player
         {
             if (toolSlot?.ItemData == null) return false;
             
-            // ツールタイプをチェック（つるはしのみ採掘可能）
-            return toolSlot.ItemData.toolType == ToolType.Pickaxe;
+            // ツールタイプをチェック（つるはしと鉄パイプを採掘可能に）
+            bool isSuitable = toolSlot.ItemData.toolType == ToolType.Pickaxe || toolSlot.ItemData.toolType == ToolType.IronPipe;
+            Debug.Log($"[MiningSystem] Tool {toolSlot.ItemData.toolType} suitable for mining: {isSuitable}");
+            return isSuitable;
         }
         
         private IDestructible[] FindMineableTargets()
         {
             if (playerTransform == null) return new IDestructible[0];
             
-            // プレイヤーの前方方向にレイキャストを複数発射
-            Vector3 forward = playerTransform.forward;
-            Vector3 origin = playerTransform.position + Vector3.up * 1.5f; // プレイヤーの胸の高さから
+            // プレイヤーの前方にボックス判定
+            Vector3 boxCenter = playerTransform.position + Vector3.up * 1.5f + playerTransform.forward * (miningBoxSize.z / 2f);
             
             var targets = new System.Collections.Generic.List<IDestructible>();
             
-            // 中央のレイ
-            if (Physics.Raycast(origin, forward, out RaycastHit centerHit, miningRange, mineableLayerMask))
+            // ボックス範囲内のコライダーを取得
+            Collider[] colliders = Physics.OverlapBox(boxCenter, miningBoxSize / 2f, playerTransform.rotation, mineableLayerMask);
+            
+            Debug.Log($"[MiningSystem] Search Box Center: {boxCenter}, Size: {miningBoxSize}, LayerMask: {mineableLayerMask.value}");
+            Debug.Log($"[MiningSystem] Found {colliders.Length} colliders in range");
+            
+            foreach (var collider in colliders)
             {
-                var destructible = centerHit.collider.GetComponent<IDestructible>();
+                // プレイヤー自身のコライダーをスキップ
+                if (collider.transform.root == playerTransform.root)
+                {
+                    Debug.Log($"[MiningSystem] Skipping player collider: {collider.name}");
+                    continue;
+                }
+                
+                Debug.Log($"[MiningSystem] Checking collider: {collider.name} on layer {collider.gameObject.layer}");
+                
+                // 自身と親オブジェクトからIDestructibleを検索
+                var destructible = collider.GetComponent<IDestructible>();
+                if (destructible == null)
+                {
+                    destructible = collider.GetComponentInParent<IDestructible>();
+                }
+                
                 if (destructible != null && !targets.Contains(destructible))
                 {
                     targets.Add(destructible);
+                    Debug.Log($"[MiningSystem] Added destructible target: {collider.name} (IDestructible found on {((MonoBehaviour)destructible).name})");
+                }
+                else if (destructible == null)
+                {
+                    Debug.Log($"[MiningSystem] Collider {collider.name} has no IDestructible component (checked parent too)");
                 }
             }
             
-            // 角度範囲内の複数レイ
-            int rayCount = 5;
-            for (int i = 0; i < rayCount; i++)
-            {
-                float angle = Mathf.Lerp(-miningAngle, miningAngle, i / (float)(rayCount - 1));
-                Vector3 direction = Quaternion.AngleAxis(angle, playerTransform.up) * forward;
-                
-                if (Physics.Raycast(origin, direction, out RaycastHit hit, miningRange, mineableLayerMask))
-                {
-                    var destructible = hit.collider.GetComponent<IDestructible>();
-                    if (destructible != null && !targets.Contains(destructible))
-                    {
-                        targets.Add(destructible);
-                    }
-                }
-                
-                // 垂直方向の角度も考慮
-                direction = Quaternion.AngleAxis(angle, playerTransform.right) * forward;
-                if (Physics.Raycast(origin, direction, out RaycastHit verticalHit, miningRange, mineableLayerMask))
-                {
-                    var destructible = verticalHit.collider.GetComponent<IDestructible>();
-                    if (destructible != null && !targets.Contains(destructible))
-                    {
-                        targets.Add(destructible);
-                    }
-                }
-            }
-            
+            Debug.Log($"[MiningSystem] Total targets found: {targets.Count}");
             return targets.ToArray();
         }
         
@@ -197,13 +204,21 @@ namespace KowloonBreak.Player
         {
             var toolType = toolSlot.ItemData.toolType;
             
+            Debug.Log($"[MiningSystem] Attempting to mine with tool: {toolType}");
+            Debug.Log($"[MiningSystem] Tool damage: {toolSlot.ItemData.attackDamage}");
+            
             // 採掘試行イベントを発火
             OnMiningAttempt?.Invoke(target, toolType);
             
             // ターゲットがそのツールで破壊可能かチェック
-            if (target.CanBeDestroyedBy(toolType))
+            bool canDestroy = target.CanBeDestroyedBy(toolType);
+            Debug.Log($"[MiningSystem] Can destroy target with {toolType}: {canDestroy}");
+            
+            if (canDestroy)
             {
                 float damage = toolSlot.ItemData.attackDamage;
+                
+                Debug.Log($"[MiningSystem] Dealing {damage} damage to target");
                 
                 // ダメージを与える
                 target.TakeDamage(damage, toolType);
@@ -214,45 +229,56 @@ namespace KowloonBreak.Player
                 // 成功イベントを発火
                 OnMiningSuccess?.Invoke(target, toolType);
                 
-                Debug.Log($"Mining: Dealt {damage} damage to {target} with {toolType}");
+                Debug.Log($"[MiningSystem] Mining successful: Dealt {damage} damage to {target} with {toolType}");
                 
                 // ツールが壊れた場合の処理
                 if (!toolStillUsable)
                 {
-                    Debug.Log($"Tool {toolSlot.ItemData.itemName} broke!");
+                    Debug.Log($"[MiningSystem] Tool {toolSlot.ItemData.itemName} broke!");
                 }
             }
             else
             {
-                Debug.Log($"Cannot mine this object with {toolType}");
+                Debug.Log($"[MiningSystem] Cannot mine this object with {toolType}");
             }
         }
         
         private void OnDrawGizmosSelected()
         {
-            if (!showDebugRays || playerTransform == null) return;
+            if (!showDebugBox || playerTransform == null) return;
             
-            Vector3 origin = playerTransform.position + Vector3.up * 1.5f;
-            Vector3 forward = playerTransform.forward;
+            // ボックス判定範囲を可視化
+            Vector3 boxCenter = playerTransform.position + Vector3.up * 1.5f + playerTransform.forward * (miningBoxSize.z / 2f);
             
-            // 採掘範囲を可視化
             Gizmos.color = Color.yellow;
-            Gizmos.DrawRay(origin, forward * miningRange);
+            Gizmos.matrix = Matrix4x4.TRS(boxCenter, playerTransform.rotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, miningBoxSize);
             
-            // 採掘角度を可視化
-            Gizmos.color = Color.green;
-            Vector3 leftDirection = Quaternion.AngleAxis(-miningAngle, playerTransform.up) * forward;
-            Vector3 rightDirection = Quaternion.AngleAxis(miningAngle, playerTransform.up) * forward;
+            // リセット
+            Gizmos.matrix = Matrix4x4.identity;
+        }
+        
+        private void DebugMiningArea()
+        {
+            if (playerTransform == null) return;
             
-            Gizmos.DrawRay(origin, leftDirection * miningRange);
-            Gizmos.DrawRay(origin, rightDirection * miningRange);
+            Vector3 boxCenter = playerTransform.position + Vector3.up * 1.5f + playerTransform.forward * (miningBoxSize.z / 2f);
             
-            // 上下の角度も表示
-            Vector3 upDirection = Quaternion.AngleAxis(-miningAngle, playerTransform.right) * forward;
-            Vector3 downDirection = Quaternion.AngleAxis(miningAngle, playerTransform.right) * forward;
+            Debug.Log($"[MiningSystem DEBUG] Player position: {playerTransform.position}");
+            Debug.Log($"[MiningSystem DEBUG] Box center: {boxCenter}");
+            Debug.Log($"[MiningSystem DEBUG] Box size: {miningBoxSize}");
+            Debug.Log($"[MiningSystem DEBUG] Layer mask value: {mineableLayerMask.value}");
             
-            Gizmos.DrawRay(origin, upDirection * miningRange);
-            Gizmos.DrawRay(origin, downDirection * miningRange);
+            // 全てのコライダーを取得（レイヤーは無視）
+            Collider[] allColliders = Physics.OverlapBox(boxCenter, miningBoxSize / 2f, playerTransform.rotation);
+            Debug.Log($"[MiningSystem DEBUG] All colliders in box (no layer filter): {allColliders.Length}");
+            
+            foreach (var collider in allColliders)
+            {
+                bool isPlayer = collider.transform.root == playerTransform.root;
+                var destructible = collider.GetComponent<IDestructible>() ?? collider.GetComponentInParent<IDestructible>();
+                Debug.Log($"[MiningSystem DEBUG] Found: {collider.name}, Layer: {collider.gameObject.layer}, HasIDestructible: {destructible != null}, IsPlayer: {isPlayer}");
+            }
         }
         
         private void OnDestroy()

@@ -23,3 +23,6 @@ MonoBehaviour:
   attackRange: 1.5
   materialType: 0
   value: 1
+  droppedItemPrefab: {fileID: 4047021543740612791, guid: e71e595bc92b48343bc75200993bea6d,
+    type: 3}
+  dropWeight: 1

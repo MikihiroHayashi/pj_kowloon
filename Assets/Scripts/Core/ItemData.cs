@@ -23,6 +23,10 @@ namespace KowloonBreak.Core
         public MaterialType materialType;
         public float value = 1f;
         
+        [Header("Drop Settings")]
+        public GameObject droppedItemPrefab;  // ドロップ時に生成されるプレハブ
+        public float dropWeight = 1f;        // ドロップ重み（確率計算用）
+        
         private void OnEnable()
         {
             if (string.IsNullOrEmpty(itemName))
