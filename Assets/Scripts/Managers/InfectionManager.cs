@@ -40,16 +40,12 @@ namespace KowloonBreak.Managers
             {
                 Instance = this;
                 
-                // ルートオブジェクトに対してのみDontDestroyOnLoadを適用
-                GameObject rootObject = transform.root.gameObject;
-                if (rootObject == gameObject)
+                // Managerオブジェクトをルートに移動してからDontDestroyOnLoadを適用
+                if (transform.parent != null)
                 {
-                    DontDestroyOnLoad(gameObject);
+                    transform.SetParent(null);
                 }
-                else
-                {
-                    Debug.LogWarning("[InfectionManager] This component is not on a root GameObject. DontDestroyOnLoad will not be applied.");
-                }
+                DontDestroyOnLoad(gameObject);
                 
                 InitializeInfectionManager();
             }

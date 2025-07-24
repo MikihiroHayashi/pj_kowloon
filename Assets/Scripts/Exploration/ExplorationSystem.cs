@@ -53,6 +53,11 @@ namespace KowloonBreak.Exploration
             if (Instance == null)
             {
                 Instance = this;
+                // Managerオブジェクトをルートに移動してからDontDestroyOnLoadを適用
+                if (transform.parent != null)
+                {
+                    transform.SetParent(null);
+                }
                 DontDestroyOnLoad(gameObject);
                 InitializeExplorationSystem();
             }

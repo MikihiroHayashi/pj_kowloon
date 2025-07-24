@@ -145,19 +145,7 @@ namespace KowloonBreak.Player
 
         private void SetupCameraFollowTarget()
         {
-            if (cameraFollowTarget == null)
-            {
-                // カメラ追従用のターゲットオブジェクトを作成
-                GameObject followTargetGO = new GameObject("CameraFollowTarget");
-                followTargetGO.transform.SetParent(transform);
-                followTargetGO.transform.localPosition = Vector3.zero;
-                
-                cameraFollowTarget = followTargetGO.transform;
-                
-                // Cinemachine セットアップを追加
-                var cinemachineSetup = followTargetGO.AddComponent<KowloonBreak.Camera.CinemachineSetup>();
-                cinemachineSetup.FollowTarget = transform;
-            }
+            // カメラフォローターゲットは手動で設定
         }
 
         private void InitializeStats()
