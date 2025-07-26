@@ -36,11 +36,11 @@ namespace KowloonBreak.Player
         public float InfectionLevel => infectionLevel;
         public bool IsAlive => currentHealth > 0f;
 
-        private PlayerController playerController;
+        private EnhancedPlayerController enhancedPlayerController;
 
         private void Awake()
         {
-            playerController = GetComponent<PlayerController>();
+            enhancedPlayerController = GetComponent<EnhancedPlayerController>();
         }
 
         private void Start()
@@ -58,18 +58,31 @@ namespace KowloonBreak.Player
         {
             currentHealth = maxHealth;
             currentStamina = maxStamina;
+            Debug.Log($"[PlayerStats] InitializeStats: Health={currentHealth}/{maxHealth}, HealthPercentage={HealthPercentage}");
+            Debug.Log($"[PlayerStats] InitializeStats: OnHealthChanged subscribers count: {OnHealthChanged?.GetInvocationList()?.Length ?? 0}");
             OnHealthChanged?.Invoke(HealthPercentage);
             OnStaminaChanged?.Invoke(StaminaPercentage);
         }
 
         private void UpdateStamina()
         {
-            if (playerController.IsRunning && playerController.IsMoving)
+            if (enhancedPlayerController != null)
             {
-                ConsumeStamina(staminaDepletionRate * Time.deltaTime);
+                bool isRunning = enhancedPlayerController.IsRunning;
+                bool isMoving = enhancedPlayerController.IsMoving;
+                
+                if (isRunning && isMoving)
+                {
+                    ConsumeStamina(staminaDepletionRate * Time.deltaTime);
+                }
+                else if (currentStamina < maxStamina)
+                {
+                    RegenerateStamina(staminaRegenRate * Time.deltaTime);
+                }
             }
             else if (currentStamina < maxStamina)
             {
+                // EnhancedPlayerControllerがない場合はスタミナを回復
                 RegenerateStamina(staminaRegenRate * Time.deltaTime);
             }
         }
@@ -89,13 +102,27 @@ namespace KowloonBreak.Player
 
         public void TakeDamage(float damage)
         {
-            if (!IsAlive) return;
+            Debug.Log($"[PlayerStats] TakeDamage called: damage={damage}, currentHealth={currentHealth}, IsAlive={IsAlive}");
+            
+            if (!IsAlive) 
+            {
+                Debug.Log("[PlayerStats] TakeDamage: Player is already dead, ignoring damage");
+                return;
+            }
 
+            float oldHealth = currentHealth;
             currentHealth = Mathf.Max(0f, currentHealth - damage);
-            OnHealthChanged?.Invoke(HealthPercentage);
+            float newHealthPercentage = HealthPercentage;
+            
+            Debug.Log($"[PlayerStats] TakeDamage: Health changed from {oldHealth} to {currentHealth} (percentage: {newHealthPercentage})");
+            Debug.Log($"[PlayerStats] TakeDamage: OnHealthChanged subscribers count: {OnHealthChanged?.GetInvocationList()?.Length ?? 0}");
+            
+            OnHealthChanged?.Invoke(newHealthPercentage);
+            Debug.Log($"[PlayerStats] TakeDamage: OnHealthChanged event fired with percentage: {newHealthPercentage}");
 
             if (currentHealth <= 0f)
             {
+                Debug.Log("[PlayerStats] TakeDamage: Player health reached 0, calling Die()");
                 Die();
             }
         }
@@ -147,12 +174,30 @@ namespace KowloonBreak.Player
 
         private void Die()
         {
-            Debug.Log("Player has died!");
+            Debug.Log("[PlayerStats] Player has died!");
             OnPlayerDeath?.Invoke();
             
-            if (playerController != null)
+            // プレイヤーの移動を無効化
+            if (enhancedPlayerController != null)
             {
-                playerController.SetMovementEnabled(false);
+                Debug.Log("[PlayerStats] Disabling player movement via EnhancedPlayerController");
+                enhancedPlayerController.SetMovementEnabled(false);
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerStats] EnhancedPlayerController not found - movement not disabled");
+            }
+            
+            // PlayerAnimatorControllerでDeathアニメーションを再生
+            var animatorController = GetComponent<PlayerAnimatorController>();
+            if (animatorController != null)
+            {
+                Debug.Log("[PlayerStats] Triggering Death animation via PlayerAnimatorController");
+                animatorController.TriggerDeath();
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerStats] PlayerAnimatorController not found on player");
             }
         }
 

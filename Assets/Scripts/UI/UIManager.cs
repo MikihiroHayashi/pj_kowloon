@@ -8,6 +8,10 @@ using KowloonBreak.Managers;
 
 namespace KowloonBreak.UI
 {
+    /// <summary>
+    /// ゲームのUI全体を管理するマネージャークラス
+    /// HUD表示、パネル管理、通知システムを担当
+    /// </summary>
     public class UIManager : MonoBehaviour
     {
         public static UIManager Instance { get; private set; }
@@ -47,6 +51,7 @@ namespace KowloonBreak.UI
         private GameManager gameManager;
         private EnhancedResourceManager resourceManager;
         private InfectionManager infectionManager;
+        private KowloonBreak.Player.EnhancedPlayerController enhancedPlayerController;
 
         public bool IsAnyPanelOpen => activePanels.Count > 0;
 
@@ -78,6 +83,8 @@ namespace KowloonBreak.UI
             resourceManager = EnhancedResourceManager.Instance;
             infectionManager = InfectionManager.Instance;
             
+            enhancedPlayerController = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
+            
             SubscribeToEvents();
             UpdateUI();
         }
@@ -95,10 +102,11 @@ namespace KowloonBreak.UI
             
             CloseAllPanels();
             ShowMainHUD();
-            
-            Debug.Log("UI Manager Initialized");
         }
 
+        /// <summary>
+        /// 各マネージャーのイベントに購読する
+        /// </summary>
         private void SubscribeToEvents()
         {
             if (gameManager != null)
@@ -116,7 +124,49 @@ namespace KowloonBreak.UI
             {
                 infectionManager.OnCityInfectionRateChanged += UpdateInfectionDisplay;
             }
+            
+            // プレイヤーのヘルス・スタミナ変更イベントに直接購読
+            if (enhancedPlayerController != null)
+            {
+                enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
+                enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
+                
+                // 初期値を設定
+                UpdateHealthBar(enhancedPlayerController.HealthPercentage);
+                UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
+            }
+            else
+            {
+                // 後から検索を試行
+                StartCoroutine(FindPlayerControllerLater());
+            }
         }
+        
+        /// <summary>
+        /// プレイヤーコントローラーを後から検索
+        /// </summary>
+        private System.Collections.IEnumerator FindPlayerControllerLater()
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                yield return new WaitForSeconds(0.5f);
+                
+                enhancedPlayerController = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
+                if (enhancedPlayerController != null)
+                {
+                    enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
+                    enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
+                    
+                    // 初期値を設定
+                    UpdateHealthBar(enhancedPlayerController.HealthPercentage);
+                    UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
+                    break;
+                }
+            }
+            
+            // EnhancedPlayerControllerが見つからない場合はサイレントに終了
+        }
+        
 
         private void UpdateHUD()
         {
@@ -334,19 +384,86 @@ namespace KowloonBreak.UI
             }
         }
 
-        public void UpdateHealthBar(float currentHealth, float maxHealth)
+        /// <summary>
+        /// ヘルスバーを更新（EnhancedPlayerControllerのイベントから呼び出される）
+        /// </summary>
+        /// <param name="healthPercentage">ヘルス割合（0.0-1.0）</param>
+        public void UpdateHealthBar(float healthPercentage)
         {
             if (healthSlider != null)
             {
-                healthSlider.value = currentHealth / maxHealth;
+                healthSlider.value = Mathf.Clamp01(healthPercentage);
+                
+                // ヘルスレベルに応じて色を変更
+                UpdateHealthBarColor(healthPercentage);
+                
+            }
+        }
+        
+        /// <summary>
+        /// ヘルスバーの色を更新
+        /// </summary>
+        private void UpdateHealthBarColor(float healthPercentage)
+        {
+            if (healthSlider != null)
+            {
+                Color barColor = healthPercentage switch
+                {
+                    <= 0.1f => Color.red,        // 10%以下：赤
+                    <= 0.25f => new Color(1f, 0.5f, 0f), // 25%以下：オレンジ
+                    <= 0.5f => Color.yellow,     // 50%以下：黄色
+                    _ => Color.green             // 50%以上：緑
+                };
+                
+                var fillArea = healthSlider.fillRect?.GetComponent<Image>();
+                if (fillArea != null)
+                {
+                    fillArea.color = barColor;
+                }
             }
         }
 
-        public void UpdateStaminaBar(float currentStamina, float maxStamina)
+        /// <summary>
+        /// スタミナバーを更新（EnhancedPlayerControllerのイベントから呼び出される）
+        /// </summary>
+        /// <param name="currentStamina">現在のスタミナ値</param>
+        public void UpdateStaminaBar(float currentStamina)
+        {
+            if (staminaSlider != null && enhancedPlayerController != null)
+            {
+                // スタミナの絶対値をパーセンテージに変換
+                float staminaPercentage = currentStamina / enhancedPlayerController.MaxStamina;
+                staminaSlider.value = Mathf.Clamp01(staminaPercentage);
+                
+                // スタミナレベルに応じて色を変更
+                UpdateStaminaBarColor(staminaPercentage);
+                
+            }
+            else
+            {
+            }
+        }
+        
+        /// <summary>
+        /// スタミナバーの色を更新
+        /// </summary>
+        private void UpdateStaminaBarColor(float staminaPercentage)
         {
             if (staminaSlider != null)
             {
-                staminaSlider.value = currentStamina / maxStamina;
+                Color barColor = staminaPercentage switch
+                {
+                    <= 0.1f => Color.red,        // 10%以下：赤
+                    <= 0.25f => new Color(1f, 0.5f, 0f), // 25%以下：オレンジ
+                    <= 0.5f => Color.yellow,     // 50%以下：黄色
+                    _ => Color.green             // 50%以上：緑
+                };
+                
+                var fillArea = staminaSlider.fillRect?.GetComponent<Image>();
+                if (fillArea != null)
+                {
+                    fillArea.color = barColor;
+                }
             }
         }
 
@@ -369,6 +486,13 @@ namespace KowloonBreak.UI
             if (infectionManager != null)
             {
                 UpdateInfectionDisplay(infectionManager.CityInfectionRate);
+            }
+            
+            // プレイヤーのヘルスとスタミナを更新
+            if (enhancedPlayerController != null)
+            {
+                UpdateHealthBar(enhancedPlayerController.HealthPercentage);
+                UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
             }
         }
 
@@ -393,6 +517,13 @@ namespace KowloonBreak.UI
             if (infectionManager != null)
             {
                 infectionManager.OnCityInfectionRateChanged -= UpdateInfectionDisplay;
+            }
+            
+            // プレイヤーコントローラーのイベント購読を解除
+            if (enhancedPlayerController != null)
+            {
+                enhancedPlayerController.OnHealthChanged -= UpdateHealthBar;
+                enhancedPlayerController.OnStaminaChanged -= UpdateStaminaBar;
             }
         }
     }

@@ -17,9 +17,9 @@ MonoBehaviour:
   itemType: 0
   icon: {fileID: 21300000, guid: dd149b94529d74440b16ca5a7984bb83, type: 3}
   maxStackSize: 1
-  toolType: 0
+  toolType: 1
   durability: 100
-  attackDamage: 1
+  attackDamage: 20
   attackRange: 1.5
   materialType: 0
   value: 1

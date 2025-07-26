@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 25
-  currentHealth: 0
+  currentHealth: 25
   allowedTools: 0000000001000000
   destroyOnZeroHealth: 1
   respawnTime: 30
