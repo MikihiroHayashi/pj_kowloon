@@ -89,7 +89,6 @@ namespace KowloonBreak.Exploration
                 CreateDefaultLootTables();
             }
             
-            Debug.Log("Exploration System Initialized");
         }
 
         private void CreateDefaultLootTables()
@@ -254,7 +253,6 @@ namespace KowloonBreak.Exploration
                 UIManager.Instance.ShowNotification($"調査地点を発見: {point.Name}", NotificationType.Info);
             }
             
-            Debug.Log($"Exploration point discovered: {point.Name}");
         }
 
         public void TryStartSearch()
@@ -370,7 +368,6 @@ namespace KowloonBreak.Exploration
                     );
                 }
                 
-                Debug.Log($"Item discovered: {discoveredItem.Name} x{discoveredItem.Amount}");
             }
         }
 
@@ -389,7 +386,6 @@ namespace KowloonBreak.Exploration
                 UIManager.Instance.ShowNotification(message, NotificationType.Warning);
             }
             
-            Debug.Log($"Search failed at: {point.Name} (Attempt {point.SearchAttempts})");
         }
 
         private DiscoveredItem GenerateLoot(ExplorationPoint point)

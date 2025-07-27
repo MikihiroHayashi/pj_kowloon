@@ -20,12 +20,15 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected float attackCooldown = 2f;
         
         [Header("Vision System")]
-        [SerializeField] protected float visionRange = 8f;
-        [SerializeField] protected float visionAngle = 60f;
-        [SerializeField] protected LayerMask visionBlockingLayers = -1;
-        [SerializeField] protected bool enableVisionSystem = true;
-        [SerializeField] protected bool showVisionDebug = false;
-        [SerializeField] protected Color visionDebugColor = Color.red;
+        [SerializeField] protected float visionAngle = 120f; // 視野角度
+        [SerializeField] protected LayerMask visionBlockingLayers = -1; // 視線を遮るレイヤー
+        [SerializeField] protected bool useLineOfSight = true; // 視線チェックを使用するか
+        
+        
+        [Header("Stealth Detection")]
+        [SerializeField] protected float crouchDetectionMultiplier = 0.3f; // しゃがみ時の検知範囲倍率
+        [SerializeField] protected float minDetectionChance = 0.1f;
+        [SerializeField] protected float maxDetectionChance = 0.9f;
         
         [Header("Navigation & Avoidance")]
         [SerializeField] protected float obstacleDetectionRange = 3f;
@@ -47,14 +50,13 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected Renderer modelRenderer;
         
         protected Transform player;
+        protected EnhancedPlayerController playerController;
         protected float lastAttackTime;
         protected bool isDead = false;
         
-        // 視覚システム関連
-        protected bool playerInVision = false;
+        // 検知システム関連
         protected bool playerDetected = false;
-        protected float lastVisionCheckTime;
-        protected const float VISION_CHECK_INTERVAL = 0.2f;
+        protected bool hasLoggedDetection = false; // デバッグログ用フラグ
         
         // 障害物回避関連
         protected Vector3 avoidanceDirection;
@@ -66,12 +68,10 @@ namespace KowloonBreak.Enemies
         protected const string ANIM_ATTACK = "Attack";
         protected const string ANIM_DEATH = "Death";
         
-        // 視覚デバッグ用プロパティ
-        public float VisionRange => visionRange;
-        public float VisionAngle => visionAngle;
+        // 公開プロパティ
         public Transform Player => player;
-        public bool ShowVisionDebug => showVisionDebug;
-        public Color VisionDebugColor => visionDebugColor;
+        public float VisionAngle => visionAngle;
+        public float DetectionRange => detectionRange;
         
         protected virtual void Awake()
         {
@@ -101,35 +101,42 @@ namespace KowloonBreak.Enemies
         
         protected virtual void Start()
         {
-            // プレイヤーを検索（まずTagで検索）
+            // プレイヤーを検索
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
             if (playerObj != null)
             {
                 player = playerObj.transform;
-                Debug.Log($"[EnemyBase] Found player by tag: {playerObj.name}");
+                playerController = playerObj.GetComponent<EnhancedPlayerController>();
             }
             else
             {
-                // Tagで見つからない場合は名前で検索
                 playerObj = GameObject.Find("Player");
                 if (playerObj != null)
                 {
                     player = playerObj.transform;
-                    Debug.Log($"[EnemyBase] Found player by name: {playerObj.name}");
+                    playerController = playerObj.GetComponent<EnhancedPlayerController>();
                 }
                 else
                 {
-                    // EnhancedPlayerControllerコンポーネントで検索
-                    var enhancedController = FindObjectOfType<EnhancedPlayerController>();
-                    if (enhancedController != null)
+                    playerController = FindObjectOfType<EnhancedPlayerController>();
+                    if (playerController != null)
                     {
-                        player = enhancedController.transform;
-                        Debug.Log($"[EnemyBase] Found player by EnhancedPlayerController: {enhancedController.name}");
+                        player = playerController.transform;
                     }
-                    else
-                    {
-                        Debug.LogError("[EnemyBase] Player not found by any method!");
-                    }
+                }
+            }
+            
+            // プレイヤーコントローラーが見つからない場合の追加検索
+            if (player != null && playerController == null)
+            {
+                playerController = player.GetComponent<EnhancedPlayerController>();
+                if (playerController == null)
+                {
+                    playerController = player.GetComponentInParent<EnhancedPlayerController>();
+                }
+                if (playerController == null)
+                {
+                    playerController = player.GetComponentInChildren<EnhancedPlayerController>();
                 }
             }
         }
@@ -138,44 +145,42 @@ namespace KowloonBreak.Enemies
         {
             if (isDead || player == null) return;
             
-            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+            bool canDetectPlayer = false;
             
-            // プレイヤーが検知範囲内または視覚で発見済みかチェック
-            bool canDetectPlayer = distanceToPlayer <= detectionRange || playerDetected;
+            // 一度発見されたら永続的に追跡
+            if (playerDetected)
+            {
+                canDetectPlayer = true;
+            }
+            // 視界システムによるプレイヤー検知（しゃがんでいても発見される）
+            else if (CanSeePlayer())
+            {
+                canDetectPlayer = true;
+                playerDetected = true; // 発見したら永続的に記憶
+            }
             
+            // プレイヤーが検出されている場合の行動
             if (canDetectPlayer)
             {
-                // 攻撃範囲内なら攻撃
+                float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+                
                 if (distanceToPlayer <= attackRange)
                 {
-                    // 攻撃範囲内のデバッグ情報（頻度を抑制）
-                    if (Time.frameCount % 60 == 0) // 1秒に1回程度
-                    {
-                        Debug.Log($"[EnemyBase] {gameObject.name} - Player in attack range: {distanceToPlayer:F1} <= {attackRange}");
-                    }
                     StopMoving();
                     TryAttack();
                 }
                 else
                 {
-                    // 移動中のデバッグ情報（頻度を抑制）
-                    if (Time.frameCount % 60 == 0) // 1秒に1回程度
-                    {
-                        Debug.Log($"[EnemyBase] {gameObject.name} - Moving to player: distance {distanceToPlayer:F1}");
-                    }
-                    // プレイヤーに向かって移動
                     MoveToPlayer();
                 }
             }
             else
             {
-                // 範囲外なら停止
                 StopMoving();
             }
             
             UpdateAnimations();
             CheckNavMeshAgentStatus();
-            UpdateVisionSystem();
         }
         
         protected virtual void MoveToPlayer()
@@ -207,20 +212,13 @@ namespace KowloonBreak.Enemies
             float timeSinceLastAttack = Time.time - lastAttackTime;
             if (timeSinceLastAttack >= attackCooldown)
             {
-                Debug.Log($"[EnemyBase] TryAttack: Cooldown ready ({timeSinceLastAttack:F1}s >= {attackCooldown}s), performing attack");
                 PerformAttack();
                 lastAttackTime = Time.time;
-            }
-            else
-            {
-                Debug.Log($"[EnemyBase] TryAttack: Still on cooldown ({timeSinceLastAttack:F1}s < {attackCooldown}s)");
             }
         }
         
         protected virtual void PerformAttack()
         {
-            Debug.Log($"[EnemyBase] PerformAttack: Enemy {gameObject.name} starting attack animation");
-            
             // 攻撃アニメーション再生（ダメージはアニメーションイベントで実行）
             if (animator != null)
                 animator.SetTrigger(ANIM_ATTACK);
@@ -231,48 +229,27 @@ namespace KowloonBreak.Enemies
         /// </summary>
         public virtual void ExecuteAttackDamage()
         {
-            Debug.Log($"[EnemyBase] ExecuteAttackDamage: Enemy {gameObject.name} dealing damage: {attackDamage}");
-            
             // プレイヤーにダメージを与える処理
             if (player != null)
             {
-                Debug.Log($"[EnemyBase] ExecuteAttackDamage: Player found: {player.name}");
-                
-                // まず直接検索
                 var enhancedPlayerController = player.GetComponent<EnhancedPlayerController>();
                 
                 // 見つからない場合は親階層で検索
                 if (enhancedPlayerController == null)
                 {
                     enhancedPlayerController = player.GetComponentInParent<EnhancedPlayerController>();
-                    Debug.Log($"[EnemyBase] ExecuteAttackDamage: Searching in parent, found: {enhancedPlayerController != null}");
                 }
                 
                 // 見つからない場合は子階層で検索
                 if (enhancedPlayerController == null)
                 {
                     enhancedPlayerController = player.GetComponentInChildren<EnhancedPlayerController>();
-                    Debug.Log($"[EnemyBase] ExecuteAttackDamage: Searching in children, found: {enhancedPlayerController != null}");
                 }
                 
                 if (enhancedPlayerController != null)
                 {
-                    Debug.Log($"[EnemyBase] ExecuteAttackDamage: EnhancedPlayerController found on {enhancedPlayerController.gameObject.name}, calling TakeDamage({attackDamage})");
                     enhancedPlayerController.TakeDamage(attackDamage);
-                    Debug.Log($"[EnemyBase] ExecuteAttackDamage: TakeDamage call completed");
                 }
-                else
-                {
-                    Debug.LogError($"[EnemyBase] ExecuteAttackDamage: EnhancedPlayerController component not found on player {player.name} or its hierarchy!");
-                    
-                    // デバッグ情報: プレイヤーオブジェクトのコンポーネント一覧
-                    var components = player.GetComponents<Component>();
-                    Debug.Log($"[EnemyBase] ExecuteAttackDamage: Components on {player.name}: {string.Join(", ", System.Array.ConvertAll(components, c => c.GetType().Name))}");
-                }
-            }
-            else
-            {
-                Debug.LogError("[EnemyBase] ExecuteAttackDamage: Player reference is null!");
             }
         }
         
@@ -296,7 +273,27 @@ namespace KowloonBreak.Enemies
         {
             if (isDead) return;
             
-            currentHealth -= damage;
+            // 攻撃を受けたら必ず発見状態になる（しゃがみ状態でも）
+            bool wasUndetected = !playerDetected;
+            playerDetected = true;
+            
+            // ステルス攻撃の判定
+            bool isSteathAttack = IsStealhAttack() && wasUndetected;
+            float finalDamage = damage;
+            
+            if (isSteathAttack)
+            {
+                // ステルス攻撃は3倍ダメージ
+                finalDamage *= 3f;
+                
+                // UIに通知
+                if (UI.UIManager.Instance != null)
+                {
+                    UI.UIManager.Instance.ShowNotification("ステルス攻撃成功！", UI.NotificationType.Success);
+                }
+            }
+            
+            currentHealth -= finalDamage;
             
             // ダメージエフェクトを開始
             if (modelRenderer != null && modelRenderer.material != null)
@@ -320,6 +317,17 @@ namespace KowloonBreak.Enemies
         {
             TakeDamage(damage, ToolType.IronPipe); // デフォルトツール
         }
+
+        /// <summary>
+        /// 強制的にプレイヤーを発見状態にする（攻撃を受けた時など）
+        /// </summary>
+        public virtual void ForceDetectPlayer()
+        {
+            if (player != null)
+            {
+                playerDetected = true;
+            }
+        }
         
         private System.Collections.IEnumerator DamageEffect()
         {
@@ -339,28 +347,22 @@ namespace KowloonBreak.Enemies
         protected virtual void Die()
         {
             isDead = true;
-            Debug.Log($"[EnemyBase] Die called on {gameObject.name}");
             
             // NavMeshAgentを停止
             if (navAgent != null)
             {
                 navAgent.enabled = false;
-                Debug.Log($"[EnemyBase] NavMeshAgent disabled on {gameObject.name}");
             }
             
             // 死亡アニメーション再生
             if (animator != null)
             {
-                Debug.Log($"[EnemyBase] Animator found, triggering Death animation on {gameObject.name}");
-                Debug.Log($"[EnemyBase] Death parameter exists: {HasParameter(ANIM_DEATH)}");
                 animator.SetTrigger(ANIM_DEATH);
-                Debug.Log($"[EnemyBase] Death trigger set, starting WaitForDeathAnimation coroutine");
                 // アニメーション完了後に削除するコルーチンを開始
                 StartCoroutine(WaitForDeathAnimation());
             }
             else
             {
-                Debug.LogWarning($"[EnemyBase] No Animator found on {gameObject.name}, destroying immediately");
                 // Animatorがない場合は即座に削除処理
                 DestroyEnemy();
             }
@@ -369,7 +371,6 @@ namespace KowloonBreak.Enemies
             if (enemyCollider != null)
             {
                 enemyCollider.enabled = false;
-                Debug.Log($"[EnemyBase] Collider disabled on {gameObject.name}");
             }
             
             // アイテムドロップ
@@ -392,7 +393,6 @@ namespace KowloonBreak.Enemies
         
         private System.Collections.IEnumerator WaitForDeathAnimation()
         {
-            Debug.Log($"[EnemyBase] WaitForDeathAnimation started on {gameObject.name}");
             
             // Deathアニメーションが開始されるまで少し待機
             yield return new WaitForSeconds(0.1f);
@@ -405,17 +405,14 @@ namespace KowloonBreak.Enemies
             {
                 if (animator == null)
                 {
-                    Debug.LogWarning($"[EnemyBase] Animator became null during death animation wait");
                     break;
                 }
                 
                 AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-                Debug.Log($"[EnemyBase] Current animation state: {stateInfo.shortNameHash} (IsName Death: {stateInfo.IsName("Death")}, IsTag Death: {stateInfo.IsTag("Death")})");
                 
                 // Deathアニメーションが再生中かチェック
                 if (stateInfo.IsName("Death") || stateInfo.IsTag("Death"))
                 {
-                    Debug.Log($"[EnemyBase] Death animation found! Length: {stateInfo.length}, NormalizedTime: {stateInfo.normalizedTime}");
                     
                     // アニメーションが完了するまで待機
                     while (stateInfo.normalizedTime < 1.0f)
@@ -425,7 +422,6 @@ namespace KowloonBreak.Enemies
                         stateInfo = animator.GetCurrentAnimatorStateInfo(0);
                     }
                     
-                    Debug.Log($"[EnemyBase] Death animation completed");
                     break;
                 }
                 
@@ -435,11 +431,9 @@ namespace KowloonBreak.Enemies
             
             if (waitFrames >= maxWaitFrames)
             {
-                Debug.LogWarning($"[EnemyBase] Death animation not found after 5 seconds, destroying anyway");
             }
             
             // アニメーション完了後にオブジェクトを削除
-            Debug.Log($"[EnemyBase] Destroying enemy {gameObject.name}");
             DestroyEnemy();
         }
         
@@ -525,7 +519,6 @@ namespace KowloonBreak.Enemies
                     // 咆哮エフェクト
                     break;
                 default:
-                    Debug.Log($"[EnemyBase] Unhandled animation event: {eventName}");
                     break;
             }
         }
@@ -693,83 +686,57 @@ namespace KowloonBreak.Enemies
         
         #endregion
         
-        #region Vision System
-        
         /// <summary>
-        /// 視覚システムの更新
+        /// 統合検知システム：視界とステルスを考慮してプレイヤーを検知
         /// </summary>
-        protected virtual void UpdateVisionSystem()
+        protected virtual bool CanSeePlayer()
         {
-            if (!enableVisionSystem || player == null || isDead) return;
+            if (player == null) return false;
             
-            // 定期的に視覚をチェック
-            if (Time.time - lastVisionCheckTime >= VISION_CHECK_INTERVAL)
+            Vector3 eyePosition = transform.position + Vector3.up * 1.5f; // 目の高さ
+            Vector3 playerPosition = player.position + Vector3.up * 1f; // プレイヤーの中心
+            Vector3 directionToPlayer = (playerPosition - eyePosition).normalized;
+            float distanceToPlayer = Vector3.Distance(eyePosition, playerPosition);
+            
+            // プレイヤーのしゃがみ状態をチェック
+            bool isPlayerCrouching = playerController != null && playerController.IsCrouching;
+            
+            // しゃがみ時は検知範囲が縮小される
+            float effectiveDetectionRange = isPlayerCrouching ? 
+                detectionRange * crouchDetectionMultiplier : detectionRange;
+            
+            // 距離チェック（ステルス考慮）
+            if (distanceToPlayer > effectiveDetectionRange)
+                return false;
+            
+            // 視野角チェック
+            float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer);
+            if (angleToPlayer > visionAngle / 2f)
+                return false;
+            
+            // 視線チェック（障害物に遮られていないか）
+            if (useLineOfSight)
             {
-                CheckPlayerInVision();
-                lastVisionCheckTime = Time.time;
-            }
-        }
-        
-        /// <summary>
-        /// プレイヤーが視野内にいるかチェック
-        /// </summary>
-        protected virtual void CheckPlayerInVision()
-        {
-            Vector3 directionToPlayer = (player.position - transform.position).normalized;
-            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-            
-            playerInVision = false;
-            
-            // 視野範囲内かチェック
-            if (distanceToPlayer <= visionRange)
-            {
-                // 視野角度内かチェック
-                float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer);
-                
-                if (angleToPlayer <= visionAngle * 0.5f)
+                RaycastHit hit;
+                if (Physics.Raycast(eyePosition, directionToPlayer, out hit, distanceToPlayer, visionBlockingLayers))
                 {
-                    // 視線が遮られていないかチェック
-                    if (HasClearLineOfSight(player.position))
+                    // プレイヤー自身にヒットした場合はOK
+                    if (!IsPlayer(hit.collider.gameObject))
                     {
-                        playerInVision = true;
-                        playerDetected = true; // 一度発見したら記憶
+                        return false; // 障害物に遮られている
                     }
                 }
             }
             
-            // 視野外かつ遠距離の場合、検知をリセット
-            if (!playerInVision && distanceToPlayer > detectionRange * 1.5f)
+            // しゃがみ時は確率的検知
+            if (isPlayerCrouching)
             {
-                playerDetected = false;
-            }
-        }
-        
-        /// <summary>
-        /// 指定位置への視線が通っているかチェック
-        /// </summary>
-        protected virtual bool HasClearLineOfSight(Vector3 targetPosition)
-        {
-            Vector3 rayOrigin = transform.position + Vector3.up * 1.5f; // 目の高さ
-            Vector3 rayDirection = (targetPosition - rayOrigin).normalized;
-            float rayDistance = Vector3.Distance(rayOrigin, targetPosition);
-            
-            RaycastHit hit;
-            if (Physics.Raycast(rayOrigin, rayDirection, out hit, rayDistance, visionBlockingLayers))
-            {
-                // 何かにぶつかった場合、それがプレイヤーかチェック
-                return IsPlayer(hit.collider.gameObject);
+                float detectionChance = Mathf.Lerp(maxDetectionChance, minDetectionChance, 
+                    distanceToPlayer / effectiveDetectionRange);
+                return Random.Range(0f, 1f) < detectionChance;
             }
             
-            // 何にもぶつからなければ視線は通っている
             return true;
-        }
-        
-        /// <summary>
-        /// プレイヤーが視野内にいるかの判定結果を取得
-        /// </summary>
-        public bool IsPlayerInVision()
-        {
-            return playerInVision;
         }
         
         /// <summary>
@@ -786,33 +753,128 @@ namespace KowloonBreak.Enemies
         public void ResetPlayerDetection()
         {
             playerDetected = false;
-            playerInVision = false;
         }
-        
-        #endregion
+
+        /// <summary>
+        /// ステルス攻撃かどうかを判定
+        /// </summary>
+        protected virtual bool IsStealhAttack()
+        {
+            if (playerController == null) return false;
+            
+            // プレイヤーが発見されていない場合はステルス攻撃
+            bool isUndetected = !playerDetected;
+            
+            // 敵の背後からの攻撃かチェック
+            bool isFromBehind = IsAttackFromBehind();
+            
+            // ステルス攻撃の条件：未発見 AND 背後から
+            // しゃがみ状態は検知システムで考慮済みなのでここでは除外
+            bool isStealth = isUndetected && isFromBehind;
+            
+            return isStealth;
+        }
+
+        /// <summary>
+        /// 攻撃が敵の背後からかどうかを判定
+        /// </summary>
+        protected virtual bool IsAttackFromBehind()
+        {
+            if (player == null) return false;
+            
+            Vector3 enemyForward = transform.forward;
+            Vector3 directionToPlayer = (player.position - transform.position).normalized;
+            
+            // 敵の後方120度以内からの攻撃を背後攻撃とする
+            float dot = Vector3.Dot(enemyForward, directionToPlayer);
+            return dot < -0.5f; // cos(120°) = -0.5
+        }
         
         // ギズモで範囲を可視化
         protected virtual void OnDrawGizmosSelected()
         {
-            // 検知範囲
-            Gizmos.color = Color.yellow;
+            Vector3 eyePosition = transform.position + Vector3.up * 1.5f;
+            Vector3 forward = transform.forward;
+            
+            // 通常の検知範囲円（薄い黄色）
+            Gizmos.color = new Color(1f, 1f, 0f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, detectionRange);
+            
+            // しゃがみ時の検知範囲円（濃い黄色）
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, detectionRange * crouchDetectionMultiplier);
             
             // 攻撃範囲
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, attackRange);
             
-            // 視覚システム
-            if (enableVisionSystem)
+            // 視野コーン（通常範囲）
+            Gizmos.color = playerDetected ? ORANGE_COLOR : Color.green;
+            float halfAngle = visionAngle / 2f;
+            Vector3 leftBoundary = Quaternion.AngleAxis(-halfAngle, Vector3.up) * forward;
+            Vector3 rightBoundary = Quaternion.AngleAxis(halfAngle, Vector3.up) * forward;
+            
+            Gizmos.DrawRay(eyePosition, leftBoundary * detectionRange);
+            Gizmos.DrawRay(eyePosition, rightBoundary * detectionRange);
+            
+            // 視野コーンの円弧を描画
+            for (int i = 0; i < 10; i++)
             {
-                DrawVisionRange();
+                float angle = Mathf.Lerp(-halfAngle, halfAngle, (float)i / 9f);
+                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
+                Gizmos.DrawRay(eyePosition, direction * detectionRange);
+            }
+            
+            // しゃがみ時の視野コーン（内側、薄い色）
+            Gizmos.color = new Color(Gizmos.color.r, Gizmos.color.g, Gizmos.color.b, 0.5f);
+            float crouchRange = detectionRange * crouchDetectionMultiplier;
+            for (int i = 0; i < 8; i++)
+            {
+                float angle = Mathf.Lerp(-halfAngle, halfAngle, (float)i / 7f);
+                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
+                Gizmos.DrawRay(eyePosition, direction * crouchRange);
+            }
+            
+            // プレイヤーへの視線
+            if (player != null)
+            {
+                Vector3 playerPos = player.position + Vector3.up * 1f;
+                bool canSee = CanSeePlayer();
+                Gizmos.color = canSee ? Color.red : Color.gray;
+                Gizmos.DrawLine(eyePosition, playerPos);
+                
+                // プレイヤーがしゃがんでいる場合の表示
+                if (playerController != null && playerController.IsCrouching)
+                {
+                    Gizmos.color = Color.blue;
+                    Gizmos.DrawWireSphere(playerPos, 0.5f);
+                    
+                    // しゃがみ時の検知確率を表示
+                    float distanceToPlayer = Vector3.Distance(eyePosition, playerPos);
+                    float effectiveRange = detectionRange * crouchDetectionMultiplier;
+                    
+                    if (distanceToPlayer <= effectiveRange)
+                    {
+                        float detectionChance = Mathf.Lerp(maxDetectionChance, minDetectionChance, 
+                            distanceToPlayer / effectiveRange);
+                        
+                        // 確率に応じて色を変更（赤=高確率、黄=中確率、緑=低確率）
+                        if (detectionChance > 0.7f)
+                            Gizmos.color = Color.red;
+                        else if (detectionChance > 0.4f)
+                            Gizmos.color = Color.yellow;
+                        else
+                            Gizmos.color = Color.green;
+                        
+                        Gizmos.DrawWireCube(playerPos, Vector3.one * 0.3f);
+                    }
+                }
             }
             
             // 障害物回避範囲
             if (enableObstacleAvoidance)
             {
                 Gizmos.color = Color.cyan;
-                Vector3 forward = transform.forward;
                 Vector3 checkPosition = transform.position + forward * obstacleDetectionRange;
                 Gizmos.DrawWireSphere(checkPosition, avoidanceRadius);
                 
@@ -829,56 +891,5 @@ namespace KowloonBreak.Enemies
             }
         }
         
-        /// <summary>
-        /// 視野範囲をGizmosで描画
-        /// </summary>
-        protected virtual void DrawVisionRange()
-        {
-            Vector3 eyePosition = transform.position + Vector3.up * 1.5f;
-            Vector3 forward = transform.forward;
-            
-            // 視野の色を状態に応じて変更
-            Color visionColor = visionDebugColor;
-            if (Application.isPlaying)
-            {
-                if (playerInVision)
-                    visionColor = Color.red;
-                else if (playerDetected)
-                    visionColor = ORANGE_COLOR;
-                else
-                    visionColor = Color.white;
-            }
-            
-            Gizmos.color = visionColor;
-            
-            // 視野円を描画
-            Gizmos.DrawWireSphere(transform.position, visionRange);
-            
-            // 視野角の範囲を描画
-            float halfAngle = visionAngle * 0.5f;
-            Vector3 leftBoundary = Quaternion.AngleAxis(-halfAngle, Vector3.up) * forward * visionRange;
-            Vector3 rightBoundary = Quaternion.AngleAxis(halfAngle, Vector3.up) * forward * visionRange;
-            
-            Gizmos.DrawRay(eyePosition, leftBoundary);
-            Gizmos.DrawRay(eyePosition, rightBoundary);
-            
-            // 視野扇形の境界線を描画
-            Vector3 lastPoint = leftBoundary;
-            int segments = 20;
-            for (int i = 1; i <= segments; i++)
-            {
-                float angle = Mathf.Lerp(-halfAngle, halfAngle, (float)i / segments);
-                Vector3 nextPoint = Quaternion.AngleAxis(angle, Vector3.up) * forward * visionRange;
-                Gizmos.DrawLine(eyePosition + lastPoint, eyePosition + nextPoint);
-                lastPoint = nextPoint;
-            }
-            
-            // プレイヤーへの視線を描画
-            if (Application.isPlaying && player != null)
-            {
-                Gizmos.color = playerInVision ? Color.red : Color.gray;
-                Gizmos.DrawLine(eyePosition, player.position);
-            }
-        }
     }
 }

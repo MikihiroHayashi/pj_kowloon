@@ -35,7 +35,7 @@ namespace KowloonBreak.Enemies
         
         private void Update()
         {
-            if (!enableDebugDraw || !enemyBase.ShowVisionDebug)
+            if (!enableDebugDraw)
             {
                 SetLineRenderersActive(false);
                 return;
@@ -128,63 +128,69 @@ namespace KowloonBreak.Enemies
         /// </summary>
         private Color GetVisionStateColor()
         {
-            if (enemyBase.IsPlayerInVision())
-                return Color.red;
-            else if (enemyBase.IsPlayerDetected())
+            if (enemyBase.IsPlayerDetected())
                 return ORANGE_COLOR;
             else
-                return enemyBase.VisionDebugColor;
+                return Color.white;
         }
         
         /// <summary>
-        /// 視野円を描画
+        /// 検知範囲円を描画
         /// </summary>
         private void DrawVisionCircle(Vector3 center, Color color)
         {
             visionCircle.material.color = color;
             visionCircle.positionCount = segments + 1;
             
+            float detectionRange = GetDetectionRange();
+            
             for (int i = 0; i <= segments; i++)
             {
                 float angle = (float)i / segments * 360f * Mathf.Deg2Rad;
                 Vector3 point = center + new Vector3(
-                    Mathf.Sin(angle) * enemyBase.VisionRange,
+                    Mathf.Sin(angle) * detectionRange,
                     0,
-                    Mathf.Cos(angle) * enemyBase.VisionRange
+                    Mathf.Cos(angle) * detectionRange
                 );
                 visionCircle.SetPosition(i, point);
             }
         }
         
         /// <summary>
-        /// 視野扇形を描画
+        /// 視野コーンを描画
         /// </summary>
         private void DrawVisionCone(Vector3 center, Vector3 forward, Color color)
         {
             visionCone.material.color = color;
             
-            float halfAngle = enemyBase.VisionAngle * 0.5f;
-            int coneSegments = Mathf.Max(3, segments / 3);
-            visionCone.positionCount = coneSegments + 3; // 中心点 + 扇形 + 中心点に戻る
+            // EnemyBaseから視野角と検知範囲を取得
+            float visionAngle = GetVisionAngle();
+            float detectionRange = GetDetectionRange();
+            
+            int coneSegments = Mathf.Max(10, segments / 2);
+            visionCone.positionCount = coneSegments + 2; // 中心点 + 扇形の点 + 中心点に戻る
             
             // 中心点
             visionCone.SetPosition(0, center);
+            
+            // 視野角の半分を計算
+            float halfAngle = visionAngle / 2f;
             
             // 扇形の点を設定
             for (int i = 0; i <= coneSegments; i++)
             {
                 float angle = Mathf.Lerp(-halfAngle, halfAngle, (float)i / coneSegments);
                 Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
-                Vector3 point = center + direction * enemyBase.VisionRange;
+                Vector3 point = center + direction * detectionRange;
                 visionCone.SetPosition(i + 1, point);
             }
             
             // 中心点に戻る
-            visionCone.SetPosition(coneSegments + 2, center);
+            visionCone.SetPosition(coneSegments + 1, center);
         }
         
         /// <summary>
-        /// プレイヤーへの視線を描画
+        /// プレイヤーへの直線を描画
         /// </summary>
         private void DrawSightLine(Vector3 eyePosition, Color color)
         {
@@ -195,7 +201,7 @@ namespace KowloonBreak.Enemies
             }
             
             sightLine.enabled = true;
-            sightLine.material.color = enemyBase.IsPlayerInVision() ? Color.red : Color.gray;
+            sightLine.material.color = enemyBase.IsPlayerDetected() ? Color.red : Color.gray;
             sightLine.SetPosition(0, eyePosition);
             sightLine.SetPosition(1, enemyBase.Player.position);
         }
@@ -229,6 +235,22 @@ namespace KowloonBreak.Enemies
                 sightLine.startWidth = lineWidth;
                 sightLine.endWidth = lineWidth;
             }
+        }
+        
+        /// <summary>
+        /// EnemyBaseから視野角を取得
+        /// </summary>
+        private float GetVisionAngle()
+        {
+            return enemyBase != null ? enemyBase.VisionAngle : 120f;
+        }
+        
+        /// <summary>
+        /// EnemyBaseから検知範囲を取得
+        /// </summary>
+        private float GetDetectionRange()
+        {
+            return enemyBase != null ? enemyBase.DetectionRange : 10f;
         }
         
         private void OnDestroy()

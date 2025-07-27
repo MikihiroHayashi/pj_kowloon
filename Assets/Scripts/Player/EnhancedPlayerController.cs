@@ -27,6 +27,10 @@ namespace KowloonBreak.Player
         [SerializeField] private float noiseLevel = 0f;
         [SerializeField] private float maxNoiseLevel = 100f;
         [SerializeField] private LayerMask enemyLayers = -1;
+        [SerializeField] private float baseStealth = 0.3f;
+        [SerializeField] private float crouchStealthBonus = 0.5f;
+        [SerializeField] private float movementStealthPenalty = 0.2f;
+        [SerializeField] private float flashlightStealthPenalty = 0.3f;
 
         [Header("Health System")]
         [SerializeField] private float maxHealth = 100f;
@@ -134,6 +138,7 @@ namespace KowloonBreak.Player
         public bool IsCrouching => isCrouching;
         public bool IsMoving => moveDirection.magnitude > 0.1f;
         public float NoiseLevel => noiseLevel;
+        public float StealthLevel => CalculateStealthLevel();
         public CharacterStats Stats => playerStats;
         public InventorySlot SelectedTool => resourceManager?.GetToolSlot(selectedToolIndex);
         public int SelectedToolIndex => selectedToolIndex;
@@ -147,6 +152,7 @@ namespace KowloonBreak.Player
         public event Action<bool> OnCrouchStateChanged;
         public event Action<float> OnNoiseChanged;
         public event Action<int, InventorySlot> OnToolSelected;
+        public event Action<float> OnStealthAttack;
 
         private void Start()
         {
@@ -304,17 +310,14 @@ namespace KowloonBreak.Player
             if (crouchModeEnabled)
             {
                 baseSpeed = crouchSpeed;
-                Debug.Log($"[EnhancedPlayerController] Using crouch speed: {baseSpeed}");
             }
             else if (runModeEnabled && currentStamina > 0)
             {
                 baseSpeed = runSpeed;
-                Debug.Log($"[EnhancedPlayerController] Using run speed: {baseSpeed}");
             }
             else
             {
                 baseSpeed = walkSpeed;
-                Debug.Log($"[EnhancedPlayerController] Using walk speed: {baseSpeed}");
             }
             
             // 健康状態とインフェクションによるペナルティ
@@ -392,11 +395,6 @@ namespace KowloonBreak.Player
                 currentStamina += regenRate * Time.deltaTime;
                 currentStamina = Mathf.Min(maxStamina, currentStamina);
                 
-                // 回復のデバッグ情報（5秒に1回程度）
-                if (Time.frameCount % 300 == 0)
-                {
-                    Debug.Log($"[EnhancedPlayerController] Stamina regenerating: {previousStamina:F1} -> {currentStamina:F1} (rate: {regenRate:F1}/sec)");
-                }
             }
             
             // スタミナ変更イベントを発火（絶対値で送信）
@@ -434,6 +432,56 @@ namespace KowloonBreak.Player
             }
             
             return Mathf.Clamp(baseNoise, 0f, maxNoiseLevel);
+        }
+
+        /// <summary>
+        /// 現在の隠密レベルを計算（0.0 = 全く隠れていない、1.0 = 完全に隠れている）
+        /// </summary>
+        private float CalculateStealthLevel()
+        {
+            float stealth = baseStealth;
+            
+            // しゃがみボーナス
+            if (crouchModeEnabled)
+            {
+                stealth += crouchStealthBonus;
+            }
+            
+            // 移動ペナルティ
+            if (IsMoving)
+            {
+                float movementPenalty = movementStealthPenalty;
+                
+                if (runModeEnabled)
+                {
+                    movementPenalty *= 2f; // 走行時はペナルティ倍増
+                }
+                else if (crouchModeEnabled)
+                {
+                    movementPenalty *= 0.5f; // しゃがみ移動はペナルティ軽減
+                }
+                
+                stealth -= movementPenalty;
+            }
+            
+            // 懐中電灯ペナルティ
+            if (flashlightEnabled)
+            {
+                stealth -= flashlightStealthPenalty;
+            }
+            
+            // 健康状態ペナルティ
+            if (isInfected)
+            {
+                stealth -= 0.1f; // 感染時は隠密性が下がる
+            }
+            
+            if (currentHealth < maxHealth * 0.3f)
+            {
+                stealth -= 0.15f; // 重傷時は隠密性が下がる
+            }
+            
+            return Mathf.Clamp01(stealth);
         }
 
         private void CheckNearbyEnemies()
@@ -575,7 +623,6 @@ namespace KowloonBreak.Player
                 // スタミナが少ない場合は走行不可
                 if (currentStamina <= 5f) // 最低5のスタミナが必要
                 {
-                    Debug.Log($"[EnhancedPlayerController] Cannot enable run mode: Low stamina ({currentStamina:F1} <= 5)");
                     if (UIManager.Instance != null)
                     {
                         UIManager.Instance.ShowNotification("スタミナが不足しています", NotificationType.Warning);
@@ -586,7 +633,6 @@ namespace KowloonBreak.Player
                 // しゃがみ中は走行不可
                 if (crouchModeEnabled)
                 {
-                    Debug.Log("[EnhancedPlayerController] Cannot enable run mode: Currently crouching");
                     if (UIManager.Instance != null)
                     {
                         UIManager.Instance.ShowNotification("しゃがみ中は走行できません", NotificationType.Warning);
@@ -601,7 +647,6 @@ namespace KowloonBreak.Player
             
             if (previousState != runModeEnabled)
             {
-                Debug.Log($"[EnhancedPlayerController] Run mode {(runModeEnabled ? "ENABLED" : "DISABLED")} (Stamina: {currentStamina:F1}/{maxStamina})");
                 OnRunStateChanged?.Invoke(isRunning);
                 
                 // UIフィードバック
@@ -643,7 +688,6 @@ namespace KowloonBreak.Player
             
             if (previousState != crouchModeEnabled)
             {
-                Debug.Log($"[EnhancedPlayerController] Crouch mode {(crouchModeEnabled ? "ENABLED" : "DISABLED")}");
                 OnCrouchStateChanged?.Invoke(isCrouching);
                 
                 // UIフィードバック
@@ -889,17 +933,14 @@ namespace KowloonBreak.Player
         
         private void TryUseTool()
         {
-            Debug.Log("[EnhancedPlayerController] TryUseTool called");
             
             if (isUsingTool) 
             {
-                Debug.Log("[EnhancedPlayerController] Already using tool, ignoring input");
                 return;
             }
             
             if (Time.time - lastToolUsageTime < toolUsageCooldown) 
             {
-                Debug.Log($"[EnhancedPlayerController] Tool usage on cooldown: {Time.time - lastToolUsageTime:F2}s < {toolUsageCooldown}s");
                 return;
             }
             
@@ -910,7 +951,6 @@ namespace KowloonBreak.Player
                 return;
             }
             
-            Debug.Log($"[EnhancedPlayerController] Selected tool index: {selectedToolIndex}");
             
             var selectedTool = resourceManager.GetToolSlot(selectedToolIndex);
             if (selectedTool == null) 
@@ -923,7 +963,6 @@ namespace KowloonBreak.Player
                     var slot = resourceManager.GetToolSlot(i);
                     if (slot != null && !slot.IsEmpty)
                     {
-                        Debug.Log($"[EnhancedPlayerController] Available tool in slot {i}: {slot.ItemData?.itemName}");
                     }
                 }
                 return;
@@ -939,7 +978,6 @@ namespace KowloonBreak.Player
                     var slot = resourceManager.GetToolSlot(i);
                     if (slot != null && !slot.IsEmpty)
                     {
-                        Debug.Log($"[EnhancedPlayerController] Available tool in slot {i}: {slot.ItemData?.itemName}");
                     }
                 }
                 return;
@@ -947,11 +985,9 @@ namespace KowloonBreak.Player
             
             if (!selectedTool.ItemData.IsTool()) 
             {
-                Debug.Log($"[EnhancedPlayerController] Selected item is not a tool: {selectedTool.ItemData.itemName}");
                 return;
             }
             
-            Debug.Log($"[EnhancedPlayerController] Using tool: {selectedTool.ItemData.itemName} (Type: {selectedTool.ItemData.toolType})");
             
             isUsingTool = true;
             lastToolUsageTime = Time.time;
@@ -969,7 +1005,6 @@ namespace KowloonBreak.Player
             currentUsedTool = toolSlot;
             
             var toolType = toolSlot.ItemData.toolType;
-            Debug.Log($"[EnhancedPlayerController] Starting tool usage: {toolSlot.ItemData.itemName} (Type: {toolType})");
             
             // アニメーターコントローラーの確認
             if (animatorController == null)
@@ -985,7 +1020,6 @@ namespace KowloonBreak.Player
                 
                 if (animatorController != null)
                 {
-                    Debug.Log("[EnhancedPlayerController] Found PlayerAnimatorController after manual search!");
                 }
                 else
                 {
@@ -995,27 +1029,23 @@ namespace KowloonBreak.Player
             }
             
             // 道具の種類に応じてアニメーションとアクションを決定
-            Debug.Log($"[EnhancedPlayerController] Tool type detected: {toolType}");
             
             switch (toolType)
             {
                 case ToolType.Pickaxe:
                     // つるはし：掘削アニメーション（Dig）
-                    Debug.Log("[EnhancedPlayerController] PICKAXE detected -> Using TriggerDig()");
                     animatorController.TriggerDig();
                     PlayToolUsageEffects(toolSlot.ItemData, "dig");
                     break;
                     
                 case ToolType.IronPipe:
                     // 鉄パイプ：攻撃アニメーション（Attack）
-                    Debug.Log("[EnhancedPlayerController] IRON PIPE detected -> Using TriggerAttack()");
                     animatorController.TriggerAttack();
                     PlayToolUsageEffects(toolSlot.ItemData, "attack");
                     break;
                     
                 default:
                     // デフォルト：攻撃アニメーション
-                    Debug.Log($"[EnhancedPlayerController] UNKNOWN tool type {toolType} -> Using TriggerAttack() as default");
                     animatorController.TriggerAttack();
                     PlayToolUsageEffects(toolSlot.ItemData, "attack");
                     break;
@@ -1027,7 +1057,6 @@ namespace KowloonBreak.Player
         /// </summary>
         public void ExecuteToolUsageEffect()
         {
-            Debug.Log("[EnhancedPlayerController] ExecuteToolUsageEffect called from animation event");
             
             if (currentUsedTool == null || currentUsedTool.IsEmpty) 
             {
@@ -1038,25 +1067,20 @@ namespace KowloonBreak.Player
             var itemData = currentUsedTool.ItemData;
             var toolType = itemData.toolType;
             
-            Debug.Log($"[EnhancedPlayerController] Executing tool effect for: {itemData.itemName} (Type: {toolType})");
             
             // 道具の種類に応じて効果を実行
-            Debug.Log($"[EnhancedPlayerController] Executing effect for tool type: {toolType}");
             
             switch (toolType)
             {
                 case ToolType.Pickaxe:
-                    Debug.Log("[EnhancedPlayerController] Executing DIGGING effect for Pickaxe");
                     ExecuteDiggingEffect(currentUsedTool);
                     break;
                     
                 case ToolType.IronPipe:
-                    Debug.Log("[EnhancedPlayerController] Executing ATTACK effect for IronPipe");
                     ExecuteAttackEffect(currentUsedTool);
                     break;
                     
                 default:
-                    Debug.Log($"[EnhancedPlayerController] Unknown tool type: {toolType}, executing ATTACK effect as default");
                     ExecuteAttackEffect(currentUsedTool);
                     break;
             }
@@ -1071,14 +1095,16 @@ namespace KowloonBreak.Player
             float range = itemData.attackRange;
             float damage = itemData.attackDamage;
             
-            Debug.Log($"[EnhancedPlayerController] Executing attack effect: {damage} damage with range: {range}");
+            // ステルス状態をチェック
+            bool isStealthAttack = IsInStealthMode();
+            
             
             // 攻撃範囲内の破壊可能オブジェクトを検索
             Collider[] hitObjects = Physics.OverlapSphere(toolUsagePoint.position, range, destructibleLayers);
             
-            Debug.Log($"[EnhancedPlayerController] Found {hitObjects.Length} objects in attack range");
             
             bool hitSomething = false;
+            bool hitEnemy = false;
             
             foreach (var hitCollider in hitObjects)
             {
@@ -1087,30 +1113,36 @@ namespace KowloonBreak.Player
                 {
                     if (destructible.CanBeDestroyedBy(itemData.toolType))
                     {
-                        Debug.Log($"[EnhancedPlayerController] Dealing {damage} damage to {hitCollider.name}");
                         destructible.TakeDamage(damage, itemData.toolType);
                         hitSomething = true;
+                        
+                        // 敵に攻撃した場合の特別処理
+                        var enemyBase = hitCollider.GetComponent<KowloonBreak.Enemies.EnemyBase>();
+                        if (enemyBase != null)
+                        {
+                            hitEnemy = true;
+                            if (isStealthAttack)
+                            {
+                                OnStealthAttack?.Invoke(damage * 3f); // ステルス攻撃イベント発火
+                            }
+                        }
                     }
                     else
                     {
-                        Debug.Log($"[EnhancedPlayerController] {hitCollider.name} cannot be destroyed by {itemData.toolType}");
                     }
                 }
                 else
                 {
-                    Debug.Log($"[EnhancedPlayerController] {hitCollider.name} is not destructible");
                 }
             }
             
             // 道具の耐久度を減らす
             if (hitSomething)
             {
-                Debug.Log($"[EnhancedPlayerController] Hit something, reducing tool durability");
                 toolSlot.UseDurability(1);
             }
             else
             {
-                Debug.Log($"[EnhancedPlayerController] No valid targets hit");
             }
         }
         
@@ -1123,12 +1155,13 @@ namespace KowloonBreak.Player
             float range = itemData.attackRange;
             float damage = itemData.attackDamage;
             
-            Debug.Log($"[EnhancedPlayerController] Executing digging effect: {damage} digging power with range: {range}");
+            // ステルス状態をチェック
+            bool isStealthAttack = IsInStealthMode();
+            
             
             // 掘削範囲内の掘削可能オブジェクトを検索
             Collider[] hitObjects = Physics.OverlapSphere(toolUsagePoint.position, range, destructibleLayers);
             
-            Debug.Log($"[EnhancedPlayerController] Found {hitObjects.Length} objects in digging range");
             
             bool dugSomething = false;
             
@@ -1139,36 +1172,37 @@ namespace KowloonBreak.Player
                 {
                     if (destructible.CanBeDestroyedBy(itemData.toolType))
                     {
-                        Debug.Log($"[EnhancedPlayerController] Digging {hitCollider.name} with {damage} digging power");
                         destructible.TakeDamage(damage, itemData.toolType);
                         dugSomething = true;
+                        
+                        // 敵に対する掘削攻撃の場合の特別処理
+                        var enemyBase = hitCollider.GetComponent<KowloonBreak.Enemies.EnemyBase>();
+                        if (enemyBase != null && isStealthAttack)
+                        {
+                            OnStealthAttack?.Invoke(damage * 3f); // ステルス攻撃イベント発火
+                        }
                     }
                     else
                     {
-                        Debug.Log($"[EnhancedPlayerController] {hitCollider.name} cannot be dug by {itemData.toolType}");
                     }
                 }
                 else
                 {
-                    Debug.Log($"[EnhancedPlayerController] {hitCollider.name} is not diggable");
                 }
             }
             
             // 道具の耐久度を減らす
             if (dugSomething)
             {
-                Debug.Log($"[EnhancedPlayerController] Dug something, reducing tool durability");
                 toolSlot.UseDurability(1);
             }
             else
             {
-                Debug.Log($"[EnhancedPlayerController] No valid targets dug");
             }
         }
         
         private void PlayToolUsageEffects(ItemData itemData, string usageType)
         {
-            Debug.Log($"[EnhancedPlayerController] Playing {usageType} effects for {itemData.itemName}");
             
             // 道具使用音の再生
             if (audioSource != null)
@@ -1272,7 +1306,6 @@ namespace KowloonBreak.Player
         {
             if (!IsAlive) return;
             
-            Debug.Log($"[EnhancedPlayerController] TakeDamage called: damage={damage}, currentHealth={currentHealth}");
             
             currentHealth -= damage;
             currentHealth = Mathf.Max(0f, currentHealth);
@@ -1323,7 +1356,6 @@ namespace KowloonBreak.Player
         
         private void Die()
         {
-            Debug.Log("[EnhancedPlayerController] Player has died!");
             OnPlayerDeath?.Invoke();
             
             SetMovementEnabled(false);
@@ -1331,7 +1363,6 @@ namespace KowloonBreak.Player
             // PlayerAnimatorControllerでDeathアニメーションを再生
             if (animatorController != null)
             {
-                Debug.Log("[EnhancedPlayerController] Triggering Death animation via PlayerAnimatorController");
                 animatorController.TriggerDeath();
             }
             else
@@ -1346,6 +1377,15 @@ namespace KowloonBreak.Player
         public bool CanRun()
         {
             return currentStamina > 5f && IsAlive && !crouchModeEnabled;
+        }
+
+        /// <summary>
+        /// 現在ステルス状態かどうかを判定
+        /// </summary>
+        public bool IsInStealthMode()
+        {
+            // 高いステルスレベル（0.6以上）で、しゃがみ状態の場合をステルス状態とする
+            return StealthLevel >= 0.6f && crouchModeEnabled;
         }
         
         /// <summary>
@@ -1430,7 +1470,6 @@ namespace KowloonBreak.Player
         /// </summary>
         public void OnToolUsageAnimationEnd()
         {
-            Debug.Log("[EnhancedPlayerController] Tool usage animation ended");
             isUsingTool = false;
             currentUsedTool = null;
         }
@@ -1440,7 +1479,6 @@ namespace KowloonBreak.Player
         /// </summary>
         public void OnAttackAnimationEnd()
         {
-            Debug.Log("[EnhancedPlayerController] Attack animation ended (legacy call)");
             OnToolUsageAnimationEnd();
         }
         
@@ -1449,7 +1487,6 @@ namespace KowloonBreak.Player
         /// </summary>
         public void ExecuteAttackDamage()
         {
-            Debug.Log("[EnhancedPlayerController] ExecuteAttackDamage called (legacy) - redirecting to ExecuteToolUsageEffect");
             ExecuteToolUsageEffect();
         }
         
@@ -1478,7 +1515,6 @@ namespace KowloonBreak.Player
                     // 無敵時間終了
                     break;
                 default:
-                    Debug.Log($"[EnhancedPlayerController] Unhandled animation event: {eventName}");
                     break;
             }
         }

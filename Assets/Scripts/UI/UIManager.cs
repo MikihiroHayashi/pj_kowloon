@@ -31,6 +31,7 @@ namespace KowloonBreak.UI
         [SerializeField] private Slider healthSlider;
         [SerializeField] private Slider staminaSlider;
         [SerializeField] private Slider infectionSlider;
+        [SerializeField] private Slider stealthSlider;
         [SerializeField] private TextMeshProUGUI dayText;
         [SerializeField] private TextMeshProUGUI phaseText;
         [SerializeField] private TextMeshProUGUI timeText;
@@ -130,10 +131,12 @@ namespace KowloonBreak.UI
             {
                 enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
                 enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
+                enhancedPlayerController.OnStealthAttack += HandleStealthAttack;
                 
                 // 初期値を設定
                 UpdateHealthBar(enhancedPlayerController.HealthPercentage);
                 UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
+                UpdateStealthBar(enhancedPlayerController.StealthLevel);
             }
             else
             {
@@ -156,10 +159,12 @@ namespace KowloonBreak.UI
                 {
                     enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
                     enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
+                    enhancedPlayerController.OnStealthAttack += HandleStealthAttack;
                     
                     // 初期値を設定
                     UpdateHealthBar(enhancedPlayerController.HealthPercentage);
                     UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
+                    UpdateStealthBar(enhancedPlayerController.StealthLevel);
                     break;
                 }
             }
@@ -173,6 +178,12 @@ namespace KowloonBreak.UI
             if (gameManager != null)
             {
                 UpdateTimeDisplay();
+            }
+            
+            // 隠密レベルを動的に更新
+            if (enhancedPlayerController != null)
+            {
+                UpdateStealthBar(enhancedPlayerController.StealthLevel);
             }
         }
 
@@ -396,7 +407,6 @@ namespace KowloonBreak.UI
                 
                 // ヘルスレベルに応じて色を変更
                 UpdateHealthBarColor(healthPercentage);
-                
             }
         }
         
@@ -439,9 +449,6 @@ namespace KowloonBreak.UI
                 UpdateStaminaBarColor(staminaPercentage);
                 
             }
-            else
-            {
-            }
         }
         
         /// <summary>
@@ -465,6 +472,89 @@ namespace KowloonBreak.UI
                     fillArea.color = barColor;
                 }
             }
+        }
+
+        /// <summary>
+        /// 隠密バーを更新
+        /// </summary>
+        /// <param name="stealthLevel">隠密レベル（0.0-1.0）</param>
+        public void UpdateStealthBar(float stealthLevel)
+        {
+            if (stealthSlider != null)
+            {
+                stealthSlider.value = Mathf.Clamp01(stealthLevel);
+                
+                // 隠密レベルに応じて色を変更
+                UpdateStealthBarColor(stealthLevel);
+            }
+        }
+        
+        /// <summary>
+        /// 隠密バーの色を更新
+        /// </summary>
+        private void UpdateStealthBarColor(float stealthLevel)
+        {
+            if (stealthSlider != null)
+            {
+                Color barColor = stealthLevel switch
+                {
+                    >= 0.8f => Color.blue,       // 80%以上：青（完全隠密）
+                    >= 0.6f => Color.cyan,       // 60%以上：シアン（高隠密）
+                    >= 0.4f => Color.green,      // 40%以上：緑（中隠密）
+                    >= 0.2f => Color.yellow,     // 20%以上：黄色（低隠密）
+                    _ => Color.red               // 20%未満：赤（隠密なし）
+                };
+                
+                var fillArea = stealthSlider.fillRect?.GetComponent<Image>();
+                if (fillArea != null)
+                {
+                    fillArea.color = barColor;
+                }
+            }
+        }
+
+        /// <summary>
+        /// ステルス攻撃イベントのハンドラー
+        /// </summary>
+        /// <param name="totalDamage">3倍になった総ダメージ</param>
+        private void HandleStealthAttack(float totalDamage)
+        {
+            ShowNotification($"ステルス攻撃！ {totalDamage:F0} ダメージ", NotificationType.Success);
+            
+            // ステルス攻撃エフェクト（画面フラッシュなど）
+            StartCoroutine(StealthAttackEffect());
+        }
+
+        /// <summary>
+        /// ステルス攻撃の視覚エフェクト
+        /// </summary>
+        private System.Collections.IEnumerator StealthAttackEffect()
+        {
+            // 画面全体に薄い青色のフラッシュエフェクト
+            GameObject flashEffect = new GameObject("StealthFlash");
+            Canvas canvas = flashEffect.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 1000; // 最前面に表示
+            
+            Image flashImage = flashEffect.AddComponent<Image>();
+            flashImage.color = new Color(0f, 0.8f, 1f, 0.3f); // 薄い青色
+            flashImage.raycastTarget = false;
+            
+            // フェードアウト
+            float duration = 0.5f;
+            float elapsedTime = 0f;
+            Color originalColor = flashImage.color;
+            
+            while (elapsedTime < duration)
+            {
+                elapsedTime += Time.deltaTime;
+                float alpha = Mathf.Lerp(originalColor.a, 0f, elapsedTime / duration);
+                flashImage.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+                yield return null;
+            }
+            
+            // クリーンアップ
+            Destroy(flashEffect);
         }
 
         public void UpdateUI()
@@ -493,6 +583,7 @@ namespace KowloonBreak.UI
             {
                 UpdateHealthBar(enhancedPlayerController.HealthPercentage);
                 UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
+                UpdateStealthBar(enhancedPlayerController.StealthLevel);
             }
         }
 
@@ -524,6 +615,7 @@ namespace KowloonBreak.UI
             {
                 enhancedPlayerController.OnHealthChanged -= UpdateHealthBar;
                 enhancedPlayerController.OnStaminaChanged -= UpdateStaminaBar;
+                enhancedPlayerController.OnStealthAttack -= HandleStealthAttack;
             }
         }
     }
