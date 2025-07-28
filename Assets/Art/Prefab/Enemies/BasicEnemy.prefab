@@ -162,15 +162,15 @@ MonoBehaviour:
   moveSpeed: 3
   attackRange: 2
   detectionRange: 8
-  attackCooldown: 2
-  visionRange: 8
+  attackCooldown: 0.5
   visionAngle: 60
   visionBlockingLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  enableVisionSystem: 1
-  showVisionDebug: 1
-  visionDebugColor: {r: 1, g: 0, b: 0, a: 1}
+  useLineOfSight: 1
+  crouchDetectionMultiplier: 0.3
+  minDetectionChance: 0.1
+  maxDetectionChance: 0.9
   obstacleDetectionRange: 2
   obstacleLayerMask:
     serializedVersion: 2
