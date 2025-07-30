@@ -8,6 +8,14 @@ using KowloonBreak.Managers;
 
 namespace KowloonBreak.Player
 {
+    public enum MovementState
+    {
+        Normal,     // 通常移動
+        Dodging,    // ダッジ中
+        Stunned,    // スタン中
+        Dead        // 死亡
+    }
+    
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(AudioSource))]
     public class EnhancedPlayerController : MonoBehaviour
@@ -35,12 +43,12 @@ namespace KowloonBreak.Player
         [Header("Health System")]
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
-        
+
         [Header("Stamina System")]
         [SerializeField] private float maxStamina = 100f;
         [SerializeField] private float staminaRegenRate = 20f;
         [SerializeField] private float runStaminaCost = 30f;
-        
+
         [Header("Infection System")]
         [SerializeField] private bool isInfected = false;
         [SerializeField] private float infectionLevel = 0f;
@@ -51,23 +59,34 @@ namespace KowloonBreak.Player
         [SerializeField] private KeyCode interactionKey = KeyCode.F;
         [SerializeField] private KeyCode flashlightKey = KeyCode.T;
         [SerializeField] private KeyCode useToolKey = KeyCode.E;
-        
+
         [Header("Movement Input Settings")]
         [SerializeField] private KeyCode runToggleKey = KeyCode.LeftShift;
         [SerializeField] private KeyCode crouchToggleKey = KeyCode.LeftControl;
         [SerializeField] private bool runToggleMode = false; // false: Hold to run, true: Toggle run
         [SerializeField] private bool crouchToggleMode = true; // false: Hold to crouch, true: Toggle crouch
-        
+
         [Header("Tool Usage System")]
         [SerializeField] private float toolUsageRange = 1.5f;
         [SerializeField] private LayerMask destructibleLayers = -1;
         [SerializeField] private float toolUsageCooldown = 0.5f;
         [SerializeField] private Transform toolUsagePoint;
-        
+
         [Header("Item Pickup System")]
         [SerializeField] private float pickupRange = 2f;
         [SerializeField] private LayerMask itemLayers = -1;
         [SerializeField] private bool autoPickup = true;
+
+        [Header("Damage Display")]
+        [SerializeField] private Transform damageDisplayPoint;
+
+        [Header("Dodge System")]
+        [SerializeField] private KeyCode dodgeKey = KeyCode.Space;
+        [SerializeField] private float dodgeDistance = 4f;
+        [SerializeField] private float dodgeDuration = 0.5f;
+        [SerializeField] private float dodgeCooldown = 1.5f;
+        [SerializeField] private float dodgeStaminaCost = 25f;
+        [SerializeField] private bool canDodgeInAir = false;
 
         [Header("Audio")]
         [SerializeField] private AudioClip[] footstepSounds;
@@ -85,7 +104,7 @@ namespace KowloonBreak.Player
         private CharacterStats playerStats;
         private HealthStatus playerHealth;
         private PlayerAnimatorController animatorController;
-        
+
         // Health Events
         public event Action<float> OnHealthChanged;
         public event Action<float> OnStaminaChanged;
@@ -105,44 +124,59 @@ namespace KowloonBreak.Player
         private bool isGrounded;
         private bool flashlightEnabled;
         private bool canMove = true;
-        
+
         // 移動モード状態管理
         private bool runModeEnabled = false; // 走行モード有効/無効
         private bool crouchModeEnabled = false; // しゃがみモード有効/無効
-        
+
         // 道具使用システム関連
         private float lastToolUsageTime;
         private bool isUsingTool;
         private InventorySlot currentUsedTool;
-        
+
         // 道具選択関連
         private int selectedToolIndex = 0;
+
+        // 移動状態管理
+        private MovementState currentMovementState = MovementState.Normal;
+        
+        // ダッジシステム関連
+        private float lastDodgeTime;
+        private bool isInvincible;
+        private Vector3 dodgeDirection;
+        private float dodgeProgress;
+        private Vector3 dodgeStartPosition;
 
         // Health Properties
         public float Health => currentHealth;
         public float MaxHealth => maxHealth;
         public float HealthPercentage => currentHealth / maxHealth;
         public bool IsAlive => currentHealth > 0f;
-        
+
         // Stamina Properties
         public float CurrentStamina => currentStamina;
         public float MaxStamina => maxStamina;
         public float StaminaPercentage => currentStamina / maxStamina;
-        
+
         // Infection Properties
         public bool IsInfected => isInfected;
         public float InfectionLevel => infectionLevel;
-        
+
         // Movement Properties
         public bool IsRunning => isRunning;
         public bool IsCrouching => isCrouching;
         public bool IsMoving => moveDirection.magnitude > 0.1f;
+
+        // Movement State Properties
+        public MovementState CurrentMovementState => currentMovementState;
+        public bool IsDodging => currentMovementState == MovementState.Dodging;
+        public bool IsInvincible => isInvincible;
         public float NoiseLevel => noiseLevel;
         public float StealthLevel => CalculateStealthLevel();
         public CharacterStats Stats => playerStats;
         public InventorySlot SelectedTool => resourceManager?.GetToolSlot(selectedToolIndex);
         public int SelectedToolIndex => selectedToolIndex;
-        
+
         // Movement Mode Properties
         public bool RunModeEnabled => runModeEnabled;
         public bool CrouchModeEnabled => crouchModeEnabled;
@@ -162,10 +196,14 @@ namespace KowloonBreak.Player
 
         private void Update()
         {
-            if (!canMove) return;
-
             HandleInput();
-            HandleMovement();
+            
+            if (canMove)
+            {
+                HandleMovement(); // 統一された移動処理
+            }
+            
+            // その他のシステム処理
             HandleStamina();
             HandleHealth();
             HandleInfection();
@@ -175,12 +213,13 @@ namespace KowloonBreak.Player
             HandleItemPickup();
         }
 
+
         private void InitializePlayer()
         {
             characterController = GetComponent<CharacterController>();
             audioSource = GetComponent<AudioSource>();
             animatorController = GetComponent<PlayerAnimatorController>();
-            
+
             if (playerCamera == null)
             {
                 playerCamera = UnityEngine.Camera.main;
@@ -189,30 +228,30 @@ namespace KowloonBreak.Player
             SetupCameraFollowTarget();
             InitializeStats();
             InitializeInventorySystem();
-            
+
             // Health and Stamina initialization
             currentHealth = maxHealth;
             currentStamina = maxStamina;
-            
+
             // Fire initial events
             OnHealthChanged?.Invoke(HealthPercentage);
             OnStaminaChanged?.Invoke(StaminaPercentage);
-            
+
             // 道具使用ポイントを設定
             SetupToolUsagePoint();
-            
+
             // プレイヤーRendererを自動取得
             if (playerRenderer == null)
             {
                 playerRenderer = GetComponentInChildren<Renderer>();
             }
-            
+
             // アニメーターコントローラーの確認
             if (animatorController == null)
             {
                 Debug.LogWarning("[EnhancedPlayerController] PlayerAnimatorController not found! Tool usage animations will not work.");
             }
-            
+
             // EnhancedPlayerController初期化完了
         }
 
@@ -226,7 +265,7 @@ namespace KowloonBreak.Player
             playerStats = new CharacterStats();
             playerHealth = new HealthStatus();
             playerInfection = new InfectionStatus();
-            
+
             playerStats.OnDeath += HandlePlayerDeath;
             playerInfection.OnTurnedZombie += HandlePlayerTurnedZombie;
         }
@@ -245,67 +284,158 @@ namespace KowloonBreak.Player
             {
                 TryInteract();
             }
-            
+
             if (Input.GetKeyDown(flashlightKey))
             {
                 ToggleFlashlight();
             }
-            
+
             // 走行モード入力処理
             HandleRunInput();
-            
+
             // しゃがみモード入力処理
             HandleCrouchInput();
-            
+
             // 道具選択 (1-8キー)
             HandleToolSelection();
-            
+
             // 道具使用 (Eキー)
             if (Input.GetKeyDown(useToolKey))
             {
                 TryUseTool();
             }
+
+            // ダッジ入力処理
+            if (Input.GetKeyDown(dodgeKey))
+            {
+                TryDodge();
+            }
         }
 
         private void HandleMovement()
         {
-            isGrounded = characterController.isGrounded;
+            Vector3 finalMovement = Vector3.zero;
             
-            if (isGrounded && velocity.y < 0)
+            // 移動状態に応じて移動量を計算
+            switch (currentMovementState)
             {
-                velocity.y = -2f;
+                case MovementState.Normal:
+                    finalMovement = CalculateNormalMovement();
+                    break;
+                case MovementState.Dodging:
+                    finalMovement = CalculateDodgeMovement();
+                    break;
+                case MovementState.Stunned:
+                case MovementState.Dead:
+                    finalMovement = Vector3.zero;
+                    break;
             }
             
+            // 重力を統一的に適用
+            ApplyGravity(ref finalMovement);
+            
+            // 単一のMove呼び出し
+            characterController.Move(finalMovement);
+            
+            // エフェクトとアニメーション更新
+            UpdateMovementEffects();
+            UpdateAnimatorStates();
+        }
+        
+        private Vector3 CalculateNormalMovement()
+        {
             float horizontal = Input.GetAxis("Horizontal");
             float vertical = Input.GetAxis("Vertical");
-            
+
             // ワールド空間での移動方向を計算
             Vector3 direction = new Vector3(horizontal, 0f, vertical);
             moveDirection = direction.normalized;
-            
+
             // 移動方向にキャラクターを向ける
             if (moveDirection.magnitude > 0.1f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
             }
-            
+
             float currentSpeed = GetCurrentSpeed();
-            Vector3 move = moveDirection * currentSpeed;
+            return moveDirection * currentSpeed * Time.deltaTime;
+        }
+        
+        private Vector3 CalculateDodgeMovement()
+        {
+            if (dodgeProgress >= 1f)
+            {
+                // ダッジ終了
+                SetMovementState(MovementState.Normal);
+                return Vector3.zero;
+            }
             
-            characterController.Move(move * Time.deltaTime);
+            // ダッジの移動量を計算（イージング適用）
+            float easedProgress = CalculateDodgeEasing(dodgeProgress);
+            float previousEasedProgress = CalculateDodgeEasing(Mathf.Max(0f, dodgeProgress - Time.deltaTime / dodgeDuration));
             
+            float deltaProgress = easedProgress - previousEasedProgress;
+            Vector3 dodgeMovement = dodgeDirection * dodgeDistance * deltaProgress;
+            
+            dodgeProgress += Time.deltaTime / dodgeDuration;
+            
+            return dodgeMovement;
+        }
+        
+        private float CalculateDodgeEasing(float t)
+        {
+            // イージングカーブ（最初は速く、最後は遅く）
+            return 1f - Mathf.Pow(1f - t, 3f);
+        }
+        
+        private void ApplyGravity(ref Vector3 movement)
+        {
+            isGrounded = characterController.isGrounded;
+
+            if (isGrounded && velocity.y < 0)
+            {
+                velocity.y = -2f;
+            }
+
             velocity.y += gravity * Time.deltaTime;
-            characterController.Move(velocity * Time.deltaTime);
-            
-            UpdateMovementEffects();
-            UpdateAnimatorStates();
+            movement.y = velocity.y * Time.deltaTime;
+        }
+        
+        private void SetMovementState(MovementState newState)
+        {
+            if (currentMovementState != newState)
+            {
+                MovementState previousState = currentMovementState;
+                currentMovementState = newState;
+                
+                OnMovementStateChanged(previousState, newState);
+            }
+        }
+        
+        private void OnMovementStateChanged(MovementState from, MovementState to)
+        {
+            switch (to)
+            {
+                case MovementState.Normal:
+                    // 通常状態に復帰
+                    break;
+                case MovementState.Dodging:
+                    // ダッジ開始処理はTryDodge()で実行済み
+                    break;
+                case MovementState.Stunned:
+                    // スタン状態の処理
+                    break;
+                case MovementState.Dead:
+                    // 死亡状態の処理
+                    break;
+            }
         }
 
         private float GetCurrentSpeed()
         {
             float baseSpeed = walkSpeed;
-            
+
             // 移動モードに応じて速度を決定
             if (crouchModeEnabled)
             {
@@ -319,13 +449,13 @@ namespace KowloonBreak.Player
             {
                 baseSpeed = walkSpeed;
             }
-            
+
             // 健康状態とインフェクションによるペナルティ
             float healthPenalty = currentHealth < maxHealth * 0.5f ? 0.7f : 1f;
             float infectionPenalty = isInfected ? (1f - (infectionLevel / 100f * 0.5f)) : 1f;
-            
+
             float finalSpeed = baseSpeed * healthPenalty * infectionPenalty;
-            
+
             return finalSpeed;
         }
 
@@ -334,38 +464,38 @@ namespace KowloonBreak.Player
         {
             // スタミナ消費条件：走行モードが有効 かつ 実際に移動している
             bool shouldConsumeStamina = runModeEnabled && IsMoving;
-            
+
             // インフェクション状態でも追加消費
             bool infectionConsumption = isInfected && infectionLevel > 50f;
-            
+
             if (shouldConsumeStamina || infectionConsumption)
             {
                 float totalConsumption = 0f;
-                
+
                 // 走行によるスタミナ消費
                 if (shouldConsumeStamina)
                 {
                     totalConsumption += runStaminaCost;
                 }
-                
+
                 // インフェクションによる追加消費
                 if (infectionConsumption)
                 {
                     float infectionCost = runStaminaCost * 0.5f;
                     totalConsumption += infectionCost;
                 }
-                
+
                 // スタミナを消費
                 if (currentStamina > 0f)
                 {
                     currentStamina -= totalConsumption * Time.deltaTime;
                     currentStamina = Mathf.Max(0f, currentStamina);
-                    
+
                     // スタミナが尽きた場合の処理
                     if (currentStamina <= 0f && runModeEnabled)
                     {
                         SetRunMode(false);
-                        
+
                         // UI通知
                         if (UIManager.Instance != null)
                         {
@@ -378,25 +508,25 @@ namespace KowloonBreak.Player
             {
                 // スタミナ回復処理
                 float regenRate = staminaRegenRate;
-                
+
                 // インフェクション状態では回復速度が半減
                 if (isInfected)
                 {
                     regenRate *= 0.5f;
                 }
-                
+
                 // しゃがみ中は回復速度が向上
                 if (crouchModeEnabled && !IsMoving)
                 {
                     regenRate *= 1.5f;
                 }
-                
+
                 float previousStamina = currentStamina;
                 currentStamina += regenRate * Time.deltaTime;
                 currentStamina = Mathf.Min(maxStamina, currentStamina);
-                
+
             }
-            
+
             // スタミナ変更イベントを発火（絶対値で送信）
             OnStaminaChanged?.Invoke(currentStamina);
         }
@@ -405,18 +535,18 @@ namespace KowloonBreak.Player
         {
             float targetNoise = CalculateNoiseLevel();
             noiseLevel = Mathf.Lerp(noiseLevel, targetNoise, Time.deltaTime * 2f);
-            
+
             OnNoiseChanged?.Invoke(noiseLevel);
-            
+
             CheckNearbyEnemies();
         }
 
         private float CalculateNoiseLevel()
         {
             if (!IsMoving) return 0f;
-            
+
             float baseNoise = 20f; // 通常歩行のノイズレベル
-            
+
             if (runModeEnabled)
             {
                 baseNoise = 60f; // 走行時は高いノイズレベル
@@ -425,12 +555,12 @@ namespace KowloonBreak.Player
             {
                 baseNoise = 5f; // しゃがみ時は低いノイズレベル
             }
-            
+
             if (playerHealth.Condition == HealthCondition.Injured)
             {
                 baseNoise *= 1.3f;
             }
-            
+
             return Mathf.Clamp(baseNoise, 0f, maxNoiseLevel);
         }
 
@@ -440,18 +570,18 @@ namespace KowloonBreak.Player
         private float CalculateStealthLevel()
         {
             float stealth = baseStealth;
-            
+
             // しゃがみボーナス
             if (crouchModeEnabled)
             {
                 stealth += crouchStealthBonus;
             }
-            
+
             // 移動ペナルティ
             if (IsMoving)
             {
                 float movementPenalty = movementStealthPenalty;
-                
+
                 if (runModeEnabled)
                 {
                     movementPenalty *= 2f; // 走行時はペナルティ倍増
@@ -460,39 +590,39 @@ namespace KowloonBreak.Player
                 {
                     movementPenalty *= 0.5f; // しゃがみ移動はペナルティ軽減
                 }
-                
+
                 stealth -= movementPenalty;
             }
-            
+
             // 懐中電灯ペナルティ
             if (flashlightEnabled)
             {
                 stealth -= flashlightStealthPenalty;
             }
-            
+
             // 健康状態ペナルティ
             if (isInfected)
             {
                 stealth -= 0.1f; // 感染時は隠密性が下がる
             }
-            
+
             if (currentHealth < maxHealth * 0.3f)
             {
                 stealth -= 0.15f; // 重傷時は隠密性が下がる
             }
-            
+
             return Mathf.Clamp01(stealth);
         }
 
         private void CheckNearbyEnemies()
         {
             Collider[] nearbyEnemies = Physics.OverlapSphere(transform.position, stealthRadius, enemyLayers);
-            
+
             foreach (var enemy in nearbyEnemies)
             {
                 float distance = Vector3.Distance(transform.position, enemy.transform.position);
                 float detectionChance = (noiseLevel / maxNoiseLevel) * (1f - (distance / stealthRadius));
-                
+
                 if (UnityEngine.Random.Range(0f, 1f) < detectionChance * Time.deltaTime)
                 {
                     // TODO: Trigger enemy detection
@@ -505,19 +635,19 @@ namespace KowloonBreak.Player
             if (IsMoving && isGrounded)
             {
                 footstepTimer += Time.deltaTime;
-                
+
                 float currentFootstepInterval = footstepInterval;
-                
+
                 // 移動モードに応じて足音間隔を調整
-                if (runModeEnabled) 
+                if (runModeEnabled)
                 {
                     currentFootstepInterval *= 0.6f; // 走行時は足音が早い
                 }
-                else if (crouchModeEnabled) 
+                else if (crouchModeEnabled)
                 {
                     currentFootstepInterval *= 1.5f; // しゃがみ時は足音が遅い
                 }
-                
+
                 if (footstepTimer >= currentFootstepInterval)
                 {
                     PlayFootstepSound();
@@ -531,10 +661,10 @@ namespace KowloonBreak.Player
             if (breathingParticles != null)
             {
                 var emission = breathingParticles.emission;
-                bool shouldEmit = (currentStamina < maxStamina * 0.3f) || 
+                bool shouldEmit = (currentStamina < maxStamina * 0.3f) ||
                                  (isInfected && infectionLevel >= 50f);
                 emission.enabled = shouldEmit;
-                
+
                 if (shouldEmit)
                 {
                     emission.rateOverTime = 10f + (1f - StaminaPercentage) * 20f;
@@ -547,9 +677,39 @@ namespace KowloonBreak.Player
         /// </summary>
         private void HandleRunInput()
         {
+            if (InputManager.Instance != null)
+            {
+                if (runToggleMode)
+                {
+                    // トグルモード: キーを押すたびにON/OFF切り替え
+                    if (InputManager.Instance.IsRunDown())
+                    {
+                        ToggleRunMode();
+                    }
+                }
+                else
+                {
+                    // ホールドモード: キーを押している間だけON
+                    if (InputManager.Instance.IsRunDown())
+                    {
+                        SetRunMode(true);
+                    }
+                    else if (InputManager.Instance.IsRunUp())
+                    {
+                        SetRunMode(false);
+                    }
+                }
+            }
+            else
+            {
+                HandleRunInputFallback();
+            }
+        }
+        
+        private void HandleRunInputFallback()
+        {
             if (runToggleMode)
             {
-                // トグルモード: キーを押すたびにON/OFF切り替え
                 if (Input.GetKeyDown(runToggleKey))
                 {
                     ToggleRunMode();
@@ -557,7 +717,6 @@ namespace KowloonBreak.Player
             }
             else
             {
-                // ホールドモード: キーを押している間だけON
                 if (Input.GetKeyDown(runToggleKey))
                 {
                     SetRunMode(true);
@@ -568,7 +727,7 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         /// <summary>
         /// しゃがみ入力を処理
         /// </summary>
@@ -595,7 +754,7 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         /// <summary>
         /// 走行モードをトグル
         /// </summary>
@@ -603,7 +762,7 @@ namespace KowloonBreak.Player
         {
             SetRunMode(!runModeEnabled);
         }
-        
+
         /// <summary>
         /// しゃがみモードをトグル
         /// </summary>
@@ -611,7 +770,7 @@ namespace KowloonBreak.Player
         {
             SetCrouchMode(!crouchModeEnabled);
         }
-        
+
         /// <summary>
         /// 走行モードを設定
         /// </summary>
@@ -629,7 +788,7 @@ namespace KowloonBreak.Player
                     }
                     return;
                 }
-                
+
                 // しゃがみ中は走行不可
                 if (crouchModeEnabled)
                 {
@@ -640,15 +799,15 @@ namespace KowloonBreak.Player
                     return;
                 }
             }
-            
+
             bool previousState = runModeEnabled;
             runModeEnabled = enabled;
             isRunning = enabled;
-            
+
             if (previousState != runModeEnabled)
             {
                 OnRunStateChanged?.Invoke(isRunning);
-                
+
                 // UIフィードバック
                 if (UIManager.Instance != null)
                 {
@@ -658,7 +817,7 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         /// <summary>
         /// しゃがみモードを設定
         /// </summary>
@@ -667,13 +826,13 @@ namespace KowloonBreak.Player
             bool previousState = crouchModeEnabled;
             crouchModeEnabled = enabled;
             isCrouching = enabled;
-            
+
             // しゃがみ有効時は走行を無効化
             if (enabled && runModeEnabled)
             {
                 SetRunMode(false);
             }
-            
+
             // CharacterControllerの高さと中心点を調整
             if (crouchModeEnabled)
             {
@@ -685,11 +844,11 @@ namespace KowloonBreak.Player
                 characterController.height = 2f;
                 characterController.center = new Vector3(0, 1f, 0);
             }
-            
+
             if (previousState != crouchModeEnabled)
             {
                 OnCrouchStateChanged?.Invoke(isCrouching);
-                
+
                 // UIフィードバック
                 if (UIManager.Instance != null)
                 {
@@ -698,7 +857,7 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         // 後方互換性のため旧メソッドを保持
         private void SetRunning(bool running)
         {
@@ -719,9 +878,9 @@ namespace KowloonBreak.Player
                 explorationSystem.TryStartSearch();
                 return;
             }
-            
+
             Collider[] interactables = Physics.OverlapSphere(transform.position, interactionRange, interactionLayers);
-            
+
             if (interactables.Length > 0)
             {
                 var nearest = GetNearestInteractable(interactables);
@@ -737,7 +896,7 @@ namespace KowloonBreak.Player
         {
             Collider nearest = null;
             float nearestDistance = float.MaxValue;
-            
+
             foreach (var interactable in interactables)
             {
                 float distance = Vector3.Distance(transform.position, interactable.transform.position);
@@ -747,19 +906,19 @@ namespace KowloonBreak.Player
                     nearest = interactable;
                 }
             }
-            
+
             return nearest;
         }
 
         private void ToggleFlashlight()
         {
             flashlightEnabled = !flashlightEnabled;
-            
+
             if (flashlight != null)
             {
                 flashlight.SetActive(flashlightEnabled);
             }
-            
+
             if (UIManager.Instance != null)
             {
                 string message = flashlightEnabled ? "懐中電灯: ON" : "懐中電灯: OFF";
@@ -770,9 +929,9 @@ namespace KowloonBreak.Player
         private void PlayFootstepSound()
         {
             if (footstepSounds == null || footstepSounds.Length == 0) return;
-            
+
             AudioClip footstep = footstepSounds[UnityEngine.Random.Range(0, footstepSounds.Length)];
-            
+
             // 移動モードに応じてボリュームを調整
             float volume = 0.5f; // デフォルト（歩行）
             if (crouchModeEnabled)
@@ -783,7 +942,7 @@ namespace KowloonBreak.Player
             {
                 volume = 0.9f; // 走行時はより大きく
             }
-            
+
             audioSource.PlayOneShot(footstep, volume);
         }
 
@@ -792,34 +951,34 @@ namespace KowloonBreak.Player
         private void HandlePlayerDeath()
         {
             canMove = false;
-            
+
             if (UIManager.Instance != null)
             {
                 UIManager.Instance.ShowNotification("あなたは死亡しました...", NotificationType.Error);
             }
-            
+
             // プレイヤー死亡処理完了
         }
 
         private void HandlePlayerTurnedZombie()
         {
             canMove = false;
-            
+
             if (UIManager.Instance != null)
             {
                 UIManager.Instance.ShowNotification("感染が進行し、意識を失った...", NotificationType.Error);
             }
-            
+
             // プレイヤーゾンビ化処理完了
         }
 
         public void TakeDamage(int damage)
         {
             if (!IsAlive) return;
-            
+
             // int版のTakeDamageはfloat版を呼び出す
             TakeDamage((float)damage);
-            
+
             if (cameraShakeTarget != null)
             {
                 StartCoroutine(CameraShake(0.3f));
@@ -834,23 +993,29 @@ namespace KowloonBreak.Player
         public void SetMovementEnabled(bool enabled)
         {
             canMove = enabled;
+            
+            // 移動無効時は通常状態に戻す
+            if (!enabled && currentMovementState == MovementState.Dodging)
+            {
+                SetMovementState(MovementState.Normal);
+            }
         }
 
         private System.Collections.IEnumerator CameraShake(float duration)
         {
             Vector3 originalPosition = cameraShakeTarget.localPosition;
             float elapsedTime = 0f;
-            
+
             while (elapsedTime < duration)
             {
                 elapsedTime += Time.deltaTime;
-                
+
                 Vector3 randomOffset = UnityEngine.Random.insideUnitSphere * cameraShakeIntensity;
                 cameraShakeTarget.localPosition = originalPosition + randomOffset;
-                
+
                 yield return null;
             }
-            
+
             cameraShakeTarget.localPosition = originalPosition;
         }
 
@@ -858,24 +1023,24 @@ namespace KowloonBreak.Player
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(transform.position, interactionRange);
-            
+
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, stealthRadius);
         }
 
         #region Tool Usage System
-        
+
         private void InitializeInventorySystem()
         {
             resourceManager = EnhancedResourceManager.Instance;
             toolSelectionHUD = FindObjectOfType<ToolSelectionHUDController>();
-            
+
             if (toolSelectionHUD != null)
             {
                 toolSelectionHUD.OnToolSelected += HandleToolSelectionChanged;
             }
         }
-        
+
         private void SetupToolUsagePoint()
         {
             if (toolUsagePoint == null)
@@ -886,7 +1051,7 @@ namespace KowloonBreak.Player
                 toolUsagePoint = toolUsagePointGO.transform;
             }
         }
-        
+
         private void HandleToolSelection()
         {
             // 1-8キーで道具選択
@@ -899,27 +1064,27 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         private void SelectTool(int index)
         {
             selectedToolIndex = index;
             var selectedSlot = resourceManager?.GetToolSlot(selectedToolIndex);
             OnToolSelected?.Invoke(selectedToolIndex, selectedSlot);
-            
+
             // HUDコントローラーにも通知
             if (toolSelectionHUD != null)
             {
                 toolSelectionHUD.SelectTool(index);
             }
-            
+
             // 道具選択完了
         }
-        
+
         private void HandleToolSelectionChanged(int index, InventorySlot slot)
         {
             selectedToolIndex = index;
         }
-        
+
         private void HandleToolUsage()
         {
             if (isUsingTool)
@@ -930,33 +1095,33 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         private void TryUseTool()
         {
-            
-            if (isUsingTool) 
+
+            if (isUsingTool)
             {
                 return;
             }
-            
-            if (Time.time - lastToolUsageTime < toolUsageCooldown) 
+
+            if (Time.time - lastToolUsageTime < toolUsageCooldown)
             {
                 return;
             }
-            
+
             // リソースマネージャーの状態を確認
             if (resourceManager == null)
             {
                 Debug.LogError("[EnhancedPlayerController] ResourceManager is null! Cannot get tool slot.");
                 return;
             }
-            
-            
+
+
             var selectedTool = resourceManager.GetToolSlot(selectedToolIndex);
-            if (selectedTool == null) 
+            if (selectedTool == null)
             {
                 Debug.LogError($"[EnhancedPlayerController] Tool slot {selectedToolIndex} is null!");
-                
+
                 // 利用可能なツールスロットを確認
                 for (int i = 0; i < 8; i++)
                 {
@@ -967,11 +1132,11 @@ namespace KowloonBreak.Player
                 }
                 return;
             }
-            
-            if (selectedTool.IsEmpty) 
+
+            if (selectedTool.IsEmpty)
             {
                 Debug.LogWarning("[EnhancedPlayerController] Selected tool slot is empty!");
-                
+
                 // 利用可能なツールスロットを確認
                 for (int i = 0; i < 8; i++)
                 {
@@ -982,20 +1147,20 @@ namespace KowloonBreak.Player
                 }
                 return;
             }
-            
-            if (!selectedTool.ItemData.IsTool()) 
+
+            if (!selectedTool.ItemData.IsTool())
             {
                 return;
             }
-            
-            
+
+
             isUsingTool = true;
             lastToolUsageTime = Time.time;
-            
+
             // 道具の種類に応じた処理開始
             StartToolUsage(selectedTool);
         }
-        
+
         /// <summary>
         /// 道具使用を開始（道具種別に応じて動作を分岐）
         /// </summary>
@@ -1003,21 +1168,21 @@ namespace KowloonBreak.Player
         {
             // 使用中の道具データを保存（アニメーションイベントで使用）
             currentUsedTool = toolSlot;
-            
+
             var toolType = toolSlot.ItemData.toolType;
-            
+
             // アニメーターコントローラーの確認
             if (animatorController == null)
             {
                 Debug.LogError("[EnhancedPlayerController] PlayerAnimatorController is null! Cannot play tool usage animation.");
-                
+
                 // 手動でコンポーネントを検索
                 animatorController = GetComponent<PlayerAnimatorController>();
                 if (animatorController == null)
                 {
                     animatorController = GetComponentInChildren<PlayerAnimatorController>();
                 }
-                
+
                 if (animatorController != null)
                 {
                 }
@@ -1027,9 +1192,9 @@ namespace KowloonBreak.Player
                     return;
                 }
             }
-            
+
             // 道具の種類に応じてアニメーションとアクションを決定
-            
+
             switch (toolType)
             {
                 case ToolType.Pickaxe:
@@ -1037,13 +1202,13 @@ namespace KowloonBreak.Player
                     animatorController.TriggerDig();
                     PlayToolUsageEffects(toolSlot.ItemData, "dig");
                     break;
-                    
+
                 case ToolType.IronPipe:
                     // 鉄パイプ：攻撃アニメーション（Attack）
                     animatorController.TriggerAttack();
                     PlayToolUsageEffects(toolSlot.ItemData, "attack");
                     break;
-                    
+
                 default:
                     // デフォルト：攻撃アニメーション
                     animatorController.TriggerAttack();
@@ -1051,41 +1216,41 @@ namespace KowloonBreak.Player
                     break;
             }
         }
-        
+
         /// <summary>
         /// アニメーションイベントから呼ばれる道具使用効果実行
         /// </summary>
         public void ExecuteToolUsageEffect()
         {
-            
-            if (currentUsedTool == null || currentUsedTool.IsEmpty) 
+
+            if (currentUsedTool == null || currentUsedTool.IsEmpty)
             {
                 Debug.LogWarning("[EnhancedPlayerController] No current tool available for effect execution");
                 return;
             }
-            
+
             var itemData = currentUsedTool.ItemData;
             var toolType = itemData.toolType;
-            
-            
+
+
             // 道具の種類に応じて効果を実行
-            
+
             switch (toolType)
             {
                 case ToolType.Pickaxe:
                     ExecuteDiggingEffect(currentUsedTool);
                     break;
-                    
+
                 case ToolType.IronPipe:
                     ExecuteAttackEffect(currentUsedTool);
                     break;
-                    
+
                 default:
                     ExecuteAttackEffect(currentUsedTool);
                     break;
             }
         }
-        
+
         /// <summary>
         /// 攻撃効果を実行（鉄パイプなど）
         /// </summary>
@@ -1094,18 +1259,18 @@ namespace KowloonBreak.Player
             var itemData = toolSlot.ItemData;
             float range = itemData.attackRange;
             float damage = itemData.attackDamage;
-            
+
             // ステルス状態をチェック
             bool isStealthAttack = IsInStealthMode();
-            
-            
+
+
             // 攻撃範囲内の破壊可能オブジェクトを検索
             Collider[] hitObjects = Physics.OverlapSphere(toolUsagePoint.position, range, destructibleLayers);
-            
-            
+
+
             bool hitSomething = false;
             bool hitEnemy = false;
-            
+
             foreach (var hitCollider in hitObjects)
             {
                 var destructible = hitCollider.GetComponent<IDestructible>();
@@ -1115,7 +1280,7 @@ namespace KowloonBreak.Player
                     {
                         destructible.TakeDamage(damage, itemData.toolType);
                         hitSomething = true;
-                        
+
                         // 敵に攻撃した場合の特別処理
                         var enemyBase = hitCollider.GetComponent<KowloonBreak.Enemies.EnemyBase>();
                         if (enemyBase != null)
@@ -1135,7 +1300,7 @@ namespace KowloonBreak.Player
                 {
                 }
             }
-            
+
             // 道具の耐久度を減らす
             if (hitSomething)
             {
@@ -1145,7 +1310,7 @@ namespace KowloonBreak.Player
             {
             }
         }
-        
+
         /// <summary>
         /// 掘削効果を実行（つるはしなど）
         /// </summary>
@@ -1154,17 +1319,17 @@ namespace KowloonBreak.Player
             var itemData = toolSlot.ItemData;
             float range = itemData.attackRange;
             float damage = itemData.attackDamage;
-            
+
             // ステルス状態をチェック
             bool isStealthAttack = IsInStealthMode();
-            
-            
+
+
             // 掘削範囲内の掘削可能オブジェクトを検索
             Collider[] hitObjects = Physics.OverlapSphere(toolUsagePoint.position, range, destructibleLayers);
-            
-            
+
+
             bool dugSomething = false;
-            
+
             foreach (var hitCollider in hitObjects)
             {
                 var destructible = hitCollider.GetComponent<IDestructible>();
@@ -1174,7 +1339,7 @@ namespace KowloonBreak.Player
                     {
                         destructible.TakeDamage(damage, itemData.toolType);
                         dugSomething = true;
-                        
+
                         // 敵に対する掘削攻撃の場合の特別処理
                         var enemyBase = hitCollider.GetComponent<KowloonBreak.Enemies.EnemyBase>();
                         if (enemyBase != null && isStealthAttack)
@@ -1190,7 +1355,7 @@ namespace KowloonBreak.Player
                 {
                 }
             }
-            
+
             // 道具の耐久度を減らす
             if (dugSomething)
             {
@@ -1200,10 +1365,10 @@ namespace KowloonBreak.Player
             {
             }
         }
-        
+
         private void PlayToolUsageEffects(ItemData itemData, string usageType)
         {
-            
+
             // 道具使用音の再生
             if (audioSource != null)
             {
@@ -1221,21 +1386,21 @@ namespace KowloonBreak.Player
                         break;
                 }
             }
-            
+
             // 道具使用エフェクトの再生
             // TODO: パーティクルエフェクトなどを追加
         }
-        
+
         #endregion
-        
+
         #region Item Pickup System
-        
+
         private void HandleItemPickup()
         {
             if (!autoPickup) return;
-            
+
             Collider[] itemsInRange = Physics.OverlapSphere(transform.position, pickupRange, itemLayers);
-            
+
             foreach (var itemCollider in itemsInRange)
             {
                 var droppedItem = itemCollider.GetComponent<DroppedItem>();
@@ -1246,29 +1411,29 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         #endregion
-        
+
         private void OnDestroy()
         {
             if (playerStats != null)
             {
                 playerStats.OnDeath -= HandlePlayerDeath;
             }
-            
+
             if (playerInfection != null)
             {
                 playerInfection.OnTurnedZombie -= HandlePlayerTurnedZombie;
             }
-            
+
             if (toolSelectionHUD != null)
             {
                 toolSelectionHUD.OnToolSelected -= HandleToolSelectionChanged;
             }
         }
-        
+
         // ===== HEALTH SYSTEM METHODS =====
-        
+
         private void HandleHealth()
         {
             // スタミナが0で走行を続けようとする場合、健康にダメージ
@@ -1276,7 +1441,7 @@ namespace KowloonBreak.Player
             {
                 float overtimeDamage = 2f; // 過労ダメージ（1秒あたり2ダメージ）
                 TakeDamage(overtimeDamage * Time.deltaTime);
-                
+
                 // 過労ダメージの警告（5秒に1回程度）
                 if (Time.frameCount % 300 == 0)
                 {
@@ -1288,47 +1453,67 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         private void HandleInfection()
         {
             if (isInfected)
             {
                 infectionLevel += 0.1f * Time.deltaTime;
-                
+
                 if (infectionLevel >= 100f)
                 {
                     TakeDamage(1f * Time.deltaTime);
                 }
             }
         }
-        
+
         public void TakeDamage(float damage)
         {
-            if (!IsAlive) return;
-            
-            
+            if (!IsAlive || isInvincible) return;
+
+
             currentHealth -= damage;
             currentHealth = Mathf.Max(0f, currentHealth);
-            
+
+            // ダメージテキストを表示
+            ShowDamageText(damage);
+
             // ダメージエフェクトを開始
             StartCoroutine(DamageEffect());
-            
+
             OnHealthChanged?.Invoke(HealthPercentage);
-            
+
             if (currentHealth <= 0f)
             {
                 Die();
             }
         }
-        
+
         public void Heal(float amount)
         {
             if (!IsAlive) return;
-            
+
             currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
             OnHealthChanged?.Invoke(HealthPercentage);
         }
-        
+
+        /// <summary>
+        /// プレイヤーのダメージテキストを表示
+        /// </summary>
+        /// <param name="damage">ダメージ量</param>
+        private void ShowDamageText(float damage)
+        {
+            if (UIManager.Instance != null)
+            {
+                // ダメージ表示位置を決定（専用オブジェクトがあればそれを使用、なければデフォルト位置）
+                Vector3 damagePosition = damageDisplayPoint != null
+                    ? damageDisplayPoint.position
+                    : transform.position + Vector3.up * 1.5f;
+
+                UIManager.Instance.ShowDamageText(damagePosition, damage, false);
+            }
+        }
+
         public void SetInfectionStatus(bool infected)
         {
             if (isInfected != infected)
@@ -1341,7 +1526,7 @@ namespace KowloonBreak.Player
                 OnInfectionStatusChanged?.Invoke(isInfected);
             }
         }
-        
+
         public void TreatInfection(float treatmentAmount)
         {
             if (isInfected)
@@ -1353,13 +1538,13 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         private void Die()
         {
             OnPlayerDeath?.Invoke();
-            
-            SetMovementEnabled(false);
-            
+
+            SetMovementState(MovementState.Dead);
+
             // PlayerAnimatorControllerでDeathアニメーションを再生
             if (animatorController != null)
             {
@@ -1370,7 +1555,7 @@ namespace KowloonBreak.Player
                 Debug.LogWarning("[EnhancedPlayerController] PlayerAnimatorController not found on player");
             }
         }
-        
+
         /// <summary>
         /// 走行可能かどうかを判定
         /// </summary>
@@ -1387,7 +1572,7 @@ namespace KowloonBreak.Player
             // 高いステルスレベル（0.6以上）で、しゃがみ状態の場合をステルス状態とする
             return StealthLevel >= 0.6f && crouchModeEnabled;
         }
-        
+
         /// <summary>
         /// スタミナの状態情報を取得
         /// </summary>
@@ -1404,7 +1589,7 @@ namespace KowloonBreak.Player
             else
                 return "良好";
         }
-        
+
         /// <summary>
         /// ダメージエフェクト（マテリアルの_Damage_Amountを一瞬1にする）
         /// </summary>
@@ -1414,10 +1599,10 @@ namespace KowloonBreak.Player
             {
                 // _Damage_Amountを1に設定
                 playerRenderer.material.SetFloat("_Damage_Amount", 1f);
-                
+
                 // 0.1秒待機
                 yield return new WaitForSeconds(0.1f);
-                
+
                 // _Damage_Amountを0に戻す
                 if (playerRenderer != null && playerRenderer.material != null)
                 {
@@ -1425,7 +1610,7 @@ namespace KowloonBreak.Player
                 }
             }
         }
-        
+
         /// <summary>
         /// アニメーター状態を更新
         /// </summary>
@@ -1437,7 +1622,7 @@ namespace KowloonBreak.Player
                 animatorController.SetSpeed(normalizedSpeed);
             }
         }
-        
+
         /// <summary>
         /// アニメーター用の正規化された速度を計算
         /// </summary>
@@ -1446,25 +1631,29 @@ namespace KowloonBreak.Player
         {
             if (animatorController == null)
                 return 0f;
-            
+
+            // ダッジ中はアニメーションで制御
+            if (currentMovementState == MovementState.Dodging)
+                return animatorController.IdleSpeed;
+
             // 移動していない場合は停止
             if (moveDirection.magnitude < 0.1f)
                 return animatorController.IdleSpeed;
-            
+
             // しゃがみモード中
             if (crouchModeEnabled)
                 return animatorController.CrouchSpeed;
-            
+
             // 走行モード中（スタミナがある場合のみ）
             if (runModeEnabled && currentStamina > 0f)
                 return animatorController.RunSpeed;
-            
+
             // 通常歩行
             return animatorController.WalkSpeed;
         }
-        
+
         #region Animation Event Methods
-        
+
         /// <summary>
         /// 道具使用アニメーション終了時の処理
         /// </summary>
@@ -1473,7 +1662,7 @@ namespace KowloonBreak.Player
             isUsingTool = false;
             currentUsedTool = null;
         }
-        
+
         /// <summary>
         /// 後方互換性のため（旧攻撃システム）
         /// </summary>
@@ -1481,7 +1670,7 @@ namespace KowloonBreak.Player
         {
             OnToolUsageAnimationEnd();
         }
-        
+
         /// <summary>
         /// 後方互換性のため（旧攻撃システム）
         /// </summary>
@@ -1489,7 +1678,7 @@ namespace KowloonBreak.Player
         {
             ExecuteToolUsageEffect();
         }
-        
+
         /// <summary>
         /// アニメーションから足音を再生
         /// </summary>
@@ -1497,7 +1686,7 @@ namespace KowloonBreak.Player
         {
             PlayFootstepSound();
         }
-        
+
         /// <summary>
         /// カスタムアニメーションイベントの処理
         /// </summary>
@@ -1518,7 +1707,117 @@ namespace KowloonBreak.Player
                     break;
             }
         }
+
+        #endregion
+
+        #region Dodge System
+
+        /// <summary>
+        /// ダッジを試行する
+        /// </summary>
+        private void TryDodge()
+        {
+            // ダッジの実行条件をチェック
+            if (!CanDodge()) return;
+
+            // スタミナを消費
+            currentStamina -= dodgeStaminaCost;
+            currentStamina = Mathf.Max(0f, currentStamina);
+            OnStaminaChanged?.Invoke(currentStamina);
+
+            // ダッジ方向を決定（通常の移動と同じワールド空間基準）
+            float horizontal = Input.GetAxisRaw("Horizontal");
+            float vertical = Input.GetAxisRaw("Vertical");
+
+            if (Mathf.Abs(horizontal) > 0.1f || Mathf.Abs(vertical) > 0.1f)
+            {
+                // 通常の移動と同じワールド空間での方向計算
+                Vector3 direction = new Vector3(horizontal, 0f, vertical);
+                dodgeDirection = direction.normalized;
+            }
+            else
+            {
+                // 入力がない場合は前方向にダッジ
+                dodgeDirection = transform.forward;
+            }
+            
+            // ダッジ状態を初期化
+            dodgeProgress = 0f;
+            dodgeStartPosition = transform.position;
+            
+            // 移動状態をダッジに変更
+            SetMovementState(MovementState.Dodging);
+
+            // クールダウンを設定
+            lastDodgeTime = Time.time;
+
+            // アニメーション再生
+            if (animatorController != null)
+            {
+                animatorController.TriggerDodge();
+            }
+        }
+
+        /// <summary>
+        /// ダッジが実行可能かチェック
+        /// </summary>
+        private bool CanDodge()
+        {
+            // 基本条件チェック
+            if (!IsAlive || currentMovementState != MovementState.Normal || !canMove) return false;
+
+            // クールダウンチェック
+            if (Time.time - lastDodgeTime < dodgeCooldown) return false;
+
+            // スタミナチェック
+            if (currentStamina < dodgeStaminaCost) return false;
+
+            // 空中でのダッジ可否チェック
+            if (!canDodgeInAir && !isGrounded) return false;
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// 無敵時間を設定（PlayerAnimationEventHandlerから呼び出し）
+        /// </summary>
+        /// <param name="invincible">無敵状態</param>
+        public void SetInvincible(bool invincible)
+        {
+            isInvincible = invincible;
+        }
+
+        /// <summary>
+        /// 移動状態を強制的に設定（スタンやノックバック等で使用）
+        /// </summary>
+        public void SetMovementStateForced(MovementState state)
+        {
+            SetMovementState(state);
+        }
         
+        /// <summary>
+        /// スタン状態を設定（指定時間後に自動で解除）
+        /// </summary>
+        public void SetStunned(float duration)
+        {
+            if (currentMovementState != MovementState.Dead)
+            {
+                SetMovementState(MovementState.Stunned);
+                StartCoroutine(RecoverFromStun(duration));
+            }
+        }
+        
+        private System.Collections.IEnumerator RecoverFromStun(float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            
+            if (currentMovementState == MovementState.Stunned)
+            {
+                SetMovementState(MovementState.Normal);
+            }
+        }
+
         #endregion
     }
 

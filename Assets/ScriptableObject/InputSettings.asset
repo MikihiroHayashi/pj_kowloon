@@ -1,0 +1,140 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2322f8af16031df48940fd3177394fca, type: 3}
+  m_Name: InputSettings
+  m_EditorClassIdentifier: 
+  preferredDevice: 1
+  controllerType: 0
+  autoDetectDevice: 1
+  deviceSwitchDelay: 0.5
+  horizontalAxis:
+    keyboardAxisName: Horizontal
+    positiveKey: 0
+    negativeKey: 0
+    controllerAxisName: Horizontal
+    invertController: 0
+  verticalAxis:
+    keyboardAxisName: Vertical
+    positiveKey: 0
+    negativeKey: 0
+    controllerAxisName: Vertical
+    invertController: 0
+  interactionInput:
+    keyboardKey: 102
+    mouseButton: -1
+    controllerButton: 350
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  flashlightInput:
+    keyboardKey: 116
+    mouseButton: -1
+    controllerButton: 353
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  useToolInput:
+    keyboardKey: 101
+    mouseButton: -1
+    controllerButton: 352
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  runInput:
+    keyboardKey: 304
+    mouseButton: -1
+    controllerButton: 351
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 303
+  crouchInput:
+    keyboardKey: 306
+    mouseButton: -1
+    controllerButton: 358
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 99
+  dodgeInput:
+    keyboardKey: 32
+    mouseButton: -1
+    controllerButton: 359
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  toolSelectionInputs:
+  - keyboardKey: 49
+    mouseButton: -1
+    controllerButton: 0
+    controllerAxisName: DPadHorizontal
+    axisThreshold: 0.5
+    alternativeKey: 0
+  - keyboardKey: 50
+    mouseButton: -1
+    controllerButton: 0
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  - keyboardKey: 51
+    mouseButton: -1
+    controllerButton: 0
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  - keyboardKey: 52
+    mouseButton: -1
+    controllerButton: 0
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  - keyboardKey: 53
+    mouseButton: -1
+    controllerButton: 0
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  - keyboardKey: 54
+    mouseButton: -1
+    controllerButton: 0
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  - keyboardKey: 55
+    mouseButton: -1
+    controllerButton: 0
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  - keyboardKey: 56
+    mouseButton: -1
+    controllerButton: 0
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  menuInput:
+    keyboardKey: 27
+    mouseButton: -1
+    controllerButton: 357
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  inventoryInput:
+    keyboardKey: 9
+    mouseButton: -1
+    controllerButton: 356
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  mouseSensitivity: 1
+  controllerSensitivity: 1.5
+  leftStickDeadZone: 0.1
+  rightStickDeadZone: 0.1
+  triggerDeadZone: 0.1

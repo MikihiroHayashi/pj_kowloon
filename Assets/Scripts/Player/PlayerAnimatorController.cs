@@ -22,6 +22,7 @@ namespace KowloonBreak.Player
         [SerializeField] private string attackParameterName = "Attack";
         [SerializeField] private string digParameterName = "Dig";
         [SerializeField] private string speedParameterName = "Speed";
+        [SerializeField] private string dodgeParameterName = "Dodge";
         
         [Header("Speed Values")]
         [Tooltip("アニメーター速度値: 停止状態")]
@@ -40,6 +41,7 @@ namespace KowloonBreak.Player
         private int attackParameterHash;
         private int digParameterHash;
         private int speedParameterHash;
+        private int dodgeParameterHash;
         
         // パラメータ存在フラグ
         private bool hasAngleParameter;
@@ -47,6 +49,7 @@ namespace KowloonBreak.Player
         private bool hasAttackParameter;
         private bool hasDigParameter;
         private bool hasSpeedParameter;
+        private bool hasDodgeParameter;
         
         // 速度値のプロパティ
         public float IdleSpeed => idleSpeed;
@@ -161,6 +164,7 @@ namespace KowloonBreak.Player
             attackParameterHash = Animator.StringToHash(attackParameterName);
             digParameterHash = Animator.StringToHash(digParameterName);
             speedParameterHash = Animator.StringToHash(speedParameterName);
+            dodgeParameterHash = Animator.StringToHash(dodgeParameterName);
             
             // パラメータの存在チェック
             hasAngleParameter = HasParameter(angleParameterName);
@@ -168,6 +172,7 @@ namespace KowloonBreak.Player
             hasAttackParameter = HasParameter(attackParameterName);
             hasDigParameter = HasParameter(digParameterName);
             hasSpeedParameter = HasParameter(speedParameterName);
+            hasDodgeParameter = HasParameter(dodgeParameterName);
             
             // 存在しないパラメータをログ出力
             if (!hasAngleParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{angleParameterName}' not found in Animator");
@@ -175,6 +180,7 @@ namespace KowloonBreak.Player
             if (!hasAttackParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{attackParameterName}' not found in Animator");
             if (!hasDigParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{digParameterName}' not found in Animator");
             if (!hasSpeedParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{speedParameterName}' not found in Animator");
+            if (!hasDodgeParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{dodgeParameterName}' not found in Animator");
             
             // 利用可能なパラメータを一覧表示
             LogAvailableParameters();
@@ -359,6 +365,25 @@ namespace KowloonBreak.Player
             else
             {
                 Debug.LogWarning($"[PlayerAnimatorController] Cannot trigger Death - Parameter '{deathParameterName}' not found in Animator");
+            }
+        }
+
+        /// <summary>
+        /// Dodgeアニメーションを再生
+        /// </summary>
+        public void TriggerDodge()
+        {
+            if (animator != null && hasDodgeParameter)
+            {
+                animator.SetTrigger(dodgeParameterHash);
+            }
+            else if (animator == null)
+            {
+                Debug.LogWarning("[PlayerAnimatorController] Cannot trigger Dodge - Animator is null");
+            }
+            else
+            {
+                Debug.LogWarning($"[PlayerAnimatorController] Cannot trigger Dodge - Parameter '{dodgeParameterName}' not found in Animator");
             }
         }
         

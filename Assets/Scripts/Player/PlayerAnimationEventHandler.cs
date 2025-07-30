@@ -84,6 +84,26 @@ namespace KowloonBreak.Player
         }
         
         /// <summary>
+        /// ダッジの無敵時間開始（アニメーションイベントから呼ばれる）
+        /// </summary>
+        public void StartDodgeInvincibility()
+        {
+            if (playerController == null) return;
+            
+            playerController.SetInvincible(true);
+        }
+        
+        /// <summary>
+        /// ダッジの無敵時間終了（アニメーションイベントから呼ばれる）
+        /// </summary>
+        public void EndDodgeInvincibility()
+        {
+            if (playerController == null) return;
+            
+            playerController.SetInvincible(false);
+        }
+
+        /// <summary>
         /// カスタムアニメーションイベント（汎用）
         /// </summary>
         /// <param name="eventName">イベント名</param>

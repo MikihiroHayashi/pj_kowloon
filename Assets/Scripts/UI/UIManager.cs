@@ -47,6 +47,10 @@ namespace KowloonBreak.UI
         [SerializeField] private Transform notificationContainer;
         [SerializeField] private float notificationDuration = 3f;
 
+        [Header("Damage Display")]
+        [SerializeField] private GameObject damageTextPrefab;
+        [SerializeField] private Transform damageContainer;
+
         private Dictionary<string, GameObject> activePanels;
         private List<GameObject> activeNotifications;
         private GameManager gameManager;
@@ -555,6 +559,69 @@ namespace KowloonBreak.UI
             
             // クリーンアップ
             Destroy(flashEffect);
+        }
+
+        /// <summary>
+        /// ワールド座標にダメージテキストを表示
+        /// </summary>
+        /// <param name="worldPosition">ワールド座標</param>
+        /// <param name="damage">ダメージ量</param>
+        /// <param name="isCritical">クリティカルダメージかどうか</param>
+        public void ShowDamageText(Vector3 worldPosition, float damage, bool isCritical = false)
+        {
+            if (damageTextPrefab == null || damageContainer == null)
+                return;
+
+            UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
+            if (mainCamera == null)
+                return;
+
+            // World座標をScreen座標に変換
+            Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPosition);
+            
+            // 画面外の場合は表示しない
+            if (screenPos.z < 0 || screenPos.x < 0 || screenPos.x > Screen.width || 
+                screenPos.y < 0 || screenPos.y > Screen.height)
+                return;
+
+            // ダメージテキストオブジェクトを生成
+            GameObject damageObj = Instantiate(damageTextPrefab, damageContainer);
+            RectTransform rectTransform = damageObj.GetComponent<RectTransform>();
+
+            if (rectTransform != null)
+            {
+                RectTransform containerRect = damageContainer.GetComponent<RectTransform>();
+                if (containerRect != null)
+                {
+                    // CanvasのRender ModeがScreen Space - Overlayの場合
+                    Canvas canvas = damageContainer.GetComponentInParent<Canvas>();
+                    UnityEngine.Camera canvasCamera = canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera ? canvas.worldCamera : null;
+                    
+                    // Screen座標をCanvas座標に変換
+                    Vector2 canvasPos;
+                    bool success = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                        containerRect,
+                        screenPos,
+                        canvasCamera,
+                        out canvasPos);
+
+                    if (success)
+                    {
+                        rectTransform.localPosition = canvasPos;
+                    }
+                    else
+                    {
+                        rectTransform.localPosition = Vector3.zero;
+                    }
+                }
+            }
+
+            // DamageTextコンポーネントを初期化
+            DamageText damageComponent = damageObj.GetComponent<DamageText>();
+            if (damageComponent != null)
+            {
+                damageComponent.Initialize(damage, isCritical);
+            }
         }
 
         public void UpdateUI()

@@ -1,11 +1,19 @@
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 using KowloonBreak.Core;
 using KowloonBreak.Environment;
 using KowloonBreak.Player;
 
 namespace KowloonBreak.Enemies
 {
+    public enum EnemyState
+    {
+        Patrol,    // パトロール（待機含む）
+        Chase,     // 追跡
+        Return     // 復帰
+    }
+    
     public class EnemyBase : MonoBehaviour, IDestructible
     {
         // 視覚状態の色定数
@@ -14,7 +22,6 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected float maxHealth = 100f;
         [SerializeField] protected float currentHealth;
         [SerializeField] protected float attackDamage = 10f;
-        [SerializeField] protected float moveSpeed = 3f;
         [SerializeField] protected float attackRange = 2f;
         [SerializeField] protected float detectionRange = 10f;
         [SerializeField] protected float attackCooldown = 2f;
@@ -25,6 +32,9 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected bool useLineOfSight = true; // 視線チェックを使用するか
 
 
+        [Header("Base Movement")]
+        [SerializeField] protected float moveSpeed = 3f;  // ベース移動速度
+        
         [Header("Stealth Detection")]
         [SerializeField] protected float crouchDetectionMultiplier = 0.3f; // しゃがみ時の視覚検知範囲倍率
         [SerializeField] protected float minDetectionChance = 0.1f;
@@ -37,6 +47,16 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected float avoidanceStrength = 2f;
         [SerializeField] protected bool enableObstacleAvoidance = true;
         [SerializeField] protected bool avoidPlayer = false;
+        
+        [Header("Patrol System")]
+        [SerializeField] protected PatrolRoute patrolRoute;
+        [SerializeField] protected float lostPlayerReturnDelay = 5f;
+        [SerializeField] protected bool enablePatrol = true;
+        
+        [Header("Speed Multipliers (Base: Move Speed)")]
+        [SerializeField] protected float patrolSpeedMultiplier = 0.8f;   // パトロール時の速度倍率 (Move Speed × この値)
+        [SerializeField] protected float chaseSpeedMultiplier = 1.2f;    // 追跡時の速度倍率 (Move Speed × この値)
+        [SerializeField] protected float returnSpeedMultiplier = 1.0f;   // 復帰時の速度倍率 (Move Speed × この値)
 
         [Header("Drop Items")]
         [SerializeField] protected ItemData[] dropItems;
@@ -48,6 +68,12 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected Animator animator;
         [SerializeField] protected Collider enemyCollider;
         [SerializeField] protected Renderer modelRenderer;
+
+        [Header("HP Bar")]
+        [SerializeField] protected Slider healthBar;
+
+        [Header("Damage Display")]
+        [SerializeField] protected Transform damageDisplayPoint;
 
         protected Transform player;
         protected EnhancedPlayerController playerController;
@@ -66,6 +92,15 @@ namespace KowloonBreak.Enemies
         protected Vector3 avoidanceDirection;
         protected float lastAvoidanceUpdateTime;
         protected const float AVOIDANCE_UPDATE_INTERVAL = 0.1f;
+        
+        // パトロールシステム関連
+        protected EnemyState currentState = EnemyState.Patrol;
+        protected int currentPatrolIndex = 0;
+        protected float lastPlayerSeenTime = 0f;
+        protected float waitStartTime = 0f;
+        protected bool isWaitingAtPatrol = false;
+        protected bool isMovingForward = true;
+        protected Vector3 originalPosition;
 
         // Animation parameter names
         protected const string ANIM_SPEED = "Speed";
@@ -76,19 +111,23 @@ namespace KowloonBreak.Enemies
         public Transform Player => player;
         public float VisionAngle => visionAngle;
         public float DetectionRange => detectionRange;
+        public EnemyState CurrentState => currentState;
+        public PatrolRoute PatrolRoute => patrolRoute;
+        public int CurrentPatrolIndex => currentPatrolIndex;
+        
+        // 速度関連プロパティ
+        public float BaseMoveSpeed => moveSpeed;
+        public float PatrolSpeedMultiplier => patrolSpeedMultiplier;
+        public float ChaseSpeedMultiplier => chaseSpeedMultiplier;
+        public float ReturnSpeedMultiplier => returnSpeedMultiplier;
 
         protected virtual void Awake()
         {
             currentHealth = maxHealth;
 
-            // NavMeshAgentの設定
+            // NavMeshAgentの取得（設定はStartで行う）
             if (navAgent == null)
                 navAgent = GetComponent<NavMeshAgent>();
-
-            if (navAgent != null)
-            {
-                SetupNavMeshAgent();
-            }
 
             // Animatorの取得
             if (animator == null)
@@ -101,11 +140,33 @@ namespace KowloonBreak.Enemies
             // Model Rendererの取得（子オブジェクトから検索）
             if (modelRenderer == null)
                 modelRenderer = GetComponentInChildren<Renderer>();
+
+            // HPバーの初期化
+            InitializeHealthBar();
         }
 
         protected virtual void Start()
         {
             FindPlayer();
+            
+            // NavMeshAgentの設定（継承先でのパラメータ設定後に実行）
+            if (navAgent != null)
+            {
+                SetupNavMeshAgent();
+            }
+            
+            InitializePatrol();
+        }
+        
+        protected virtual void InitializePatrol()
+        {
+            originalPosition = transform.position;
+            
+            if (patrolRoute != null && patrolRoute.IsValidRoute())
+            {
+                // 最も近いパトロールポイントから開始
+                currentPatrolIndex = patrolRoute.GetNearestPointIndex(transform.position);
+            }
         }
 
         protected virtual void FindPlayer()
@@ -138,47 +199,142 @@ namespace KowloonBreak.Enemies
             if (isDead || player == null) return;
 
             bool canDetectPlayer = UpdatePlayerDetection();
-
-            // デバッグ情報（必要に応じてコメントアウト）
-            if (Time.frameCount % 60 == 0) // 1秒間隔でログ出力
-            {
-                LogDetectionStatus();
-            }
-
-            if (canDetectPlayer)
-            {
-                float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-                // 攻撃デバッグ情報
-                if (Time.frameCount % 30 == 0) // 0.5秒間隔
-                {
-                    LogAttackStatus(distanceToPlayer);
-                }
-
-                // Colliderサイズを考慮した攻撃範囲判定
-                float effectiveAttackRange = GetEffectiveAttackRange();
-
-                if (distanceToPlayer <= effectiveAttackRange)
-                {
-                    StopMoving();
-                    TryAttack();
-                }
-                else
-                {
-                    MoveToPlayer();
-                }
-            }
-            else
-            {
-                StopMoving();
-            }
-
+            
+            // 統合された移動システム
+            UpdateMovement(canDetectPlayer);
+            
             UpdateAnimations();
             CheckNavMeshAgentStatus();
+            UpdateHealthBar();
+        }
+        
+        /// <summary>
+        /// 統合された移動制御システム
+        /// </summary>
+        protected virtual void UpdateMovement(bool canSeePlayer)
+        {
+            switch (currentState)
+            {
+                case EnemyState.Patrol:
+                    if (canSeePlayer)
+                    {
+                        ChangeState(EnemyState.Chase);
+                    }
+                    else
+                    {
+                        UpdatePatrol();
+                    }
+                    break;
+                    
+                case EnemyState.Chase:
+                    if (canSeePlayer)
+                    {
+                        lastPlayerSeenTime = Time.time;
+                        UpdateChase();
+                    }
+                    else if (Time.time - lastPlayerSeenTime > lostPlayerReturnDelay)
+                    {
+                        ChangeState(EnemyState.Return);
+                    }
+                    else
+                    {
+                        // プレイヤーを見失ったが、まだ記憶している間は最後の位置を探索
+                        UpdateChase();
+                    }
+                    break;
+                    
+                case EnemyState.Return:
+                    UpdateReturn();
+                    break;
+            }
+        }
+        
+        /// <summary>
+        /// 状態変更処理
+        /// </summary>
+        protected virtual void ChangeState(EnemyState newState)
+        {
+            if (currentState == newState) return;
+            
+            EnemyState previousState = currentState;
+            currentState = newState;
+            
+            OnStateChanged(previousState, newState);
+        }
+        
+        /// <summary>
+        /// 状態変更時の処理
+        /// </summary>
+        protected virtual void OnStateChanged(EnemyState from, EnemyState to)
+        {
+            switch (to)
+            {
+                case EnemyState.Patrol:
+                    // パトロール復帰時の処理
+                    float patrolSpeed = GetPatrolSpeed();
+                    SetMovementSpeed(patrolSpeed);
+                    Debug.Log($"[{gameObject.name}] State changed to Patrol. Speed: {patrolSpeed} (Move Speed: {moveSpeed} × {patrolSpeedMultiplier})");
+                    break;
+                    
+                case EnemyState.Chase:
+                    // 追跡開始時の処理
+                    lastPlayerSeenTime = Time.time;
+                    float chaseSpeed = GetChaseSpeed();
+                    SetMovementSpeed(chaseSpeed);
+                    Debug.Log($"[{gameObject.name}] State changed to Chase. Speed: {chaseSpeed} (Move Speed: {moveSpeed} × {chaseSpeedMultiplier})");
+                    break;
+                    
+                case EnemyState.Return:
+                    // 復帰開始時の処理
+                    float returnSpeed = GetReturnSpeed();
+                    SetMovementSpeed(returnSpeed);
+                    Debug.Log($"[{gameObject.name}] State changed to Return. Speed: {returnSpeed} (Move Speed: {moveSpeed} × {returnSpeedMultiplier})");
+                    break;
+            }
+        }
+        
+        /// <summary>
+        /// パトロール時の移動速度を取得 (Move Speed × Patrol Multiplier)
+        /// </summary>
+        protected virtual float GetPatrolSpeed()
+        {
+            // PatrolRouteに設定された速度を優先し、なければMove Speedに倍率適用
+            return patrolRoute != null && patrolRoute.patrolSpeed > 0 
+                ? patrolRoute.patrolSpeed 
+                : moveSpeed * patrolSpeedMultiplier;
+        }
+        
+        /// <summary>
+        /// 追跡時の移動速度を取得 (Move Speed × Chase Multiplier)
+        /// </summary>
+        protected virtual float GetChaseSpeed()
+        {
+            return moveSpeed * chaseSpeedMultiplier;
+        }
+        
+        /// <summary>
+        /// 復帰時の移動速度を取得 (Move Speed × Return Multiplier)
+        /// </summary>
+        protected virtual float GetReturnSpeed()
+        {
+            return moveSpeed * returnSpeedMultiplier;
+        }
+        
+        /// <summary>
+        /// NavMeshAgentの移動速度を設定
+        /// </summary>
+        protected virtual void SetMovementSpeed(float speed)
+        {
+            if (navAgent != null && navAgent.isActiveAndEnabled)
+            {
+                navAgent.speed = speed;
+                // 加速度も速度に比例して調整
+                navAgent.acceleration = speed * 2f;
+            }
         }
 
         /// <summary>
-        /// プレイヤー検知システムのメイン更新メソッド（修正版）
+        /// プレイヤー検知システムのメイン更新メソッド（統合版）
         /// </summary>
         protected virtual bool UpdatePlayerDetection()
         {
@@ -194,7 +350,6 @@ namespace KowloonBreak.Enemies
                 {
                     // まだ検知できる場合は記憶時間を更新
                     playerDetectionTime = currentTime;
-                    Debug.Log($"[{gameObject.name}] 継続検知中");
                 }
                 else
                 {
@@ -202,11 +357,6 @@ namespace KowloonBreak.Enemies
                     if (currentTime - playerDetectionTime > detectionMemoryDuration)
                     {
                         playerDetected = false;
-                        Debug.Log($"[{gameObject.name}] 記憶期間経過で追跡停止");
-                    }
-                    else
-                    {
-                        Debug.Log($"[{gameObject.name}] 見失い中（記憶残り: {detectionMemoryDuration - (currentTime - playerDetectionTime):F1}秒）");
                     }
                 }
             }
@@ -217,19 +367,128 @@ namespace KowloonBreak.Enemies
                 {
                     playerDetected = true;
                     playerDetectionTime = currentTime;
-                    Debug.Log($"[{gameObject.name}] プレイヤーを発見！");
                 }
             }
 
             return playerDetected;
         }
 
-        protected virtual void MoveToPlayer()
+        /// <summary>
+        /// パトロール更新処理
+        /// </summary>
+        protected virtual void UpdatePatrol()
+        {
+            if (!enablePatrol || patrolRoute == null || !patrolRoute.IsValidRoute())
+            {
+                StopMoving();
+                return;
+            }
+            
+            var currentPoint = patrolRoute.GetPoint(currentPatrolIndex);
+            if (currentPoint.transform == null) return;
+            
+            float distance = Vector3.Distance(transform.position, currentPoint.transform.position);
+            
+            if (distance < 1f && !isWaitingAtPatrol)
+            {
+                // パトロールポイントに到着
+                isWaitingAtPatrol = true;
+                waitStartTime = Time.time;
+                StopMoving();
+                
+                // 到着時の処理（向きを変える等）
+                OnPatrolPointReached(currentPatrolIndex);
+            }
+            else if (isWaitingAtPatrol)
+            {
+                // 待機中
+                if (Time.time - waitStartTime >= currentPoint.waitTime)
+                {
+                    MoveToNextPatrolPoint();
+                }
+            }
+            else
+            {
+                // パトロールポイントに向かって移動
+                MoveToTarget(currentPoint.transform.position);
+            }
+        }
+        
+        /// <summary>
+        /// 追跡更新処理
+        /// </summary>
+        protected virtual void UpdateChase()
+        {
+            if (player == null) return;
+            
+            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+            float effectiveAttackRange = GetEffectiveAttackRange();
+            
+            if (distanceToPlayer <= effectiveAttackRange)
+            {
+                StopMoving();
+                TryAttack();
+            }
+            else
+            {
+                MoveToTarget(player.position);
+            }
+        }
+        
+        /// <summary>
+        /// 復帰更新処理
+        /// </summary>
+        protected virtual void UpdateReturn()
+        {
+            Vector3 targetPosition;
+            
+            if (patrolRoute != null && patrolRoute.IsValidRoute())
+            {
+                // パトロールルートがある場合は最も近いポイントに復帰
+                int nearestIndex = patrolRoute.GetNearestPointIndex(transform.position);
+                var nearestPoint = patrolRoute.GetPoint(nearestIndex);
+                
+                if (nearestPoint.transform != null)
+                {
+                    targetPosition = nearestPoint.transform.position;
+                    
+                    // 復帰完了判定
+                    if (Vector3.Distance(transform.position, targetPosition) < 1.5f)
+                    {
+                        currentPatrolIndex = nearestIndex;
+                        isWaitingAtPatrol = false;
+                        ChangeState(EnemyState.Patrol);
+                        return;
+                    }
+                }
+                else
+                {
+                    targetPosition = originalPosition;
+                }
+            }
+            else
+            {
+                // パトロールルートがない場合は元の位置に復帰
+                targetPosition = originalPosition;
+                
+                // 復帰完了判定
+                if (Vector3.Distance(transform.position, targetPosition) < 1.5f)
+                {
+                    ChangeState(EnemyState.Patrol);
+                    return;
+                }
+            }
+            
+            MoveToTarget(targetPosition);
+        }
+        
+        /// <summary>
+        /// 統一された移動メソッド（旧MoveToPlayerを拡張）
+        /// </summary>
+        protected virtual void MoveToTarget(Vector3 targetPosition)
         {
             if (navAgent != null && navAgent.isActiveAndEnabled)
             {
-                Vector3 targetPosition = player.position;
-
                 // 障害物回避が有効な場合
                 if (enableObstacleAvoidance)
                 {
@@ -237,20 +496,33 @@ namespace KowloonBreak.Enemies
                 }
 
                 navAgent.SetDestination(targetPosition);
-
-                // デバッグ情報
-                if (Time.frameCount % 60 == 0)
-                {
-                    Debug.Log($"[{gameObject.name}] プレイヤーに向かって移動中: " +
-                             $"目標={targetPosition}, " +
-                             $"NavMesh状態={navAgent.pathStatus}, " +
-                             $"速度={navAgent.velocity.magnitude:F1}");
-                }
             }
-            else
+        }
+        
+        /// <summary>
+        /// 次のパトロールポイントに移動
+        /// </summary>
+        protected virtual void MoveToNextPatrolPoint()
+        {
+            if (patrolRoute == null || !patrolRoute.IsValidRoute()) return;
+            
+            // 方向転換が必要かチェック
+            if (patrolRoute.ShouldChangeDirection(currentPatrolIndex, isMovingForward))
             {
-                Debug.LogWarning($"[{gameObject.name}] NavMeshAgentが無効です！");
+                isMovingForward = !isMovingForward;
             }
+            
+            // 次のインデックスを取得
+            currentPatrolIndex = patrolRoute.GetNextIndex(currentPatrolIndex, isMovingForward);
+            isWaitingAtPatrol = false;
+        }
+        
+        /// <summary>
+        /// パトロールポイント到着時の処理
+        /// </summary>
+        protected virtual void OnPatrolPointReached(int pointIndex)
+        {
+            // 継承先でカスタマイズ可能
         }
 
         protected virtual void StopMoving()
@@ -260,10 +532,6 @@ namespace KowloonBreak.Enemies
                 bool hadPath = navAgent.hasPath;
                 navAgent.ResetPath();
 
-                if (hadPath && Time.frameCount % 60 == 0)
-                {
-                    Debug.Log($"[{gameObject.name}] 移動停止");
-                }
             }
         }
 
@@ -272,19 +540,11 @@ namespace KowloonBreak.Enemies
             float timeSinceLastAttack = Time.time - lastAttackTime;
             bool canAttack = timeSinceLastAttack >= attackCooldown;
 
-            // 攻撃試行のデバッグログ
-            if (Time.frameCount % 30 == 0)
-            {
-                Debug.Log($"[{gameObject.name}] TryAttack: " +
-                         $"クールダウン残り={Mathf.Max(0, attackCooldown - timeSinceLastAttack):F1}秒, " +
-                         $"攻撃可能={canAttack}");
-            }
 
             if (canAttack)
             {
                 PerformAttack();
                 lastAttackTime = Time.time;
-                Debug.Log($"[{gameObject.name}] 攻撃実行！");
             }
         }
 
@@ -294,11 +554,6 @@ namespace KowloonBreak.Enemies
             if (animator != null)
             {
                 animator.SetTrigger(ANIM_ATTACK);
-                Debug.Log($"[{gameObject.name}] 攻撃アニメーション再生: {ANIM_ATTACK}");
-            }
-            else
-            {
-                Debug.LogWarning($"[{gameObject.name}] Animatorが見つかりません！攻撃アニメーションを再生できません");
             }
         }
 
@@ -365,8 +620,8 @@ namespace KowloonBreak.Enemies
                 NotifyPlayerAttack(player.position);
             }
 
-            // ステルス攻撃の判定
-            bool isStealthAttack = IsStealthAttack() && wasUndetected;
+            // ステルス攻撃の判定（プレイヤーが発見されていない場合）
+            bool isStealthAttack = wasUndetected;
             float finalDamage = damage;
 
             if (isStealthAttack)
@@ -380,6 +635,12 @@ namespace KowloonBreak.Enemies
             }
 
             currentHealth -= finalDamage;
+
+            // HPバーを更新
+            UpdateHealthBar();
+
+            // ダメージテキストを表示
+            ShowDamageText(finalDamage, isStealthAttack);
 
             // ダメージエフェクトを開始
             if (modelRenderer != null && modelRenderer.material != null)
@@ -528,6 +789,94 @@ namespace KowloonBreak.Enemies
         {
             Destroy(gameObject);
         }
+        
+        /// <summary>
+        /// パトロールルートを設定
+        /// </summary>
+        public virtual void SetPatrolRoute(PatrolRoute route)
+        {
+            patrolRoute = route;
+            InitializePatrol();
+        }
+        
+        /// <summary>
+        /// パトロールを有効/無効にする
+        /// </summary>
+        public virtual void SetPatrolEnabled(bool enabled)
+        {
+            enablePatrol = enabled;
+            
+            if (!enabled && currentState == EnemyState.Patrol)
+            {
+                StopMoving();
+            }
+        }
+        
+        /// <summary>
+        /// 強制的にパトロール状態に戻す
+        /// </summary>
+        public virtual void ForceReturnToPatrol()
+        {
+            ChangeState(EnemyState.Return);
+        }
+        
+        /// <summary>
+        /// 追跡時の速度倍率を設定
+        /// </summary>
+        public virtual void SetChaseSpeedMultiplier(float multiplier)
+        {
+            chaseSpeedMultiplier = multiplier;
+            
+            // 現在追跡中の場合は即座に速度を更新
+            if (currentState == EnemyState.Chase)
+            {
+                SetMovementSpeed(GetChaseSpeed());
+            }
+        }
+        
+        /// <summary>
+        /// パトロール時の速度倍率を設定
+        /// </summary>
+        public virtual void SetPatrolSpeedMultiplier(float multiplier)
+        {
+            patrolSpeedMultiplier = multiplier;
+            
+            // 現在パトロール中の場合は即座に速度を更新
+            if (currentState == EnemyState.Patrol)
+            {
+                SetMovementSpeed(GetPatrolSpeed());
+            }
+        }
+        
+        /// <summary>
+        /// 復帰時の速度倍率を設定
+        /// </summary>
+        public virtual void SetReturnSpeedMultiplier(float multiplier)
+        {
+            returnSpeedMultiplier = multiplier;
+            
+            // 現在復帰中の場合は即座に速度を更新
+            if (currentState == EnemyState.Return)
+            {
+                SetMovementSpeed(GetReturnSpeed());
+            }
+        }
+        
+        /// <summary>
+        /// 現在の移動速度を取得
+        /// </summary>
+        public virtual float GetCurrentMovementSpeed()
+        {
+            return navAgent != null ? navAgent.speed : 0f;
+        }
+        
+        /// <summary>
+        /// 各状態の速度設定値を取得
+        /// </summary>
+        public virtual (float patrol, float chase, float returnSpeed) GetSpeedSettings()
+        {
+            return (GetPatrolSpeed(), GetChaseSpeed(), GetReturnSpeed());
+        }
 
         protected virtual void DropItems()
         {
@@ -619,14 +968,15 @@ namespace KowloonBreak.Enemies
         /// </summary>
         protected virtual void SetupNavMeshAgent()
         {
-            navAgent.speed = moveSpeed;
-            navAgent.acceleration = moveSpeed * 2f; // 素早い方向転換
+            float initialSpeed = GetPatrolSpeed();
+            SetMovementSpeed(initialSpeed); // 初期状態はパトロール速度
             navAgent.angularSpeed = 180f; // 回転速度
             navAgent.stoppingDistance = attackRange * 0.5f; // 攻撃範囲の半分で停止（より近くで止まる）
             navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.MedQualityObstacleAvoidance;
             navAgent.avoidancePriority = 50; // 中程度の優先度
             navAgent.radius = avoidanceRadius * 0.5f; // エージェントの半径
-
+            
+            Debug.Log($"[{gameObject.name}] NavMeshAgent setup completed. Initial patrol speed: {initialSpeed} (Move Speed: {moveSpeed}, patrol: ×{patrolSpeedMultiplier}, chase: ×{chaseSpeedMultiplier})");
         }
 
         /// <summary>
@@ -931,7 +1281,6 @@ namespace KowloonBreak.Enemies
                 {
                     if (!IsPlayer(hit.collider.gameObject))
                     {
-                        Debug.Log($"[{gameObject.name}] 視線が{hit.collider.name}に遮られている");
                         return false;
                     }
                 }
@@ -965,56 +1314,92 @@ namespace KowloonBreak.Enemies
 
                 lastDetectionResult = Random.Range(0f, 1f) < detectionChance;
                 lastDetectionCheck = Time.time;
-
-                Debug.Log($"[{gameObject.name}] しゃがみ検知判定: 確率={detectionChance:F2}, 結果={lastDetectionResult}");
             }
 
             return lastDetectionResult;
         }
 
+
+
+        #endregion
+
+        #region Health Bar Management
+
         /// <summary>
-        /// デバッグ情報の表示
+        /// HPバーの初期化
         /// </summary>
-        protected virtual void LogDetectionStatus()
+        protected virtual void InitializeHealthBar()
         {
-            if (player == null) return;
-
-            bool isCrouching = playerController != null && playerController.IsCrouching;
-            bool isMoving = playerController != null && playerController.IsMoving;
-            bool isRunning = playerController != null && playerController.IsRunning;
-            float distance = Vector3.Distance(transform.position, player.position);
-
-            string playerState = isRunning ? "走行" : isMoving ? "歩行" : isCrouching ? "しゃがみ" : "待機";
-
-            Vector3 eyePosition = transform.position + Vector3.up * 1.5f;
-            Vector3 playerPosition = player.position + Vector3.up * 1f;
-            Vector3 directionToPlayer = (playerPosition - eyePosition).normalized;
-            bool canSee = CanDetectByVision(eyePosition, playerPosition, directionToPlayer, distance, isCrouching);
-
-            Debug.Log($"[{gameObject.name}] " +
-                     $"状態: {(playerDetected ? "追跡中" : "巡回中")}, " +
-                     $"プレイヤー: {playerState}, " +
-                     $"距離: {distance:F1}m, " +
-                     $"視界内: {canSee}");
+            if (healthBar != null)
+            {
+                healthBar.maxValue = 1f;
+                healthBar.value = 1f;
+                // 初期状態ではMAXなので非表示
+                healthBar.gameObject.SetActive(false);
+            }
         }
 
         /// <summary>
-        /// 攻撃状況のデバッグ情報
+        /// HPバーの更新
         /// </summary>
-        protected virtual void LogAttackStatus(float distanceToPlayer)
+        protected virtual void UpdateHealthBar()
         {
-            float timeSinceLastAttack = Time.time - lastAttackTime;
-            float effectiveAttackRange = GetEffectiveAttackRange();
-            bool inAttackRange = distanceToPlayer <= effectiveAttackRange;
-            bool canAttack = timeSinceLastAttack >= attackCooldown;
+            if (healthBar == null) return;
 
-            Debug.Log($"[{gameObject.name}] 攻撃状況: " +
-                     $"距離={distanceToPlayer:F1}m, " +
-                     $"基本攻撃範囲={attackRange}m, " +
-                     $"有効攻撃範囲={effectiveAttackRange:F1}m, " +
-                     $"範囲内={inAttackRange}, " +
-                     $"クールダウン残り={Mathf.Max(0, attackCooldown - timeSinceLastAttack):F1}秒, " +
-                     $"攻撃可能={canAttack}");
+            float healthPercentage = currentHealth / maxHealth;
+
+            // HPがMAXの場合は非表示、それ以外は表示
+            if (healthPercentage >= 1f)
+            {
+                healthBar.gameObject.SetActive(false);
+            }
+            else
+            {
+                healthBar.gameObject.SetActive(true);
+                healthBar.value = healthPercentage;
+
+                // HPに応じてバーの色を変更
+                UpdateHealthBarColor(healthPercentage);
+            }
+        }
+
+        /// <summary>
+        /// HPバーの色を更新
+        /// </summary>
+        protected virtual void UpdateHealthBarColor(float healthPercentage)
+        {
+            if (healthBar == null) return;
+
+            var fillArea = healthBar.fillRect?.GetComponent<Image>();
+            if (fillArea == null) return;
+
+            Color barColor = healthPercentage switch
+            {
+                <= 0.2f => Color.red,        // 20%以下：赤
+                <= 0.5f => new Color(1f, 0.5f, 0f), // 50%以下：オレンジ
+                <= 0.8f => Color.yellow,     // 80%以下：黄色
+                _ => Color.green             // 80%以上：緑
+            };
+
+            fillArea.color = barColor;
+        }
+
+        /// <summary>
+        /// ダメージテキストを表示
+        /// </summary>
+        /// <param name="damage">ダメージ量</param>
+        /// <param name="isCritical">クリティカルダメージかどうか</param>
+        protected virtual void ShowDamageText(float damage, bool isCritical = false)
+        {
+            if (UI.UIManager.Instance != null)
+            {
+                // ダメージ表示位置を決定（専用オブジェクトがあればそれを使用、なければデフォルト位置）
+                Vector3 damagePosition = damageDisplayPoint != null 
+                    ? damageDisplayPoint.position 
+                    : transform.position + Vector3.up * 1.5f;
+                    
+                UI.UIManager.Instance.ShowDamageText(damagePosition, damage, isCritical);
+            }
         }
 
         #endregion
@@ -1097,6 +1482,16 @@ namespace KowloonBreak.Enemies
             Vector3 eyePosition = transform.position + Vector3.up * 1.5f;
             Vector3 forward = transform.forward;
 
+            // 現在の状態を色で表示
+            Gizmos.color = currentState switch
+            {
+                EnemyState.Patrol => Color.green,
+                EnemyState.Chase => Color.red,
+                EnemyState.Return => Color.yellow,
+                _ => Color.white
+            };
+            Gizmos.DrawWireCube(transform.position + Vector3.up * 3f, Vector3.one * 0.5f);
+
             // 移動感知範囲円（緑色）
             Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, detectionRange);
@@ -1129,16 +1524,6 @@ namespace KowloonBreak.Enemies
                 float angle = Mathf.Lerp(-halfAngle, halfAngle, (float)i / 9f);
                 Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
                 Gizmos.DrawRay(eyePosition, direction * detectionRange);
-            }
-
-            // しゃがみ時の視覚検知コーン（縮小範囲）
-            Gizmos.color = new Color(0f, 0f, 1f, 0.5f);
-            float crouchRange = detectionRange * crouchDetectionMultiplier;
-            for (int i = 0; i < 8; i++)
-            {
-                float angle = Mathf.Lerp(-halfAngle, halfAngle, (float)i / 7f);
-                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
-                Gizmos.DrawRay(eyePosition, direction * crouchRange);
             }
 
             // プレイヤーへの視線
@@ -1175,23 +1560,16 @@ namespace KowloonBreak.Enemies
                 }
             }
 
-            // 障害物回避範囲
-            if (enableObstacleAvoidance)
+            // 現在のパトロールポイントを強調表示
+            if (patrolRoute != null && patrolRoute.IsValidRoute())
             {
-                Gizmos.color = Color.cyan;
-                Vector3 checkPosition = transform.position + forward * obstacleDetectionRange;
-                Gizmos.DrawWireSphere(checkPosition, avoidanceRadius);
-
-                // 回避方向を表示
-                if (avoidanceDirection != Vector3.zero)
+                var currentPoint = patrolRoute.GetPoint(currentPatrolIndex);
+                if (currentPoint != null && currentPoint.transform != null)
                 {
-                    Gizmos.color = Color.magenta;
-                    Gizmos.DrawRay(transform.position, avoidanceDirection * avoidanceStrength);
+                    Gizmos.color = Color.cyan;
+                    Gizmos.DrawWireSphere(currentPoint.transform.position, 1f);
+                    Gizmos.DrawLine(transform.position, currentPoint.transform.position);
                 }
-
-                // 前方検知線
-                Gizmos.color = Color.blue;
-                Gizmos.DrawRay(transform.position, forward * obstacleDetectionRange);
             }
         }
 
