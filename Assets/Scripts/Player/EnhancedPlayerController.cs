@@ -105,6 +105,7 @@ namespace KowloonBreak.Player
         private InfectionStatus playerInfection;
         private EnhancedResourceManager resourceManager;
         private ToolSelectionHUDController toolSelectionHUD;
+        private MiningSystem miningSystem;
 
         private Vector3 moveDirection;
         private Vector3 velocity;
@@ -986,6 +987,7 @@ namespace KowloonBreak.Player
         {
             resourceManager = EnhancedResourceManager.Instance;
             toolSelectionHUD = FindObjectOfType<ToolSelectionHUDController>();
+            miningSystem = GetComponent<MiningSystem>();
 
             if (toolSelectionHUD != null)
             {
@@ -1113,7 +1115,6 @@ namespace KowloonBreak.Player
 
         private void TryUseTool()
         {
-
             if (isUsingTool)
             {
                 return;
@@ -1131,35 +1132,10 @@ namespace KowloonBreak.Player
                 return;
             }
 
-
             var selectedTool = resourceManager.GetToolSlot(selectedToolIndex);
-            if (selectedTool == null)
+            if (selectedTool == null || selectedTool.IsEmpty)
             {
-                Debug.LogError($"[EnhancedPlayerController] Tool slot {selectedToolIndex} is null!");
-
-                // 利用可能なツールスロットを確認
-                for (int i = 0; i < 8; i++)
-                {
-                    var slot = resourceManager.GetToolSlot(i);
-                    if (slot != null && !slot.IsEmpty)
-                    {
-                    }
-                }
-                return;
-            }
-
-            if (selectedTool.IsEmpty)
-            {
-                Debug.LogWarning("[EnhancedPlayerController] Selected tool slot is empty!");
-
-                // 利用可能なツールスロットを確認
-                for (int i = 0; i < 8; i++)
-                {
-                    var slot = resourceManager.GetToolSlot(i);
-                    if (slot != null && !slot.IsEmpty)
-                    {
-                    }
-                }
+                Debug.LogWarning("[EnhancedPlayerController] No tool selected or slot is empty!");
                 return;
             }
 
@@ -1168,12 +1144,31 @@ namespace KowloonBreak.Player
                 return;
             }
 
-
             isUsingTool = true;
             lastToolUsageTime = Time.time;
 
-            // 道具の種類に応じた処理開始
-            StartToolUsage(selectedTool);
+            // 採掘系ツール（つるはし、鉄パイプ）の場合はMiningSystemを使用
+            if (miningSystem != null && IsMiningTool(selectedTool))
+            {
+                bool miningSuccess = miningSystem.TryMineWithCurrentTool();
+                if (!miningSuccess)
+                {
+                    // 採掘に失敗した場合は通常のツール使用処理にフォールバック
+                    StartToolUsage(selectedTool);
+                }
+            }
+            else
+            {
+                // 通常のツール使用処理
+                StartToolUsage(selectedTool);
+            }
+        }
+        
+        private bool IsMiningTool(InventorySlot toolSlot)
+        {
+            if (toolSlot?.ItemData == null) return false;
+            return toolSlot.ItemData.toolType == ToolType.Pickaxe || 
+                   toolSlot.ItemData.toolType == ToolType.IronPipe;
         }
 
         /// <summary>

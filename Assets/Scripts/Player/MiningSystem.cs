@@ -12,7 +12,6 @@ namespace KowloonBreak.Player
         [SerializeField] private float miningRange = 3f;
         [SerializeField] private Vector3 miningBoxSize = new Vector3(2f, 2f, 3f);
         [SerializeField] private LayerMask mineableLayerMask = -1;
-        [SerializeField] private KeyCode miningKey = KeyCode.E;
         
         [Header("Visual Feedback")]
         [SerializeField] private bool showDebugBox = true;
@@ -23,6 +22,34 @@ namespace KowloonBreak.Player
         
         public System.Action<IDestructible, ToolType> OnMiningAttempt;
         public System.Action<IDestructible, ToolType> OnMiningSuccess;
+        
+        // パブリックAPI: EnhancedPlayerControllerから呼び出し用
+        public bool TryMineWithCurrentTool()
+        {
+            var currentTool = GetCurrentTool();
+            if (currentTool == null || currentTool.IsEmpty)
+            {
+                return false;
+            }
+            
+            if (!IsToolSuitableForMining(currentTool))
+            {
+                return false;
+            }
+            
+            var targets = FindMineableTargets();
+            if (targets.Length > 0)
+            {
+                var closestTarget = FindClosestTarget(targets);
+                if (closestTarget != null)
+                {
+                    AttemptMining(closestTarget, currentTool);
+                    return true;
+                }
+            }
+            
+            return false;
+        }
         
         private void Awake()
         {
@@ -43,19 +70,7 @@ namespace KowloonBreak.Player
             }
         }
         
-        private void Update()
-        {
-            HandleMiningInput();
-        }
-        
-        private void HandleMiningInput()
-        {
-            // 採掘キーが押された時
-            if (Input.GetKeyDown(miningKey))
-            {
-                PerformMining();
-            }
-        }
+        // 入力処理をEnhancedPlayerControllerに移譲するため削除
         
         private void OnToolUsedFromHUD(int toolIndex, InventorySlot toolSlot)
         {
@@ -111,6 +126,14 @@ namespace KowloonBreak.Player
         
         private InventorySlot GetCurrentTool()
         {
+            // EnhancedPlayerControllerから現在のツールを取得
+            var playerController = GetComponent<EnhancedPlayerController>();
+            if (playerController != null)
+            {
+                return playerController.SelectedTool;
+            }
+            
+            // フォールバック: toolHUDから取得
             if (toolHUD != null)
             {
                 return toolHUD.GetSelectedTool();
