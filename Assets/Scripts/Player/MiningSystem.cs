@@ -43,12 +43,56 @@ namespace KowloonBreak.Player
                 var closestTarget = FindClosestTarget(targets);
                 if (closestTarget != null)
                 {
-                    AttemptMining(closestTarget, currentTool);
+                    // アニメーション用にターゲットとツールを保存（ダメージは与えない）
+                    PrepareMining(closestTarget, currentTool);
                     return true;
                 }
             }
             
             return false;
+        }
+        
+        // アニメーションイベント用の準備メソッド
+        private IDestructible pendingTarget;
+        private InventorySlot pendingTool;
+        
+        private void PrepareMining(IDestructible target, InventorySlot toolSlot)
+        {
+            pendingTarget = target;
+            pendingTool = toolSlot;
+            
+            Debug.Log($"[MiningSystem] Prepared mining: {target} with {toolSlot.ItemData.toolType}");
+            
+            // 採掘試行イベントを発火
+            OnMiningAttempt?.Invoke(target, toolSlot.ItemData.toolType);
+        }
+        
+        // アニメーションイベントから呼び出されるダメージ実行メソッド
+        public void ExecuteMiningDamage()
+        {
+            if (pendingTarget == null || pendingTool == null || pendingTool.IsEmpty)
+            {
+                Debug.LogWarning("[MiningSystem] No pending mining action to execute");
+                return;
+            }
+            
+            Debug.Log("[MiningSystem] Executing mining damage from animation event");
+            AttemptMining(pendingTarget, pendingTool);
+            
+            // クリア
+            pendingTarget = null;
+            pendingTool = null;
+        }
+        
+        // アニメーション終了時や中断時に保留状態をクリア
+        public void ClearPendingMining()
+        {
+            if (pendingTarget != null || pendingTool != null)
+            {
+                Debug.Log("[MiningSystem] Clearing pending mining action");
+                pendingTarget = null;
+                pendingTool = null;
+            }
         }
         
         private void Awake()

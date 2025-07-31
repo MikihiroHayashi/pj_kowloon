@@ -23,6 +23,7 @@ namespace KowloonBreak.Player
         [SerializeField] private string digParameterName = "Dig";
         [SerializeField] private string speedParameterName = "Speed";
         [SerializeField] private string dodgeParameterName = "Dodge";
+        [SerializeField] private string crouchParameterName = "Crouch";
         
         [Header("Speed Values")]
         [Tooltip("アニメーター速度値: 停止状態")]
@@ -42,6 +43,7 @@ namespace KowloonBreak.Player
         private int digParameterHash;
         private int speedParameterHash;
         private int dodgeParameterHash;
+        private int crouchParameterHash;
         
         // パラメータ存在フラグ
         private bool hasAngleParameter;
@@ -50,6 +52,7 @@ namespace KowloonBreak.Player
         private bool hasDigParameter;
         private bool hasSpeedParameter;
         private bool hasDodgeParameter;
+        private bool hasCrouchParameter;
         
         // 速度値のプロパティ
         public float IdleSpeed => idleSpeed;
@@ -165,6 +168,7 @@ namespace KowloonBreak.Player
             digParameterHash = Animator.StringToHash(digParameterName);
             speedParameterHash = Animator.StringToHash(speedParameterName);
             dodgeParameterHash = Animator.StringToHash(dodgeParameterName);
+            crouchParameterHash = Animator.StringToHash(crouchParameterName);
             
             // パラメータの存在チェック
             hasAngleParameter = HasParameter(angleParameterName);
@@ -173,6 +177,7 @@ namespace KowloonBreak.Player
             hasDigParameter = HasParameter(digParameterName);
             hasSpeedParameter = HasParameter(speedParameterName);
             hasDodgeParameter = HasParameter(dodgeParameterName);
+            hasCrouchParameter = HasParameter(crouchParameterName);
             
             // 存在しないパラメータをログ出力
             if (!hasAngleParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{angleParameterName}' not found in Animator");
@@ -181,6 +186,7 @@ namespace KowloonBreak.Player
             if (!hasDigParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{digParameterName}' not found in Animator");
             if (!hasSpeedParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{speedParameterName}' not found in Animator");
             if (!hasDodgeParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{dodgeParameterName}' not found in Animator");
+            if (!hasCrouchParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{crouchParameterName}' not found in Animator");
             
             // 利用可能なパラメータを一覧表示
             LogAvailableParameters();
@@ -396,6 +402,19 @@ namespace KowloonBreak.Player
             if (animator != null && hasSpeedParameter)
             {
                 animator.SetFloat(speedParameterHash, speed);
+            }
+        }
+        
+        /// <summary>
+        /// しゃがみ状態を設定
+        /// </summary>
+        /// <param name="isCrouching">しゃがみ中かどうか</param>
+        public void SetCrouch(bool isCrouching)
+        {
+            if (animator != null && hasCrouchParameter)
+            {
+                animator.SetBool(crouchParameterHash, isCrouching);
+                Debug.Log($"[PlayerAnimatorController] Set Crouch parameter to: {isCrouching}");
             }
         }
         

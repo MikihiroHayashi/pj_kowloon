@@ -813,6 +813,12 @@ namespace KowloonBreak.Player
                 characterController.center = new Vector3(0, 1f, 0);
             }
 
+            // アニメーターのCrouchパラメーターを更新
+            if (animatorController != null)
+            {
+                animatorController.SetCrouch(crouchModeEnabled);
+            }
+
             if (previousState != crouchModeEnabled)
             {
                 OnCrouchStateChanged?.Invoke(isCrouching);
@@ -1151,9 +1157,16 @@ namespace KowloonBreak.Player
             if (miningSystem != null && IsMiningTool(selectedTool))
             {
                 bool miningSuccess = miningSystem.TryMineWithCurrentTool();
-                if (!miningSuccess)
+                if (miningSuccess)
                 {
-                    // 採掘に失敗した場合は通常のツール使用処理にフォールバック
+                    // 採掘対象が見つかった場合、アニメーションを再生
+                    Debug.Log("[EnhancedPlayerController] Mining target found, playing animation");
+                    StartToolUsage(selectedTool);
+                }
+                else
+                {
+                    // 採掘対象が見つからない場合は通常のツール使用処理にフォールバック
+                    Debug.Log("[EnhancedPlayerController] No mining target found, falling back to normal tool usage");
                     StartToolUsage(selectedTool);
                 }
             }
@@ -1232,7 +1245,6 @@ namespace KowloonBreak.Player
         /// </summary>
         public void ExecuteToolUsageEffect()
         {
-
             if (currentUsedTool == null || currentUsedTool.IsEmpty)
             {
                 Debug.LogWarning("[EnhancedPlayerController] No current tool available for effect execution");
@@ -1242,22 +1254,29 @@ namespace KowloonBreak.Player
             var itemData = currentUsedTool.ItemData;
             var toolType = itemData.toolType;
 
-
-            // 道具の種類に応じて効果を実行
-
-            switch (toolType)
+            // 採掘系ツールの場合はMiningSystemを使用
+            if (miningSystem != null && IsMiningTool(currentUsedTool))
             {
-                case ToolType.Pickaxe:
-                    ExecuteDiggingEffect(currentUsedTool);
-                    break;
+                Debug.Log("[EnhancedPlayerController] Executing mining damage through MiningSystem");
+                miningSystem.ExecuteMiningDamage();
+            }
+            else
+            {
+                // 通常のツール使用効果を実行
+                switch (toolType)
+                {
+                    case ToolType.Pickaxe:
+                        ExecuteDiggingEffect(currentUsedTool);
+                        break;
 
-                case ToolType.IronPipe:
-                    ExecuteAttackEffect(currentUsedTool);
-                    break;
+                    case ToolType.IronPipe:
+                        ExecuteAttackEffect(currentUsedTool);
+                        break;
 
-                default:
-                    ExecuteAttackEffect(currentUsedTool);
-                    break;
+                    default:
+                        ExecuteAttackEffect(currentUsedTool);
+                        break;
+                }
             }
         }
 
@@ -1630,6 +1649,9 @@ namespace KowloonBreak.Player
             {
                 float normalizedSpeed = CalculateNormalizedSpeed();
                 animatorController.SetSpeed(normalizedSpeed);
+                
+                // しゃがみ状態も毎フレーム同期（安全のため）
+                animatorController.SetCrouch(crouchModeEnabled);
             }
         }
 
@@ -1671,6 +1693,12 @@ namespace KowloonBreak.Player
         {
             isUsingTool = false;
             currentUsedTool = null;
+            
+            // MiningSystemの保留状態もクリア
+            if (miningSystem != null)
+            {
+                miningSystem.ClearPendingMining();
+            }
         }
 
         /// <summary>
