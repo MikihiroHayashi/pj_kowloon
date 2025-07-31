@@ -38,7 +38,6 @@ namespace KowloonBreak.Player
         [SerializeField] private float baseStealth = 0.3f;
         [SerializeField] private float crouchStealthBonus = 0.5f;
         [SerializeField] private float movementStealthPenalty = 0.2f;
-        [SerializeField] private float flashlightStealthPenalty = 0.3f;
 
         [Header("Health System")]
         [SerializeField] private float maxHealth = 100f;
@@ -56,13 +55,8 @@ namespace KowloonBreak.Player
         [Header("Interaction System")]
         [SerializeField] private float interactionRange = 3f;
         [SerializeField] private LayerMask interactionLayers = -1;
-        [SerializeField] private KeyCode interactionKey = KeyCode.F;
-        [SerializeField] private KeyCode flashlightKey = KeyCode.T;
-        [SerializeField] private KeyCode useToolKey = KeyCode.E;
 
         [Header("Movement Input Settings")]
-        [SerializeField] private KeyCode runToggleKey = KeyCode.LeftShift;
-        [SerializeField] private KeyCode crouchToggleKey = KeyCode.LeftControl;
         [SerializeField] private bool runToggleMode = false; // false: Hold to run, true: Toggle run
         [SerializeField] private bool crouchToggleMode = true; // false: Hold to crouch, true: Toggle crouch
 
@@ -81,7 +75,6 @@ namespace KowloonBreak.Player
         [SerializeField] private Transform damageDisplayPoint;
 
         [Header("Dodge System")]
-        [SerializeField] private KeyCode dodgeKey = KeyCode.Space;
         [SerializeField] private float dodgeDistance = 4f;
         [SerializeField] private float dodgeDuration = 0.5f;
         [SerializeField] private float dodgeCooldown = 1.5f;
@@ -93,7 +86,6 @@ namespace KowloonBreak.Player
         [SerializeField] private float footstepInterval = 0.5f;
 
         [Header("Visual Effects")]
-        [SerializeField] private GameObject flashlight;
         [SerializeField] private ParticleSystem breathingParticles;
         [SerializeField] private Transform cameraShakeTarget;
         [SerializeField] private float cameraShakeIntensity = 0.1f;
@@ -122,7 +114,6 @@ namespace KowloonBreak.Player
         private bool isRunning;
         private bool isCrouching;
         private bool isGrounded;
-        private bool flashlightEnabled;
         private bool canMove = true;
 
         // 移動モード状態管理
@@ -272,22 +263,16 @@ namespace KowloonBreak.Player
 
         private void SetupInput()
         {
-            if (flashlight != null)
-            {
-                flashlight.SetActive(false);
-            }
+            // 入力設定の初期化
         }
 
         private void HandleInput()
         {
-            if (Input.GetKeyDown(interactionKey))
+            if (InputManager.Instance == null) return;
+
+            if (InputManager.Instance.IsInteractionPressed())
             {
                 TryInteract();
-            }
-
-            if (Input.GetKeyDown(flashlightKey))
-            {
-                ToggleFlashlight();
             }
 
             // 走行モード入力処理
@@ -296,17 +281,17 @@ namespace KowloonBreak.Player
             // しゃがみモード入力処理
             HandleCrouchInput();
 
-            // 道具選択 (1-8キー)
+            // 道具選択
             HandleToolSelection();
 
-            // 道具使用 (Eキー)
-            if (Input.GetKeyDown(useToolKey))
+            // 道具使用
+            if (InputManager.Instance.IsUseToolPressed())
             {
                 TryUseTool();
             }
 
             // ダッジ入力処理
-            if (Input.GetKeyDown(dodgeKey))
+            if (InputManager.Instance.IsDodgePressed())
             {
                 TryDodge();
             }
@@ -344,11 +329,12 @@ namespace KowloonBreak.Player
         
         private Vector3 CalculateNormalMovement()
         {
-            float horizontal = Input.GetAxis("Horizontal");
-            float vertical = Input.GetAxis("Vertical");
+            Vector2 inputVector = InputManager.Instance != null ? 
+                InputManager.Instance.GetMovementInput() : 
+                new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
 
             // ワールド空間での移動方向を計算
-            Vector3 direction = new Vector3(horizontal, 0f, vertical);
+            Vector3 direction = new Vector3(inputVector.x, 0f, inputVector.y);
             moveDirection = direction.normalized;
 
             // 移動方向にキャラクターを向ける
@@ -594,12 +580,6 @@ namespace KowloonBreak.Player
                 stealth -= movementPenalty;
             }
 
-            // 懐中電灯ペナルティ
-            if (flashlightEnabled)
-            {
-                stealth -= flashlightStealthPenalty;
-            }
-
             // 健康状態ペナルティ
             if (isInfected)
             {
@@ -708,24 +688,8 @@ namespace KowloonBreak.Player
         
         private void HandleRunInputFallback()
         {
-            if (runToggleMode)
-            {
-                if (Input.GetKeyDown(runToggleKey))
-                {
-                    ToggleRunMode();
-                }
-            }
-            else
-            {
-                if (Input.GetKeyDown(runToggleKey))
-                {
-                    SetRunMode(true);
-                }
-                else if (Input.GetKeyUp(runToggleKey))
-                {
-                    SetRunMode(false);
-                }
-            }
+            // フォールバック処理は削除し、InputManagerを必須とする
+            Debug.LogWarning("[EnhancedPlayerController] InputManager is not available. Input handling disabled.");
         }
 
         /// <summary>
@@ -733,24 +697,27 @@ namespace KowloonBreak.Player
         /// </summary>
         private void HandleCrouchInput()
         {
-            if (crouchToggleMode)
+            if (InputManager.Instance != null)
             {
-                // トグルモード: キーを押すたびにON/OFF切り替え
-                if (Input.GetKeyDown(crouchToggleKey))
+                if (crouchToggleMode)
                 {
-                    ToggleCrouchMode();
+                    // トグルモード: キーを押すたびにON/OFF切り替え
+                    if (InputManager.Instance.IsCrouchDown())
+                    {
+                        ToggleCrouchMode();
+                    }
                 }
-            }
-            else
-            {
-                // ホールドモード: キーを押している間だけON
-                if (Input.GetKeyDown(crouchToggleKey))
+                else
                 {
-                    SetCrouchMode(true);
-                }
-                else if (Input.GetKeyUp(crouchToggleKey))
-                {
-                    SetCrouchMode(false);
+                    // ホールドモード: キーを押している間だけON
+                    if (InputManager.Instance.IsCrouchDown())
+                    {
+                        SetCrouchMode(true);
+                    }
+                    else if (InputManager.Instance.IsCrouchUp())
+                    {
+                        SetCrouchMode(false);
+                    }
                 }
             }
         }
@@ -910,21 +877,6 @@ namespace KowloonBreak.Player
             return nearest;
         }
 
-        private void ToggleFlashlight()
-        {
-            flashlightEnabled = !flashlightEnabled;
-
-            if (flashlight != null)
-            {
-                flashlight.SetActive(flashlightEnabled);
-            }
-
-            if (UIManager.Instance != null)
-            {
-                string message = flashlightEnabled ? "懐中電灯: ON" : "懐中電灯: OFF";
-                UIManager.Instance.ShowNotification(message, NotificationType.Info);
-            }
-        }
 
         private void PlayFootstepSound()
         {
@@ -1054,19 +1006,31 @@ namespace KowloonBreak.Player
 
         private void HandleToolSelection()
         {
-            // 1-8キーで道具選択
-            for (int i = 0; i < 8; i++)
+            if (InputManager.Instance != null)
             {
-                if (Input.GetKeyDown(KeyCode.Alpha1 + i))
+                // LB/RB (Q/E) でツール切り替え
+                if (InputManager.Instance.IsToolPreviousPressed())
                 {
-                    SelectTool(i);
-                    break;
+                    SelectPreviousTool();
+                }
+                else if (InputManager.Instance.IsToolNextPressed())
+                {
+                    SelectNextTool();
+                }
+                
+                // レガシー: 1-8キーでの直接選択も残す
+                int selectedTool = InputManager.Instance.GetToolSelectionInput();
+                if (selectedTool >= 0)
+                {
+                    SelectTool(selectedTool);
                 }
             }
         }
 
         private void SelectTool(int index)
         {
+            if (index < 0 || index >= 8) return;
+            
             selectedToolIndex = index;
             var selectedSlot = resourceManager?.GetToolSlot(selectedToolIndex);
             OnToolSelected?.Invoke(selectedToolIndex, selectedSlot);
@@ -1076,8 +1040,59 @@ namespace KowloonBreak.Player
             {
                 toolSelectionHUD.SelectTool(index);
             }
-
-            // 道具選択完了
+            
+            // UIフィードバック
+            if (UIManager.Instance != null && selectedSlot != null && !selectedSlot.IsEmpty)
+            {
+                string toolName = selectedSlot.ItemData.itemName;
+                UIManager.Instance.ShowNotification($"ツール選択: {toolName}", NotificationType.Info);
+            }
+        }
+        
+        private void SelectPreviousTool()
+        {
+            if (resourceManager == null) return;
+            
+            int currentIndex = selectedToolIndex;
+            int attempts = 0;
+            
+            do {
+                selectedToolIndex = (selectedToolIndex - 1 + 8) % 8;
+                attempts++;
+                
+                var slot = resourceManager.GetToolSlot(selectedToolIndex);
+                if (slot != null && !slot.IsEmpty)
+                {
+                    SelectTool(selectedToolIndex);
+                    return;
+                }
+            } while (selectedToolIndex != currentIndex && attempts < 8);
+            
+            // 利用可能なツールがない場合は元のインデックスに戻す
+            selectedToolIndex = currentIndex;
+        }
+        
+        private void SelectNextTool()
+        {
+            if (resourceManager == null) return;
+            
+            int currentIndex = selectedToolIndex;
+            int attempts = 0;
+            
+            do {
+                selectedToolIndex = (selectedToolIndex + 1) % 8;
+                attempts++;
+                
+                var slot = resourceManager.GetToolSlot(selectedToolIndex);
+                if (slot != null && !slot.IsEmpty)
+                {
+                    SelectTool(selectedToolIndex);
+                    return;
+                }
+            } while (selectedToolIndex != currentIndex && attempts < 8);
+            
+            // 利用可能なツールがない場合は元のインデックスに戻す
+            selectedToolIndex = currentIndex;
         }
 
         private void HandleToolSelectionChanged(int index, InventorySlot slot)
@@ -1726,13 +1741,14 @@ namespace KowloonBreak.Player
             OnStaminaChanged?.Invoke(currentStamina);
 
             // ダッジ方向を決定（通常の移動と同じワールド空間基準）
-            float horizontal = Input.GetAxisRaw("Horizontal");
-            float vertical = Input.GetAxisRaw("Vertical");
+            Vector2 inputVector = InputManager.Instance != null ? 
+                InputManager.Instance.GetMovementInputRaw() : 
+                new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
-            if (Mathf.Abs(horizontal) > 0.1f || Mathf.Abs(vertical) > 0.1f)
+            if (Mathf.Abs(inputVector.x) > 0.1f || Mathf.Abs(inputVector.y) > 0.1f)
             {
                 // 通常の移動と同じワールド空間での方向計算
-                Vector3 direction = new Vector3(horizontal, 0f, vertical);
+                Vector3 direction = new Vector3(inputVector.x, 0f, inputVector.y);
                 dodgeDirection = direction.normalized;
             }
             else

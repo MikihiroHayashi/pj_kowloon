@@ -64,7 +64,7 @@ namespace KowloonBreak.Core
         
         private void InitializeButtonStates()
         {
-            string[] actions = { "interaction", "flashlight", "useTool", "run", "crouch", "dodge", "menu", "inventory" };
+            string[] actions = { "interaction", "useTool", "run", "crouch", "dodge", "menu", "inventory", "toolPrevious", "toolNext" };
             
             foreach (string action in actions)
             {
@@ -142,13 +142,14 @@ namespace KowloonBreak.Core
             
             // 現在の状態を更新
             buttonStates["interaction"] = inputSettings.interactionInput.IsPressed(currentDevice);
-            buttonStates["flashlight"] = inputSettings.flashlightInput.IsPressed(currentDevice);
             buttonStates["useTool"] = inputSettings.useToolInput.IsPressed(currentDevice);
             buttonStates["run"] = inputSettings.runInput.IsPressed(currentDevice);
             buttonStates["crouch"] = inputSettings.crouchInput.IsPressed(currentDevice);
             buttonStates["dodge"] = inputSettings.dodgeInput.IsPressed(currentDevice);
             buttonStates["menu"] = inputSettings.menuInput.IsPressed(currentDevice);
             buttonStates["inventory"] = inputSettings.inventoryInput.IsPressed(currentDevice);
+            buttonStates["toolPrevious"] = inputSettings.toolPreviousInput.IsPressed(currentDevice);
+            buttonStates["toolNext"] = inputSettings.toolNextInput.IsPressed(currentDevice);
             
             // ツール選択
             for (int i = 0; i < 8; i++)
@@ -220,7 +221,6 @@ namespace KowloonBreak.Core
         
         // 便利メソッド
         public bool IsInteractionPressed() => GetButtonDown("interaction");
-        public bool IsFlashlightPressed() => GetButtonDown("flashlight");
         public bool IsUseToolPressed() => GetButtonDown("useTool");
         public bool IsRunPressed() => GetButton("run");
         public bool IsRunDown() => GetButtonDown("run");
@@ -231,6 +231,10 @@ namespace KowloonBreak.Core
         public bool IsDodgePressed() => GetButtonDown("dodge");
         public bool IsMenuPressed() => GetButtonDown("menu");
         public bool IsInventoryPressed() => GetButtonDown("inventory");
+        
+        // Tool switching methods
+        public bool IsToolPreviousPressed() => GetButtonDown("toolPrevious");
+        public bool IsToolNextPressed() => GetButtonDown("toolNext");
         
         public int GetToolSelectionInput()
         {

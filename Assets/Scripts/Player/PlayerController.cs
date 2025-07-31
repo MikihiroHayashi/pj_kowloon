@@ -1,4 +1,5 @@
 using UnityEngine;
+using KowloonBreak.Core;
 
 namespace KowloonBreak.Player
 {
@@ -55,23 +56,45 @@ namespace KowloonBreak.Player
 
         private void HandleInput()
         {
-            moveInput.x = Input.GetAxisRaw("Horizontal");
-            moveInput.y = Input.GetAxisRaw("Vertical");
+            if (InputManager.Instance != null)
+            {
+                Vector2 movement = InputManager.Instance.GetMovementInputRaw();
+                moveInput.x = movement.x;
+                moveInput.y = movement.y;
+                
+                isRunning = InputManager.Instance.IsRunPressed();
+
+                if (InputManager.Instance.IsDodgePressed() && isGrounded)
+                {
+                    Jump();
+                }
+
+                if (InputManager.Instance.IsMenuPressed())
+                {
+                    ToggleCursor();
+                }
+            }
+            else
+            {
+                // Fallback to direct input
+                moveInput.x = Input.GetAxisRaw("Horizontal");
+                moveInput.y = Input.GetAxisRaw("Vertical");
+                isRunning = Input.GetKey(KeyCode.LeftShift);
+
+                if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+                {
+                    Jump();
+                }
+
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    ToggleCursor();
+                }
+            }
             
+            // Mouse look (remains direct for camera control)
             lookInput.x = Input.GetAxis("Mouse X");
             lookInput.y = Input.GetAxis("Mouse Y");
-            
-            isRunning = Input.GetKey(KeyCode.LeftShift);
-
-            if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
-            {
-                Jump();
-            }
-
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                ToggleCursor();
-            }
         }
 
         private void HandleMovement()

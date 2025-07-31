@@ -207,19 +207,13 @@ namespace KowloonBreak.Core
         [Header("Player Actions")]
         public InputBinding interactionInput = new InputBinding
         {
-            keyboardKey = KeyCode.F,
-            controllerButton = KeyCode.Joystick1Button0 // Xbox: A
-        };
-        
-        public InputBinding flashlightInput = new InputBinding
-        {
-            keyboardKey = KeyCode.T,
+            keyboardKey = KeyCode.R,
             controllerButton = KeyCode.Joystick1Button3 // Xbox: Y
         };
         
         public InputBinding useToolInput = new InputBinding
         {
-            keyboardKey = KeyCode.E,
+            keyboardKey = KeyCode.F,
             controllerButton = KeyCode.Joystick1Button2 // Xbox: X
         };
         
@@ -227,7 +221,7 @@ namespace KowloonBreak.Core
         {
             keyboardKey = KeyCode.LeftShift,
             alternativeKey = KeyCode.RightShift,
-            controllerButton = KeyCode.Joystick1Button1 // Xbox: B
+            controllerButton = KeyCode.Joystick1Button0 // Xbox: A (長押し)
         };
         
         public InputBinding crouchInput = new InputBinding
@@ -240,13 +234,26 @@ namespace KowloonBreak.Core
         public InputBinding dodgeInput = new InputBinding
         {
             keyboardKey = KeyCode.Space,
-            controllerButton = KeyCode.Joystick1Button9 // Xbox: Right Stick Click
+            controllerButton = KeyCode.Joystick1Button1 // Xbox: B
         };
         
         [Header("Tool Selection")]
+        public InputBinding toolPreviousInput = new InputBinding
+        {
+            keyboardKey = KeyCode.Q,
+            controllerButton = KeyCode.JoystickButton4 // Xbox: LB
+        };
+        
+        public InputBinding toolNextInput = new InputBinding
+        {
+            keyboardKey = KeyCode.E,
+            controllerButton = KeyCode.JoystickButton5 // Xbox: RB
+        };
+        
+        [Header("Legacy Tool Selection (1-8 Keys)")]
         public InputBinding[] toolSelectionInputs = new InputBinding[8]
         {
-            new InputBinding { keyboardKey = KeyCode.Alpha1, controllerAxisName = "DPadHorizontal" },
+            new InputBinding { keyboardKey = KeyCode.Alpha1 },
             new InputBinding { keyboardKey = KeyCode.Alpha2 },
             new InputBinding { keyboardKey = KeyCode.Alpha3 },
             new InputBinding { keyboardKey = KeyCode.Alpha4 },

@@ -29,21 +29,14 @@ MonoBehaviour:
     controllerAxisName: Vertical
     invertController: 0
   interactionInput:
-    keyboardKey: 102
-    mouseButton: -1
-    controllerButton: 350
-    controllerAxisName: 
-    axisThreshold: 0.5
-    alternativeKey: 0
-  flashlightInput:
-    keyboardKey: 116
+    keyboardKey: 114
     mouseButton: -1
     controllerButton: 353
     controllerAxisName: 
     axisThreshold: 0.5
     alternativeKey: 0
   useToolInput:
-    keyboardKey: 101
+    keyboardKey: 102
     mouseButton: -1
     controllerButton: 352
     controllerAxisName: 
@@ -52,7 +45,7 @@ MonoBehaviour:
   runInput:
     keyboardKey: 304
     mouseButton: -1
-    controllerButton: 351
+    controllerButton: 350
     controllerAxisName: 
     axisThreshold: 0.5
     alternativeKey: 303
@@ -66,7 +59,21 @@ MonoBehaviour:
   dodgeInput:
     keyboardKey: 32
     mouseButton: -1
-    controllerButton: 359
+    controllerButton: 351
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  toolPreviousInput:
+    keyboardKey: 113
+    mouseButton: -1
+    controllerButton: 334
+    controllerAxisName: 
+    axisThreshold: 0.5
+    alternativeKey: 0
+  toolNextInput:
+    keyboardKey: 101
+    mouseButton: -1
+    controllerButton: 335
     controllerAxisName: 
     axisThreshold: 0.5
     alternativeKey: 0
@@ -74,7 +81,7 @@ MonoBehaviour:
   - keyboardKey: 49
     mouseButton: -1
     controllerButton: 0
-    controllerAxisName: DPadHorizontal
+    controllerAxisName: 
     axisThreshold: 0.5
     alternativeKey: 0
   - keyboardKey: 50
