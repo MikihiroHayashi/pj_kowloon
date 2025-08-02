@@ -149,7 +149,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   autoPickup: 1
   damageDisplayPoint: {fileID: 1593819854123328363}
-  dodgeDistance: 2
+  dodgeDistance: 4
   dodgeDuration: 0.5
   dodgeCooldown: 0.1
   dodgeStaminaCost: 25
