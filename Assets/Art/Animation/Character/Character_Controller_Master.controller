@@ -678,7 +678,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Dadge
+  m_Name: Dodge
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -708,7 +708,7 @@ AnimatorStateTransition:
   m_Conditions:
   - m_ConditionMode: 3
     m_ConditionEvent: Speed
-    m_EventTreshold: 2
+    m_EventTreshold: 1.9
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -2550560610193658802}
   m_Solo: 0
@@ -733,7 +733,7 @@ AnimatorStateTransition:
   m_Conditions:
   - m_ConditionMode: 3
     m_ConditionEvent: Speed
-    m_EventTreshold: 0.5
+    m_EventTreshold: 1.9
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 8710459625994388285}
   m_Solo: 0
@@ -1080,19 +1080,19 @@ AnimatorStateMachine:
     m_Position: {x: 330, y: 30, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -2550560610193658802}
-    m_Position: {x: 580, y: 20, z: 0}
+    m_Position: {x: 580, y: 30, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 8304983971743815911}
     m_Position: {x: 320, y: -120, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -2302060664522007837}
-    m_Position: {x: 320, y: -190, z: 0}
+    m_Position: {x: 50, y: -310, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1558348333065903335}
-    m_Position: {x: 320, y: -260, z: 0}
+    m_Position: {x: 320, y: -180, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 920089840306086881}
-    m_Position: {x: 320, y: -330, z: 0}
+    m_Position: {x: 320, y: -240, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 4781097776224572718}
     m_Position: {x: 330, y: -50, z: 0}
@@ -1108,7 +1108,7 @@ AnimatorStateMachine:
   m_EntryTransitions: []
   m_StateMachineTransitions: {}
   m_StateMachineBehaviours: []
-  m_AnyStatePosition: {x: 70, y: -190, z: 0}
+  m_AnyStatePosition: {x: 70, y: -180, z: 0}
   m_EntryPosition: {x: -250, y: 30, z: 0}
   m_ExitPosition: {x: 600, y: -180, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}

@@ -301,6 +301,7 @@ MonoBehaviour:
   digParameterName: Dig
   speedParameterName: Speed
   dodgeParameterName: Dodge
+  crouchParameterName: Crouch
   idleSpeed: 0
   crouchSpeed: 0.5
   walkSpeed: 1
@@ -322,7 +323,6 @@ MonoBehaviour:
   mineableLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  miningKey: 101
   showDebugBox: 1
 --- !u!136 &8028166677090169455
 CapsuleCollider:
@@ -394,7 +394,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 784953c6b47318a4e9fbbc50624093b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lockY: 1
+  lockY: 0
   lockX: 0
   lockZ: 0
   useMainCamera: 1
