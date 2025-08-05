@@ -29,7 +29,11 @@ AnimationClip:
     - time: 0.25
       value: {fileID: 21300000, guid: f667f4146d3ac6649970a9607f48775e, type: 3}
     - time: 0.33333334
-      value: {fileID: 21300000, guid: 5b2a8a8fd0e535044aa9fc1d9d3d1724, type: 3}
+      value: {fileID: 21300000, guid: f57325f9dd905fc4eb91926d9a36a410, type: 3}
+    - time: 0.4
+      value: {fileID: 21300000, guid: 38d81d2307fece649bcade88946bcb70, type: 3}
+    - time: 0.46666667
+      value: {fileID: 21300000, guid: f7d0bbd24409aa14287eebf83df7d972, type: 3}
     attribute: m_Sprite
     path: Player
     classID: 212
@@ -56,13 +60,15 @@ AnimationClip:
     - {fileID: 21300000, guid: eabeeb9152594794894e57baefbe4eed, type: 3}
     - {fileID: 21300000, guid: 23cad98a79cfd0442b860adbb2a77400, type: 3}
     - {fileID: 21300000, guid: f667f4146d3ac6649970a9607f48775e, type: 3}
-    - {fileID: 21300000, guid: 5b2a8a8fd0e535044aa9fc1d9d3d1724, type: 3}
+    - {fileID: 21300000, guid: f57325f9dd905fc4eb91926d9a36a410, type: 3}
+    - {fileID: 21300000, guid: 38d81d2307fece649bcade88946bcb70, type: 3}
+    - {fileID: 21300000, guid: f7d0bbd24409aa14287eebf83df7d972, type: 3}
   m_AnimationClipSettings:
     serializedVersion: 2
     m_AdditiveReferencePoseClip: {fileID: 0}
     m_AdditiveReferencePoseTime: 0
     m_StartTime: 0
-    m_StopTime: 0.35000002
+    m_StopTime: 0.48333335
     m_OrientationOffsetY: 0
     m_Level: 0
     m_CycleOffset: 0
@@ -82,14 +88,14 @@ AnimationClip:
   m_HasGenericRootTransform: 0
   m_HasMotionFloatCurves: 0
   m_Events:
-  - time: 0.016666668
+  - time: 0.033333335
     functionName: StartDodgeInvincibility
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
-  - time: 0.31666666
+  - time: 0.43333334
     functionName: EndDodgeInvincibility
     data: 
     objectReferenceParameter: {fileID: 0}

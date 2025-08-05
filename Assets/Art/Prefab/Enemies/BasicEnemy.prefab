@@ -320,7 +320,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   useLineOfSight: 1
-  moveSpeed: 3.5
+  moveSpeed: 2
   crouchDetectionMultiplier: 0.3
   minDetectionChance: 0.1
   maxDetectionChance: 0.9
@@ -335,8 +335,7 @@ MonoBehaviour:
   patrolRoute: {fileID: 0}
   lostPlayerReturnDelay: 5
   enablePatrol: 1
-  patrolSpeedMultiplier: 0.8
-  chaseSpeedMultiplier: 2
+  chaseSpeedMultiplier: 3
   returnSpeedMultiplier: 1
   dropItems:
   - {fileID: 11400000, guid: 2d0f461f6b273d14786a4c37c05c2878, type: 2}

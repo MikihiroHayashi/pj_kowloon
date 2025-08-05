@@ -54,7 +54,6 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected bool enablePatrol = true;
         
         [Header("Speed Multipliers (Base: Move Speed)")]
-        [SerializeField] protected float patrolSpeedMultiplier = 0.8f;   // パトロール時の速度倍率 (Move Speed × この値)
         [SerializeField] protected float chaseSpeedMultiplier = 1.2f;    // 追跡時の速度倍率 (Move Speed × この値)
         [SerializeField] protected float returnSpeedMultiplier = 1.0f;   // 復帰時の速度倍率 (Move Speed × この値)
 
@@ -117,7 +116,6 @@ namespace KowloonBreak.Enemies
         
         // 速度関連プロパティ
         public float BaseMoveSpeed => moveSpeed;
-        public float PatrolSpeedMultiplier => patrolSpeedMultiplier;
         public float ChaseSpeedMultiplier => chaseSpeedMultiplier;
         public float ReturnSpeedMultiplier => returnSpeedMultiplier;
 
@@ -273,7 +271,7 @@ namespace KowloonBreak.Enemies
                     // パトロール復帰時の処理
                     float patrolSpeed = GetPatrolSpeed();
                     SetMovementSpeed(patrolSpeed);
-                    Debug.Log($"[{gameObject.name}] State changed to Patrol. Speed: {patrolSpeed} (Move Speed: {moveSpeed} × {patrolSpeedMultiplier})");
+                    Debug.Log($"[{gameObject.name}] State changed to Patrol. Speed: {patrolSpeed}");
                     break;
                     
                 case EnemyState.Chase:
@@ -294,14 +292,14 @@ namespace KowloonBreak.Enemies
         }
         
         /// <summary>
-        /// パトロール時の移動速度を取得 (Move Speed × Patrol Multiplier)
+        /// パトロール時の移動速度を取得
         /// </summary>
         protected virtual float GetPatrolSpeed()
         {
-            // PatrolRouteに設定された速度を優先し、なければMove Speedに倍率適用
+            // PatrolRouteに設定された速度を優先し、なければMove Speed
             return patrolRoute != null && patrolRoute.patrolSpeed > 0 
                 ? patrolRoute.patrolSpeed 
-                : moveSpeed * patrolSpeedMultiplier;
+                : moveSpeed;
         }
         
         /// <summary>
@@ -834,19 +832,6 @@ namespace KowloonBreak.Enemies
             }
         }
         
-        /// <summary>
-        /// パトロール時の速度倍率を設定
-        /// </summary>
-        public virtual void SetPatrolSpeedMultiplier(float multiplier)
-        {
-            patrolSpeedMultiplier = multiplier;
-            
-            // 現在パトロール中の場合は即座に速度を更新
-            if (currentState == EnemyState.Patrol)
-            {
-                SetMovementSpeed(GetPatrolSpeed());
-            }
-        }
         
         /// <summary>
         /// 復帰時の速度倍率を設定
@@ -970,13 +955,17 @@ namespace KowloonBreak.Enemies
         {
             float initialSpeed = GetPatrolSpeed();
             SetMovementSpeed(initialSpeed); // 初期状態はパトロール速度
-            navAgent.angularSpeed = 180f; // 回転速度
-            navAgent.stoppingDistance = attackRange * 0.5f; // 攻撃範囲の半分で停止（より近くで止まる）
+            
+            // プレイヤーとの体感速度を合わせるための調整
+            navAgent.acceleration = 50f;      // 加速度を上げる（デフォルト：8）
+            navAgent.angularSpeed = 360f;     // 回転速度を上げる（デフォルト：120）
+            navAgent.stoppingDistance = 0.1f; // 停止距離を短く（デフォルト：0.5）
+            
             navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.MedQualityObstacleAvoidance;
             navAgent.avoidancePriority = 50; // 中程度の優先度
             navAgent.radius = avoidanceRadius * 0.5f; // エージェントの半径
             
-            Debug.Log($"[{gameObject.name}] NavMeshAgent setup completed. Initial patrol speed: {initialSpeed} (Move Speed: {moveSpeed}, patrol: ×{patrolSpeedMultiplier}, chase: ×{chaseSpeedMultiplier})");
+            Debug.Log($"[{gameObject.name}] NavMeshAgent setup completed. Initial patrol speed: {initialSpeed} (Move Speed: {moveSpeed}, chase: ×{chaseSpeedMultiplier})");
         }
 
         /// <summary>
