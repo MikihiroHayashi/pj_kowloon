@@ -276,6 +276,13 @@ namespace KowloonBreak.Core
             controllerButton = KeyCode.Joystick1Button6 // Xbox: View
         };
         
+        public InputBinding companionCommandInput = new InputBinding
+        {
+            keyboardKey = KeyCode.T,
+            alternativeKey = KeyCode.Return,
+            controllerButton = KeyCode.Joystick1Button3 // Xbox: Y (alternative to interaction)
+        };
+        
         [Header("Sensitivity")]
         [Range(0.1f, 3.0f)]
         public float mouseSensitivity = 1.0f;

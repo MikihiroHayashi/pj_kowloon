@@ -64,7 +64,7 @@ namespace KowloonBreak.Core
         
         private void InitializeButtonStates()
         {
-            string[] actions = { "interaction", "useTool", "run", "crouch", "dodge", "menu", "inventory", "toolPrevious", "toolNext" };
+            string[] actions = { "interaction", "useTool", "run", "crouch", "dodge", "menu", "inventory", "toolPrevious", "toolNext", "companionCommand" };
             
             foreach (string action in actions)
             {
@@ -150,6 +150,7 @@ namespace KowloonBreak.Core
             buttonStates["inventory"] = inputSettings.inventoryInput.IsPressed(currentDevice);
             buttonStates["toolPrevious"] = inputSettings.toolPreviousInput.IsPressed(currentDevice);
             buttonStates["toolNext"] = inputSettings.toolNextInput.IsPressed(currentDevice);
+            buttonStates["companionCommand"] = inputSettings.companionCommandInput.IsPressed(currentDevice);
             
             // ツール選択
             for (int i = 0; i < 8; i++)
@@ -231,6 +232,7 @@ namespace KowloonBreak.Core
         public bool IsDodgePressed() => GetButtonDown("dodge");
         public bool IsMenuPressed() => GetButtonDown("menu");
         public bool IsInventoryPressed() => GetButtonDown("inventory");
+        public bool IsCompanionCommandPressed() => GetButtonDown("companionCommand");
         
         // Tool switching methods
         public bool IsToolPreviousPressed() => GetButtonDown("toolPrevious");

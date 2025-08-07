@@ -1,0 +1,413 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using KowloonBreak.Characters;
+using KowloonBreak.Core;
+
+namespace KowloonBreak.UI
+{
+    public class CompanionCommandUI : MonoBehaviour
+    {
+        [Header("UI References")]
+        [SerializeField] private GameObject commandPanelPrefab;
+        [SerializeField] private Transform commandButtonContainer;
+        [SerializeField] private Button commandButtonPrefab;
+        [SerializeField] private Text companionNameText;
+        [SerializeField] private Text companionStatusText;
+        [SerializeField] private Text trustLevelText;
+        
+        [Header("UI Settings")]
+        [SerializeField] private float interactionRange = 3f;
+        [SerializeField] private LayerMask companionLayerMask = -1;
+        [SerializeField] private KeyCode commandKey = KeyCode.E;
+        
+        [Header("Visual Feedback")]
+        [SerializeField] private GameObject interactionPrompt;
+        [SerializeField] private Text interactionPromptText;
+        
+        private GameObject commandPanel;
+        private CompanionAI currentNearbyCompanion;
+        private CompanionAI selectedCompanion;
+        private List<Button> activeButtons = new List<Button>();
+        private bool isUIOpen = false;
+        private Transform player;
+        
+        // Command descriptions for UI
+        private readonly Dictionary<CompanionCommand, string> commandDescriptions = new Dictionary<CompanionCommand, string>
+        {
+            { CompanionCommand.Follow, "付いてこい" },
+            { CompanionCommand.Stay, "ここで待て" },
+            { CompanionCommand.Attack, "攻撃しろ" },
+            { CompanionCommand.Defend, "守備しろ" },
+            { CompanionCommand.MoveTo, "ここに移動しろ" },
+            { CompanionCommand.Scout, "偵察に行け" },
+            { CompanionCommand.Flank, "側面を取れ" },
+            { CompanionCommand.Support, "援護しろ" },
+            { CompanionCommand.Retreat, "撤退しろ" },
+            { CompanionCommand.Advanced, "戦術行動" }
+        };
+
+        private void Start()
+        {
+            InitializeUI();
+            FindPlayer();
+        }
+
+        private void Update()
+        {
+            CheckForNearbyCompanions();
+            HandleInput();
+            UpdateInteractionPrompt();
+        }
+
+        private void InitializeUI()
+        {
+            if (commandPanelPrefab != null)
+            {
+                commandPanel = Instantiate(commandPanelPrefab, transform);
+                commandPanel.SetActive(false);
+            }
+            
+            if (interactionPrompt != null)
+            {
+                interactionPrompt.SetActive(false);
+            }
+        }
+
+        private void FindPlayer()
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+            }
+        }
+
+        private void CheckForNearbyCompanions()
+        {
+            if (player == null) return;
+
+            CompanionAI nearestCompanion = null;
+            float nearestDistance = float.MaxValue;
+
+            Collider[] companionsInRange = Physics.OverlapSphere(player.position, interactionRange, companionLayerMask);
+
+            foreach (var collider in companionsInRange)
+            {
+                var companion = collider.GetComponent<CompanionAI>();
+                if (companion != null)
+                {
+                    float distance = Vector3.Distance(player.position, companion.transform.position);
+                    if (distance < nearestDistance)
+                    {
+                        nearestDistance = distance;
+                        nearestCompanion = companion;
+                    }
+                }
+            }
+
+            currentNearbyCompanion = nearestCompanion;
+        }
+
+        private void HandleInput()
+        {
+            if (Input.GetKeyDown(commandKey))
+            {
+                if (!isUIOpen && currentNearbyCompanion != null)
+                {
+                    OpenCommandUI(currentNearbyCompanion);
+                }
+                else if (isUIOpen)
+                {
+                    CloseCommandUI();
+                }
+            }
+
+            // Close UI with Escape key
+            if (Input.GetKeyDown(KeyCode.Escape) && isUIOpen)
+            {
+                CloseCommandUI();
+            }
+        }
+
+        private void UpdateInteractionPrompt()
+        {
+            if (interactionPrompt == null) return;
+
+            bool shouldShowPrompt = currentNearbyCompanion != null && !isUIOpen;
+            
+            if (interactionPrompt.activeInHierarchy != shouldShowPrompt)
+            {
+                interactionPrompt.SetActive(shouldShowPrompt);
+            }
+
+            if (shouldShowPrompt && interactionPromptText != null)
+            {
+                string companionName = currentNearbyCompanion.GetComponent<CompanionCharacter>()?.Name ?? "仲間";
+                interactionPromptText.text = $"{commandKey}キーで{companionName}に命令";
+            }
+        }
+
+        public void OpenCommandUI(CompanionAI companion)
+        {
+            selectedCompanion = companion;
+            isUIOpen = true;
+            
+            // Pause the game
+            Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            
+            if (commandPanel != null)
+            {
+                commandPanel.SetActive(true);
+                UpdateCompanionInfo();
+                GenerateCommandButtons();
+            }
+        }
+
+        public void CloseCommandUI()
+        {
+            isUIOpen = false;
+            selectedCompanion = null;
+            
+            // Resume the game
+            Time.timeScale = 1f;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            
+            if (commandPanel != null)
+            {
+                commandPanel.SetActive(false);
+            }
+            
+            ClearCommandButtons();
+        }
+
+        private void UpdateCompanionInfo()
+        {
+            if (selectedCompanion == null) return;
+
+            var companionChar = selectedCompanion.GetComponent<CompanionCharacter>();
+            if (companionChar == null) return;
+
+            if (companionNameText != null)
+            {
+                companionNameText.text = companionChar.Name;
+            }
+
+            if (companionStatusText != null)
+            {
+                string status = GetStatusText(selectedCompanion.CurrentState);
+                companionStatusText.text = $"状態: {status}";
+            }
+
+            if (trustLevelText != null)
+            {
+                int trustLevel = companionChar.TrustLevel;
+                int intelligenceLevel = selectedCompanion.IntelligenceLevel;
+                trustLevelText.text = $"信頼度: {trustLevel} (知能レベル: {intelligenceLevel})";
+            }
+        }
+
+        private string GetStatusText(AIState state)
+        {
+            return state switch
+            {
+                AIState.Follow => "追従中",
+                AIState.Combat => "戦闘中",
+                AIState.Idle => "待機中",
+                AIState.Explore => "移動中",
+                AIState.Support => "援護中",
+                _ => "不明"
+            };
+        }
+
+        private void GenerateCommandButtons()
+        {
+            ClearCommandButtons();
+
+            if (commandButtonContainer == null || commandButtonPrefab == null || selectedCompanion == null)
+                return;
+
+            // Get all available commands based on intelligence level
+            var availableCommands = GetAvailableCommands();
+
+            foreach (var command in availableCommands)
+            {
+                CreateCommandButton(command);
+            }
+        }
+
+        private List<CompanionCommand> GetAvailableCommands()
+        {
+            var commands = new List<CompanionCommand>();
+            
+            foreach (CompanionCommand command in System.Enum.GetValues(typeof(CompanionCommand)))
+            {
+                if (selectedCompanion.CanExecuteCommand(command))
+                {
+                    commands.Add(command);
+                }
+            }
+            
+            return commands;
+        }
+
+        private void CreateCommandButton(CompanionCommand command)
+        {
+            var buttonObj = Instantiate(commandButtonPrefab, commandButtonContainer);
+            var buttonText = buttonObj.GetComponentInChildren<Text>();
+            
+            if (buttonText != null)
+            {
+                buttonText.text = GetCommandDisplayText(command);
+            }
+
+            buttonObj.onClick.AddListener(() => ExecuteCommand(command));
+            activeButtons.Add(buttonObj);
+        }
+
+        private string GetCommandDisplayText(CompanionCommand command)
+        {
+            string description = commandDescriptions.ContainsKey(command) ? 
+                commandDescriptions[command] : command.ToString();
+                
+            // Add intelligence level requirement indicator
+            int requiredLevel = GetRequiredIntelligenceLevel(command);
+            if (requiredLevel > 1)
+            {
+                description += $" (Lv.{requiredLevel})";
+            }
+            
+            return description;
+        }
+
+        private int GetRequiredIntelligenceLevel(CompanionCommand command)
+        {
+            return command switch
+            {
+                CompanionCommand.Follow => 1,
+                CompanionCommand.Stay => 1,
+                CompanionCommand.Attack => 2,
+                CompanionCommand.Defend => 2,
+                CompanionCommand.MoveTo => 3,
+                CompanionCommand.Scout => 3,
+                CompanionCommand.Flank => 4,
+                CompanionCommand.Support => 4,
+                CompanionCommand.Retreat => 5,
+                CompanionCommand.Advanced => 5,
+                _ => 1
+            };
+        }
+
+        private void ExecuteCommand(CompanionCommand command)
+        {
+            if (selectedCompanion == null) return;
+
+            bool success = false;
+
+            // Handle commands that need special parameters
+            switch (command)
+            {
+                case CompanionCommand.MoveTo:
+                    // For now, use a position slightly forward from the player
+                    Vector3 movePosition = player.position + player.forward * 5f;
+                    success = selectedCompanion.ExecuteCommand(command, movePosition);
+                    break;
+
+                case CompanionCommand.Attack:
+                    // Try to find nearest enemy for attack command
+                    GameObject nearestEnemy = FindNearestEnemy();
+                    if (nearestEnemy != null)
+                    {
+                        success = selectedCompanion.ExecuteCommand(command, target: nearestEnemy);
+                    }
+                    else
+                    {
+                        ShowFeedback("攻撃対象が見つかりません");
+                        CloseCommandUI();
+                        return;
+                    }
+                    break;
+
+                default:
+                    success = selectedCompanion.ExecuteCommand(command);
+                    break;
+            }
+
+            // Show feedback and close UI
+            if (success)
+            {
+                string commandName = commandDescriptions.ContainsKey(command) ? 
+                    commandDescriptions[command] : command.ToString();
+                ShowFeedback($"命令実行: {commandName}");
+            }
+            else
+            {
+                ShowFeedback("命令を実行できませんでした");
+            }
+
+            CloseCommandUI();
+        }
+
+        private GameObject FindNearestEnemy()
+        {
+            if (selectedCompanion == null) return null;
+
+            float searchRadius = 15f;
+            Collider[] potentialEnemies = Physics.OverlapSphere(selectedCompanion.transform.position, searchRadius);
+            
+            GameObject nearestEnemy = null;
+            float nearestDistance = float.MaxValue;
+
+            foreach (var collider in potentialEnemies)
+            {
+                if (collider.CompareTag("Enemy") || collider.GetComponent<Enemies.EnemyBase>() != null)
+                {
+                    float distance = Vector3.Distance(selectedCompanion.transform.position, collider.transform.position);
+                    if (distance < nearestDistance)
+                    {
+                        nearestDistance = distance;
+                        nearestEnemy = collider.gameObject;
+                    }
+                }
+            }
+
+            return nearestEnemy;
+        }
+
+        private void ShowFeedback(string message)
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowNotification(message, NotificationType.Info);
+            }
+            else
+            {
+                Debug.Log($"[CompanionCommandUI] {message}");
+            }
+        }
+
+        private void ClearCommandButtons()
+        {
+            foreach (var button in activeButtons)
+            {
+                if (button != null)
+                {
+                    Destroy(button.gameObject);
+                }
+            }
+            activeButtons.Clear();
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (player != null)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireSphere(player.position, interactionRange);
+            }
+        }
+    }
+}

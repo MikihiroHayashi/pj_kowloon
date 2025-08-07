@@ -20,6 +20,7 @@ namespace KowloonBreak.UI
         [SerializeField] private GameObject mainHUD;
         [SerializeField] private GameObject inventoryPanel;
         [SerializeField] private GameObject companionPanel;
+        [SerializeField] private GameObject companionCommandPanel;
         [SerializeField] private GameObject baseManagementPanel;
         [SerializeField] private GameObject mapPanel;
         [SerializeField] private GameObject dialoguePanel;
@@ -51,12 +52,30 @@ namespace KowloonBreak.UI
         [SerializeField] private GameObject damageTextPrefab;
         [SerializeField] private Transform damageContainer;
 
+        [Header("Companion Command System")]
+        [SerializeField] private GameObject commandButtonPrefab;
+        [SerializeField] private Transform commandButtonContainer;
+        [SerializeField] private Text companionNameText;
+        [SerializeField] private Text companionStatusText;
+        [SerializeField] private Text trustLevelText;
+        [SerializeField] private GameObject interactionPrompt;
+        [SerializeField] private Text interactionPromptText;
+        [SerializeField] private float interactionRange = 3f;
+        [SerializeField] private LayerMask companionLayerMask = -1;
+
         private Dictionary<string, GameObject> activePanels;
         private List<GameObject> activeNotifications;
         private GameManager gameManager;
         private EnhancedResourceManager resourceManager;
         private InfectionManager infectionManager;
         private KowloonBreak.Player.EnhancedPlayerController enhancedPlayerController;
+        
+        // Companion Command System
+        private KowloonBreak.Characters.CompanionAI currentNearbyCompanion;
+        private KowloonBreak.Characters.CompanionAI selectedCompanion;
+        private List<Button> activeCommandButtons = new List<Button>();
+        private Transform player;
+        private KowloonBreak.Core.InputManager inputManager;
 
         public bool IsAnyPanelOpen => activePanels.Count > 0;
 
@@ -87,17 +106,27 @@ namespace KowloonBreak.UI
             gameManager = GameManager.Instance;
             resourceManager = EnhancedResourceManager.Instance;
             infectionManager = InfectionManager.Instance;
+            inputManager = KowloonBreak.Core.InputManager.Instance;
             
             enhancedPlayerController = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
             
+            // Find player transform
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+            }
+            
             SubscribeToEvents();
             UpdateUI();
+            InitializeCompanionCommandSystem();
         }
 
         private void Update()
         {
             UpdateHUD();
             HandleInput();
+            UpdateCompanionCommandSystem();
         }
 
         private void InitializeUI()
@@ -193,19 +222,21 @@ namespace KowloonBreak.UI
 
         private void HandleInput()
         {
-            // インベントリ開閉 (I キー)
-            if (Input.GetKeyDown(KeyCode.I))
+            if (inputManager == null) return;
+
+            // インベントリ開閉
+            if (inputManager.IsInventoryPressed())
             {
                 TogglePanel("Inventory");
             }
 
             // エスケープキーでパネルを閉じる
-            if (Input.GetKeyDown(KeyCode.Escape) && IsAnyPanelOpen)
+            if (inputManager.IsMenuPressed() && IsAnyPanelOpen)
             {
                 CloseAllPanels();
             }
 
-            // その他のUIショートカット
+            // その他のUIショートカット (直接Input.GetKeyDownを使用)
             if (Input.GetKeyDown(KeyCode.M))
             {
                 TogglePanel("Map");
@@ -219,6 +250,12 @@ namespace KowloonBreak.UI
             if (Input.GetKeyDown(KeyCode.B))
             {
                 TogglePanel("BaseManagement");
+            }
+            
+            // Companion command input (InputManager経由)
+            if (inputManager.IsCompanionCommandPressed())
+            {
+                HandleCompanionCommandInput();
             }
         }
 
@@ -371,6 +408,7 @@ namespace KowloonBreak.UI
             {
                 "Inventory" => inventoryPanel,
                 "Companion" => companionPanel,
+                "CompanionCommand" => companionCommandPanel,
                 "BaseManagement" => baseManagementPanel,
                 "Map" => mapPanel,
                 "Dialogue" => dialoguePanel,
@@ -685,6 +723,350 @@ namespace KowloonBreak.UI
                 enhancedPlayerController.OnStealthAttack -= HandleStealthAttack;
             }
         }
+
+        #region Companion Command System
+
+        private void InitializeCompanionCommandSystem()
+        {
+            if (interactionPrompt != null)
+            {
+                interactionPrompt.SetActive(false);
+            }
+        }
+
+        private void UpdateCompanionCommandSystem()
+        {
+            if (player == null) return;
+
+            CheckForNearbyCompanions();
+            UpdateInteractionPrompt();
+        }
+
+        private void CheckForNearbyCompanions()
+        {
+            if (player == null) return;
+
+            KowloonBreak.Characters.CompanionAI nearestCompanion = null;
+            float nearestDistance = float.MaxValue;
+
+            Collider[] companionsInRange = Physics.OverlapSphere(player.position, interactionRange, companionLayerMask);
+
+            foreach (var collider in companionsInRange)
+            {
+                var companion = collider.GetComponent<KowloonBreak.Characters.CompanionAI>();
+                if (companion != null)
+                {
+                    float distance = Vector3.Distance(player.position, companion.transform.position);
+                    if (distance < nearestDistance)
+                    {
+                        nearestDistance = distance;
+                        nearestCompanion = companion;
+                    }
+                }
+            }
+
+            currentNearbyCompanion = nearestCompanion;
+        }
+
+        private void UpdateInteractionPrompt()
+        {
+            if (interactionPrompt == null) return;
+
+            bool shouldShowPrompt = currentNearbyCompanion != null && !IsPanelOpen("CompanionCommand");
+            
+            if (interactionPrompt.activeInHierarchy != shouldShowPrompt)
+            {
+                interactionPrompt.SetActive(shouldShowPrompt);
+            }
+
+            if (shouldShowPrompt && interactionPromptText != null)
+            {
+                var companionChar = currentNearbyCompanion.GetComponent<KowloonBreak.Characters.CompanionCharacter>();
+                string companionName = companionChar?.Name ?? "仲間";
+                string keyName = GetCompanionCommandKeyName();
+                interactionPromptText.text = $"{keyName}で{companionName}に命令";
+            }
+        }
+
+        private void HandleCompanionCommandInput()
+        {
+            if (!IsPanelOpen("CompanionCommand") && currentNearbyCompanion != null)
+            {
+                OpenCompanionCommandUI(currentNearbyCompanion);
+            }
+            else if (IsPanelOpen("CompanionCommand"))
+            {
+                ClosePanel("CompanionCommand");
+            }
+        }
+
+        public void OpenCompanionCommandUI(KowloonBreak.Characters.CompanionAI companion)
+        {
+            selectedCompanion = companion;
+            OpenPanel("CompanionCommand");
+            
+            if (IsPanelOpen("CompanionCommand"))
+            {
+                UpdateCompanionInfo();
+                GenerateCommandButtons();
+            }
+        }
+
+        private void UpdateCompanionInfo()
+        {
+            if (selectedCompanion == null) return;
+
+            var companionChar = selectedCompanion.GetComponent<KowloonBreak.Characters.CompanionCharacter>();
+            if (companionChar == null) return;
+
+            if (companionNameText != null)
+            {
+                companionNameText.text = companionChar.Name;
+            }
+
+            if (companionStatusText != null)
+            {
+                string status = GetCompanionStatusText(selectedCompanion.CurrentState);
+                companionStatusText.text = $"状態: {status}";
+            }
+
+            if (trustLevelText != null)
+            {
+                int trustLevel = companionChar.TrustLevel;
+                int intelligenceLevel = selectedCompanion.IntelligenceLevel;
+                trustLevelText.text = $"信頼度: {trustLevel} (知能レベル: {intelligenceLevel})";
+            }
+        }
+
+        private string GetCompanionStatusText(KowloonBreak.Characters.AIState state)
+        {
+            return state switch
+            {
+                KowloonBreak.Characters.AIState.Follow => "追従中",
+                KowloonBreak.Characters.AIState.Combat => "戦闘中",
+                KowloonBreak.Characters.AIState.Idle => "待機中",
+                KowloonBreak.Characters.AIState.Explore => "移動中",
+                KowloonBreak.Characters.AIState.Support => "援護中",
+                _ => "不明"
+            };
+        }
+
+        private void GenerateCommandButtons()
+        {
+            ClearCommandButtons();
+
+            if (commandButtonContainer == null || commandButtonPrefab == null || selectedCompanion == null)
+                return;
+
+            var availableCommands = GetAvailableCommands();
+
+            foreach (var command in availableCommands)
+            {
+                CreateCommandButton(command);
+            }
+        }
+
+        private List<KowloonBreak.Characters.CompanionCommand> GetAvailableCommands()
+        {
+            var commands = new List<KowloonBreak.Characters.CompanionCommand>();
+            
+            foreach (KowloonBreak.Characters.CompanionCommand command in System.Enum.GetValues(typeof(KowloonBreak.Characters.CompanionCommand)))
+            {
+                if (selectedCompanion.CanExecuteCommand(command))
+                {
+                    commands.Add(command);
+                }
+            }
+            
+            return commands;
+        }
+
+        private void CreateCommandButton(KowloonBreak.Characters.CompanionCommand command)
+        {
+            var buttonObj = Instantiate(commandButtonPrefab, commandButtonContainer);
+            var button = buttonObj.GetComponent<Button>();
+            var buttonText = buttonObj.GetComponentInChildren<Text>();
+            
+            if (buttonText != null)
+            {
+                buttonText.text = GetCommandDisplayText(command);
+            }
+
+            if (button != null)
+            {
+                button.onClick.AddListener(() => ExecuteCompanionCommand(command));
+                activeCommandButtons.Add(button);
+            }
+        }
+
+        private string GetCommandDisplayText(KowloonBreak.Characters.CompanionCommand command)
+        {
+            var commandDescriptions = new Dictionary<KowloonBreak.Characters.CompanionCommand, string>
+            {
+                { KowloonBreak.Characters.CompanionCommand.Follow, "付いてこい" },
+                { KowloonBreak.Characters.CompanionCommand.Stay, "ここで待て" },
+                { KowloonBreak.Characters.CompanionCommand.Attack, "攻撃しろ" },
+                { KowloonBreak.Characters.CompanionCommand.Defend, "守備しろ" },
+                { KowloonBreak.Characters.CompanionCommand.MoveTo, "ここに移動しろ" },
+                { KowloonBreak.Characters.CompanionCommand.Scout, "偵察に行け" },
+                { KowloonBreak.Characters.CompanionCommand.Flank, "側面を取れ" },
+                { KowloonBreak.Characters.CompanionCommand.Support, "援護しろ" },
+                { KowloonBreak.Characters.CompanionCommand.Retreat, "撤退しろ" },
+                { KowloonBreak.Characters.CompanionCommand.Advanced, "戦術行動" }
+            };
+
+            string description = commandDescriptions.ContainsKey(command) ? 
+                commandDescriptions[command] : command.ToString();
+                
+            int requiredLevel = GetRequiredIntelligenceLevel(command);
+            if (requiredLevel > 1)
+            {
+                description += $" (Lv.{requiredLevel})";
+            }
+            
+            return description;
+        }
+
+        private int GetRequiredIntelligenceLevel(KowloonBreak.Characters.CompanionCommand command)
+        {
+            return command switch
+            {
+                KowloonBreak.Characters.CompanionCommand.Follow => 1,
+                KowloonBreak.Characters.CompanionCommand.Stay => 1,
+                KowloonBreak.Characters.CompanionCommand.Attack => 2,
+                KowloonBreak.Characters.CompanionCommand.Defend => 2,
+                KowloonBreak.Characters.CompanionCommand.MoveTo => 3,
+                KowloonBreak.Characters.CompanionCommand.Scout => 3,
+                KowloonBreak.Characters.CompanionCommand.Flank => 4,
+                KowloonBreak.Characters.CompanionCommand.Support => 4,
+                KowloonBreak.Characters.CompanionCommand.Retreat => 5,
+                KowloonBreak.Characters.CompanionCommand.Advanced => 5,
+                _ => 1
+            };
+        }
+
+        private void ExecuteCompanionCommand(KowloonBreak.Characters.CompanionCommand command)
+        {
+            if (selectedCompanion == null) return;
+
+            bool success = false;
+
+            switch (command)
+            {
+                case KowloonBreak.Characters.CompanionCommand.MoveTo:
+                    Vector3 movePosition = player.position + player.forward * 5f;
+                    success = selectedCompanion.ExecuteCommand(command, movePosition);
+                    break;
+
+                case KowloonBreak.Characters.CompanionCommand.Attack:
+                    GameObject nearestEnemy = FindNearestEnemyForCompanion();
+                    if (nearestEnemy != null)
+                    {
+                        success = selectedCompanion.ExecuteCommand(command, target: nearestEnemy);
+                    }
+                    else
+                    {
+                        ShowNotification("攻撃対象が見つかりません", NotificationType.Warning);
+                        ClosePanel("CompanionCommand");
+                        return;
+                    }
+                    break;
+
+                default:
+                    success = selectedCompanion.ExecuteCommand(command);
+                    break;
+            }
+
+            if (success)
+            {
+                var commandDescriptions = new Dictionary<KowloonBreak.Characters.CompanionCommand, string>
+                {
+                    { KowloonBreak.Characters.CompanionCommand.Follow, "付いてこい" },
+                    { KowloonBreak.Characters.CompanionCommand.Stay, "ここで待て" },
+                    { KowloonBreak.Characters.CompanionCommand.Attack, "攻撃しろ" },
+                    { KowloonBreak.Characters.CompanionCommand.Defend, "守備しろ" },
+                    { KowloonBreak.Characters.CompanionCommand.MoveTo, "ここに移動しろ" },
+                    { KowloonBreak.Characters.CompanionCommand.Scout, "偵察に行け" },
+                    { KowloonBreak.Characters.CompanionCommand.Flank, "側面を取れ" },
+                    { KowloonBreak.Characters.CompanionCommand.Support, "援護しろ" },
+                    { KowloonBreak.Characters.CompanionCommand.Retreat, "撤退しろ" },
+                    { KowloonBreak.Characters.CompanionCommand.Advanced, "戦術行動" }
+                };
+                
+                string commandName = commandDescriptions.ContainsKey(command) ? 
+                    commandDescriptions[command] : command.ToString();
+                ShowNotification($"命令実行: {commandName}", NotificationType.Success);
+            }
+            else
+            {
+                ShowNotification("命令を実行できませんでした", NotificationType.Error);
+            }
+
+            ClosePanel("CompanionCommand");
+        }
+
+        private GameObject FindNearestEnemyForCompanion()
+        {
+            if (selectedCompanion == null) return null;
+
+            float searchRadius = 15f;
+            Collider[] potentialEnemies = Physics.OverlapSphere(selectedCompanion.transform.position, searchRadius);
+            
+            GameObject nearestEnemy = null;
+            float nearestDistance = float.MaxValue;
+
+            foreach (var collider in potentialEnemies)
+            {
+                if (collider.CompareTag("Enemy") || collider.GetComponent<KowloonBreak.Enemies.EnemyBase>() != null)
+                {
+                    float distance = Vector3.Distance(selectedCompanion.transform.position, collider.transform.position);
+                    if (distance < nearestDistance)
+                    {
+                        nearestDistance = distance;
+                        nearestEnemy = collider.gameObject;
+                    }
+                }
+            }
+
+            return nearestEnemy;
+        }
+
+        private void ClearCommandButtons()
+        {
+            foreach (var button in activeCommandButtons)
+            {
+                if (button != null)
+                {
+                    Destroy(button.gameObject);
+                }
+            }
+            activeCommandButtons.Clear();
+        }
+
+        private string GetCompanionCommandKeyName()
+        {
+            if (inputManager == null || inputManager.Settings == null) 
+                return "Tキー";
+
+            var binding = inputManager.Settings.companionCommandInput;
+            var currentDevice = inputManager.CurrentDevice;
+
+            switch (currentDevice)
+            {
+                case KowloonBreak.Core.InputDevice.KeyboardMouse:
+                    if (binding.keyboardKey != KeyCode.None)
+                        return $"{binding.keyboardKey}キー";
+                    else if (binding.alternativeKey != KeyCode.None)
+                        return $"{binding.alternativeKey}キー";
+                    break;
+                case KowloonBreak.Core.InputDevice.Controller:
+                    return "Yボタン";
+            }
+
+            return "Tキー";
+        }
+
+        #endregion
     }
 
     public enum NotificationType
