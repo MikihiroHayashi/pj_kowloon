@@ -235,9 +235,21 @@ namespace KowloonBreak.Exploration
 
         private void HandleInput()
         {
-            if (Input.GetKeyDown(KeyCode.E) && !isSearching)
+            var inputManager = InputManager.Instance;
+            if (inputManager != null)
             {
-                TryStartSearch();
+                if (inputManager.IsInteractionPressed() && !isSearching)
+                {
+                    TryStartSearch();
+                }
+            }
+            else
+            {
+                // Fallback to direct input
+                if (Input.GetKeyDown(KeyCode.E) && !isSearching)
+                {
+                    TryStartSearch();
+                }
             }
         }
 

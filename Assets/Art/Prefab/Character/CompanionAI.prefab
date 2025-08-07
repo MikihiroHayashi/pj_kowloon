@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1593819854123328363}
   m_Layer: 0
-  m_Name: DamagePos
+  m_Name: InteractionPromptAnchor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -47,10 +47,10 @@ GameObject:
   - component: {fileID: 4712628069155050857}
   - component: {fileID: 6792100724070896434}
   - component: {fileID: 1104567319099991210}
-  - component: {fileID: 7513620138086173528}
+  - component: {fileID: 937253184694271039}
   m_Layer: 8
   m_Name: CompanionAI
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -82,11 +82,11 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3.5
+  m_Speed: 4.5
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
-  m_StoppingDistance: 1.5
+  m_StoppingDistance: 1
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
@@ -144,10 +144,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5673bf4da78a32045ae9cc73ac7141f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  followDistance: 3
-  maxFollowDistance: 10
+  followDistance: 1
+  maxFollowDistance: 5
   baseUpdateRate: 0.2
-  stoppingDistance: 1.5
+  stoppingDistance: 1
+  walkSpeed: 3
+  runSpeed: 6
+  crouchSpeed: 1.5
+  canRun: 1
+  canCrouch: 1
+  canDodge: 1
   detectionRange: 8
   detectionAngle: 90
   enemyLayerMask:
@@ -157,6 +163,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 9
   player: {fileID: 0}
+  interactionPromptAnchor: {fileID: 1593819854123328363}
   showDebugGizmos: 1
   currentState: 1
 --- !u!136 &8028166677090169455
@@ -324,7 +331,7 @@ MonoBehaviour:
   arrowWidth: 0.3
   arrowHeadSize: 0.5
   arrowOffset: {x: 0, y: 0.1, z: 0}
---- !u!114 &7513620138086173528
+--- !u!114 &937253184694271039
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -333,15 +340,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 4601225622746221893}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e24ae6ebf8305eb438d1daba5cd2b0ad, type: 3}
+  m_Script: {fileID: 11500000, guid: 7defa83f9a1f0fe489e1d15cb2838994, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 4972783984286411978}
-  targetTransform: {fileID: 2500127600325588898}
+  targetTransform: {fileID: 5104767785950813820}
   autoFindAnimator: 1
   autoFindTargetTransform: 1
   useLocalRotation: 1
-  smoothAngleTransition: 0
+  smoothAngleTransition: 1
   smoothSpeed: 5
   debugAngle: 0
   angleParameterName: Angle
@@ -366,7 +373,6 @@ GameObject:
   - component: {fileID: 2500127600325588898}
   - component: {fileID: 8748517836812838625}
   - component: {fileID: 4972783984286411978}
-  - component: {fileID: 489548735391818573}
   m_Layer: 0
   m_Name: PlayerVisuals
   m_TagString: Untagged
@@ -432,19 +438,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &489548735391818573
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6195070814820800851}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c73c589a748c1284da5bcc5541fecb1d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enableToolUsageEvents: 1
 --- !u!1 &7937031782915748241
 GameObject:
   m_ObjectHideFlags: 0

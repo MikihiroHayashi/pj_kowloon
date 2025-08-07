@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using KowloonBreak.Core;
 using KowloonBreak.Managers;
 
@@ -193,11 +194,11 @@ namespace KowloonBreak.UI
             // 数量テキスト用のGameObject
             GameObject quantityObj = new GameObject("QuantityText");
             quantityObj.transform.SetParent(slotObj.transform);
-            var quantityText = quantityObj.AddComponent<Text>();
+            var quantityText = quantityObj.AddComponent<TextMeshProUGUI>();
             quantityText.text = "";
             quantityText.fontSize = 14;
             quantityText.color = Color.white;
-            quantityText.alignment = TextAnchor.LowerRight;
+            quantityText.alignment = TextAlignmentOptions.BottomRight;
             quantityText.raycastTarget = false;
             
             // 耐久度バー用のGameObject

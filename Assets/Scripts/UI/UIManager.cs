@@ -55,13 +55,16 @@ namespace KowloonBreak.UI
         [Header("Companion Command System")]
         [SerializeField] private GameObject commandButtonPrefab;
         [SerializeField] private Transform commandButtonContainer;
-        [SerializeField] private Text companionNameText;
-        [SerializeField] private Text companionStatusText;
-        [SerializeField] private Text trustLevelText;
+        [SerializeField] private TextMeshProUGUI companionNameText;
+        [SerializeField] private TextMeshProUGUI companionStatusText;
+        [SerializeField] private TextMeshProUGUI trustLevelText;
         [SerializeField] private GameObject interactionPrompt;
-        [SerializeField] private Text interactionPromptText;
+        [SerializeField] private TextMeshProUGUI interactionPromptText;
         [SerializeField] private float interactionRange = 3f;
         [SerializeField] private LayerMask companionLayerMask = -1;
+        
+        [Header("Debug - InteractionPrompt Positioning")]
+        [SerializeField] private bool debugPromptPositioning = false;
 
         private Dictionary<string, GameObject> activePanels;
         private List<GameObject> activeNotifications;
@@ -76,6 +79,10 @@ namespace KowloonBreak.UI
         private List<Button> activeCommandButtons = new List<Button>();
         private Transform player;
         private KowloonBreak.Core.InputManager inputManager;
+        
+        // InteractionPrompt 3D positioning
+        private UnityEngine.Camera mainCamera;
+        private RectTransform interactionPromptRectTransform;
 
         public bool IsAnyPanelOpen => activePanels.Count > 0;
 
@@ -135,6 +142,13 @@ namespace KowloonBreak.UI
             activeNotifications = new List<GameObject>();
             
             CloseAllPanels();
+            
+            // CompanionCommandPanelを明示的に非表示にする
+            if (companionCommandPanel != null)
+            {
+                companionCommandPanel.SetActive(false);
+            }
+            
             ShowMainHUD();
         }
 
@@ -359,6 +373,12 @@ namespace KowloonBreak.UI
                 activePanels[panelName] = panel;
                 OnPanelOpened?.Invoke(panelName);
                 
+                // CompanionCommandパネルが開かれた場合、InteractionPromptを即座に非表示
+                if (panelName == "CompanionCommand")
+                {
+                    UpdateInteractionPrompt();
+                }
+                
                 if (gameManager != null)
                 {
                     gameManager.PauseGame();
@@ -373,6 +393,12 @@ namespace KowloonBreak.UI
                 panel.SetActive(false);
                 activePanels.Remove(panelName);
                 OnPanelClosed?.Invoke(panelName);
+                
+                // CompanionCommandパネルが閉じられた場合、InteractionPromptを即座に再表示チェック
+                if (panelName == "CompanionCommand")
+                {
+                    UpdateInteractionPrompt();
+                }
                 
                 if (activePanels.Count == 0 && gameManager != null)
                 {
@@ -610,12 +636,12 @@ namespace KowloonBreak.UI
             if (damageTextPrefab == null || damageContainer == null)
                 return;
 
-            UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
-            if (mainCamera == null)
+            UnityEngine.Camera cameraForDamage = UnityEngine.Camera.main;
+            if (cameraForDamage == null)
                 return;
 
             // World座標をScreen座標に変換
-            Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPosition);
+            Vector3 screenPos = cameraForDamage.WorldToScreenPoint(worldPosition);
             
             // 画面外の場合は表示しない
             if (screenPos.z < 0 || screenPos.x < 0 || screenPos.x > Screen.width || 
@@ -731,6 +757,14 @@ namespace KowloonBreak.UI
             if (interactionPrompt != null)
             {
                 interactionPrompt.SetActive(false);
+                interactionPromptRectTransform = interactionPrompt.GetComponent<RectTransform>();
+            }
+            
+            // メインカメラの参照を取得（DamageTextと同じ方法）
+            mainCamera = UnityEngine.Camera.main;
+            if (mainCamera == null)
+            {
+                mainCamera = FindObjectOfType<UnityEngine.Camera>();
             }
         }
 
@@ -749,7 +783,26 @@ namespace KowloonBreak.UI
             KowloonBreak.Characters.CompanionAI nearestCompanion = null;
             float nearestDistance = float.MaxValue;
 
+            // まずLayerMaskを使って検索
             Collider[] companionsInRange = Physics.OverlapSphere(player.position, interactionRange, companionLayerMask);
+            
+            // LayerMaskで見つからない場合、フォールバック検索（全レイヤー対象）
+            if (companionsInRange.Length == 0)
+            {
+                Collider[] allColliders = Physics.OverlapSphere(player.position, interactionRange);
+                var companionColliders = new System.Collections.Generic.List<Collider>();
+                
+                foreach (var col in allColliders)
+                {
+                    var compAI = col.GetComponent<KowloonBreak.Characters.CompanionAI>();
+                    if (compAI != null)
+                    {
+                        companionColliders.Add(col);
+                    }
+                }
+                
+                companionsInRange = companionColliders.ToArray();
+            }
 
             foreach (var collider in companionsInRange)
             {
@@ -772,7 +825,35 @@ namespace KowloonBreak.UI
         {
             if (interactionPrompt == null) return;
 
+            // コンパニオンが近くにいて、かつCompanionCommandパネルが開いていない場合のみ表示
             bool shouldShowPrompt = currentNearbyCompanion != null && !IsPanelOpen("CompanionCommand");
+            
+            if (shouldShowPrompt)
+            {
+                // コンパニオンの頭上位置を取得
+                Transform promptAnchor = GetCompanionPromptAnchor(currentNearbyCompanion);
+                if (promptAnchor != null)
+                {
+                    Vector3 worldPosition = promptAnchor.position;
+                    
+                    // アンカーがコンパニオン自身の場合は上方向にオフセット
+                    if (promptAnchor == currentNearbyCompanion.transform)
+                    {
+                        worldPosition += Vector3.up * 2.0f; // 2メートル上
+                    }
+                    
+                    // ワールド座標をスクリーン座標に変換
+                    bool isVisible = UpdatePromptPosition(worldPosition);
+                    
+                    // カメラの視野内にある場合のみ表示
+                    shouldShowPrompt = isVisible;
+                }
+                else
+                {
+                    // アンカーが見つからない場合は表示しない
+                    shouldShowPrompt = false;
+                }
+            }
             
             if (interactionPrompt.activeInHierarchy != shouldShowPrompt)
             {
@@ -781,10 +862,7 @@ namespace KowloonBreak.UI
 
             if (shouldShowPrompt && interactionPromptText != null)
             {
-                var companionChar = currentNearbyCompanion.GetComponent<KowloonBreak.Characters.CompanionCharacter>();
-                string companionName = companionChar?.Name ?? "仲間";
-                string keyName = GetCompanionCommandKeyName();
-                interactionPromptText.text = $"{keyName}で{companionName}に命令";
+                interactionPromptText.text = "話す";
             }
         }
 
@@ -833,8 +911,7 @@ namespace KowloonBreak.UI
             if (trustLevelText != null)
             {
                 int trustLevel = companionChar.TrustLevel;
-                int intelligenceLevel = selectedCompanion.IntelligenceLevel;
-                trustLevelText.text = $"信頼度: {trustLevel} (知能レベル: {intelligenceLevel})";
+                trustLevelText.text = trustLevel.ToString();
             }
         }
 
@@ -885,7 +962,7 @@ namespace KowloonBreak.UI
         {
             var buttonObj = Instantiate(commandButtonPrefab, commandButtonContainer);
             var button = buttonObj.GetComponent<Button>();
-            var buttonText = buttonObj.GetComponentInChildren<Text>();
+            var buttonText = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
             
             if (buttonText != null)
             {
@@ -1064,6 +1141,97 @@ namespace KowloonBreak.UI
             }
 
             return "Tキー";
+        }
+
+        /// <summary>
+        /// コンパニオンのInteractionPrompt表示用アンカーを取得
+        /// </summary>
+        private Transform GetCompanionPromptAnchor(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (companion == null) return null;
+            
+            // CompanionAIのフィールドからアンカーを取得
+            Transform anchor = companion.InteractionPromptAnchor;
+            if (anchor != null) return anchor;
+            
+            // アンカーが設定されていない場合はコンパニオン自身の位置を返す
+            // （UpdateInteractionPromptで自動オフセットされる）
+            return companion.transform;
+        }
+
+        /// <summary>
+        /// ワールド座標をスクリーン座標に変換してInteractionPromptの位置を更新
+        /// DamageContainerと同じ仕組みを使用
+        /// </summary>
+        private bool UpdatePromptPosition(Vector3 worldPosition)
+        {
+            if (mainCamera == null || interactionPromptRectTransform == null || damageContainer == null)
+            {
+                if (debugPromptPositioning)
+                    Debug.LogWarning("[UIManager] UpdatePromptPosition: Missing components");
+                return false;
+            }
+
+            // ワールド座標をスクリーン座標に変換（DamageTextと同じ方法）
+            Vector3 screenPosition = mainCamera.WorldToScreenPoint(worldPosition);
+            
+            if (debugPromptPositioning)
+            {
+                Debug.Log($"[UIManager] World: {worldPosition} -> Screen: {screenPosition}");
+            }
+            
+            // 画面外の場合は非表示（DamageTextと同じ条件）
+            if (screenPosition.z < 0 || screenPosition.x < 0 || screenPosition.x > Screen.width || 
+                screenPosition.y < 0 || screenPosition.y > Screen.height)
+            {
+                if (debugPromptPositioning)
+                    Debug.Log("[UIManager] Position is off-screen or behind camera");
+                return false;
+            }
+
+            // DamageContainerを基準とした座標変換（DamageTextと同じ方法）
+            RectTransform containerRect = damageContainer.GetComponent<RectTransform>();
+            if (containerRect != null)
+            {
+                // CanvasのRender ModeがScreen Space - Overlayの場合
+                Canvas canvas = damageContainer.GetComponentInParent<Canvas>();
+                UnityEngine.Camera canvasCamera = canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera ? canvas.worldCamera : null;
+                
+                // Screen座標をCanvas座標に変換（DamageTextと同じ方法）
+                Vector2 canvasPosition;
+                bool success = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    containerRect,
+                    screenPosition,
+                    canvasCamera,
+                    out canvasPosition);
+
+                if (debugPromptPositioning)
+                {
+                    Debug.Log($"[UIManager] Canvas position conversion success: {success}, Result: {canvasPosition}");
+                    Debug.Log($"[UIManager] Canvas Camera: {(canvasCamera != null ? canvasCamera.name : "null")}");
+                }
+
+                if (success)
+                {
+                    // DamageTextと同じようにlocalPositionを使用
+                    interactionPromptRectTransform.localPosition = canvasPosition;
+                    
+                    if (debugPromptPositioning)
+                    {
+                        Debug.Log($"[UIManager] Final local position: {interactionPromptRectTransform.localPosition}");
+                    }
+                    
+                    return true;
+                }
+                else
+                {
+                    // 変換に失敗した場合は画面中央に表示
+                    interactionPromptRectTransform.localPosition = Vector3.zero;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion

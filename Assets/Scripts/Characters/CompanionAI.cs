@@ -16,6 +16,14 @@ namespace KowloonBreak.Characters
         [SerializeField] private float baseUpdateRate = 0.2f;
         [SerializeField] private float stoppingDistance = 1.5f;
         
+        [Header("Movement Settings")]
+        [SerializeField] private float walkSpeed = 3f;
+        [SerializeField] private float runSpeed = 6f;
+        [SerializeField] private float crouchSpeed = 1.5f;
+        [SerializeField] private bool canRun = true;
+        [SerializeField] private bool canCrouch = true;
+        [SerializeField] private bool canDodge = true;
+        
         [Header("Detection")]
         [SerializeField] private float detectionRange = 8f;
         [SerializeField] private float detectionAngle = 90f;
@@ -24,6 +32,7 @@ namespace KowloonBreak.Characters
         
         [Header("References")]
         [SerializeField] private Transform player;
+        [SerializeField] private Transform interactionPromptAnchor;
         
         [Header("Debug")]
         [SerializeField] private bool showDebugGizmos = true;
@@ -31,14 +40,23 @@ namespace KowloonBreak.Characters
         
         private NavMeshAgent navAgent;
         private CompanionCharacter companionCharacter;
+        private CompanionAnimatorController animatorController;
         private GameObject currentTarget;
         private Vector3 lastPlayerPosition;
         private float lastUpdateTime;
+        
+        // Movement state tracking
+        private CompanionMovementState currentMovementState = CompanionMovementState.Idle;
+        private bool isRunning = false;
+        private bool isCrouching = false;
+        private bool shouldRun = false;
+        private bool shouldCrouch = false;
         
         public AIState CurrentState => currentState;
         public bool HasTarget => currentTarget != null;
         public Transform Player => player;
         public int IntelligenceLevel => GetIntelligenceLevelFromTrust();
+        public Transform InteractionPromptAnchor => interactionPromptAnchor;
         
         public System.Action<AIState> OnStateChanged;
 
@@ -46,6 +64,12 @@ namespace KowloonBreak.Characters
         {
             navAgent = GetComponent<NavMeshAgent>();
             companionCharacter = GetComponent<CompanionCharacter>();
+            animatorController = GetComponent<CompanionAnimatorController>();
+            
+            if (animatorController == null)
+            {
+                animatorController = GetComponentInChildren<CompanionAnimatorController>();
+            }
             
             InitializeAgent();
         }
@@ -151,6 +175,7 @@ namespace KowloonBreak.Characters
             
             CheckForEnemies();
             UpdateLastPlayerPosition();
+            UpdateMovementAnimation();
         }
 
         private void CheckPlayerDangerStatus()
@@ -339,6 +364,17 @@ namespace KowloonBreak.Characters
 
         private void HandleTacticalCombat(float distanceToTarget, float combatRange)
         {
+            int intelligenceLevel = GetIntelligenceLevelFromTrust();
+            
+            // ダッジロールの使用判定（知能レベル4以上でランダムに使用）
+            if (intelligenceLevel >= 4 && 
+                distanceToTarget < combatRange * 0.7f && 
+                UnityEngine.Random.Range(0f, 1f) < 0.1f) // 10%の確率
+            {
+                TryPerformDodgeRoll();
+                return;
+            }
+            
             // Try to position tactically (flanking, maintaining distance)
             Vector3 tacticalPosition = CalculateTacticalPosition();
             
@@ -346,7 +382,7 @@ namespace KowloonBreak.Characters
             {
                 MoveToPosition(tacticalPosition);
             }
-            else if (distanceToTarget < combatRange * 0.5f && GetIntelligenceLevelFromTrust() >= 4)
+            else if (distanceToTarget < combatRange * 0.5f && intelligenceLevel >= 4)
             {
                 // Smart retreat when too close
                 Vector3 retreatPosition = CalculateRetreatPosition();
@@ -660,6 +696,12 @@ namespace KowloonBreak.Characters
         {
             if (currentTarget == null) return;
 
+            // 攻撃アニメーションをトリガー
+            if (animatorController != null)
+            {
+                animatorController.TriggerAttack();
+            }
+
             var destructible = currentTarget.GetComponent<Environment.IDestructible>();
             if (destructible != null && destructible.CanBeDestroyedBy(Core.ToolType.IronPipe))
             {
@@ -697,6 +739,205 @@ namespace KowloonBreak.Characters
             if (player != null)
             {
                 lastPlayerPosition = player.position;
+            }
+        }
+
+        /// <summary>
+        /// 移動アニメーションを更新
+        /// </summary>
+        private void UpdateMovementAnimation()
+        {
+            if (animatorController == null || navAgent == null) return;
+
+            // NavMeshAgentの速度から移動状態を判定
+            float velocity = navAgent.velocity.magnitude;
+            CompanionMovementState targetMovementState;
+            
+            if (velocity < 0.1f)
+            {
+                targetMovementState = CompanionMovementState.Idle;
+                isRunning = false;
+            }
+            else
+            {
+                targetMovementState = currentState == AIState.Combat ? CompanionMovementState.Combat : CompanionMovementState.Moving;
+                
+                // 知能レベルに応じて移動速度を調整
+                DetermineMovementBehavior();
+                
+                // NavMeshAgentの速度を設定
+                ApplyMovementSpeed();
+            }
+
+            // アニメーションステートが変化した場合のみ更新
+            if (currentMovementState != targetMovementState || 
+                animatorController.IsCrouching != isCrouching)
+            {
+                currentMovementState = targetMovementState;
+                animatorController.SetMovementState(currentMovementState, isRunning, isCrouching);
+            }
+        }
+
+        /// <summary>
+        /// 知能レベルと状況に応じて移動行動を決定
+        /// </summary>
+        private void DetermineMovementBehavior()
+        {
+            int intelligenceLevel = GetIntelligenceLevelFromTrust();
+            
+            // デフォルト値
+            shouldRun = false;
+            shouldCrouch = false;
+            
+            switch (currentState)
+            {
+                case AIState.Follow:
+                    DetermineFollowMovement(intelligenceLevel);
+                    break;
+                case AIState.Combat:
+                    DetermineCombatMovement(intelligenceLevel);
+                    break;
+                case AIState.Explore:
+                    DetermineExploreMovement(intelligenceLevel);
+                    break;
+                case AIState.Support:
+                    DetermineSupportMovement(intelligenceLevel);
+                    break;
+            }
+            
+            // 能力チェック
+            isRunning = shouldRun && canRun;
+            isCrouching = shouldCrouch && canCrouch;
+        }
+
+        private void DetermineFollowMovement(int intelligenceLevel)
+        {
+            if (player == null) return;
+            
+            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+            
+            // 距離に応じて移動速度を調整
+            if (distanceToPlayer > followDistance * 2f)
+            {
+                shouldRun = true; // 遠い場合は走る
+            }
+            else if (distanceToPlayer < followDistance * 0.5f)
+            {
+                // 近すぎる場合は歩行またはしゃがみ（知能レベルに応じて）
+                if (intelligenceLevel >= 3)
+                {
+                    shouldCrouch = true; // 賢いコンパニオンはしゃがみで接近
+                }
+            }
+            
+            // プレイヤーの状態を模倣（知能レベル4以上）
+            if (intelligenceLevel >= 4 && player != null)
+            {
+                var playerController = player.GetComponent<EnhancedPlayerController>();
+                if (playerController != null)
+                {
+                    // プレイヤーがしゃがんでいる場合は同じようにしゃがむ
+                    if (playerController.IsCrouching)
+                    {
+                        shouldCrouch = true;
+                        shouldRun = false;
+                    }
+                }
+            }
+        }
+
+        private void DetermineCombatMovement(int intelligenceLevel)
+        {
+            // 戦闘中は積極的に移動
+            shouldRun = intelligenceLevel >= 2;
+            
+            // 高い知能レベルでは戦術的にしゃがみを使用
+            if (intelligenceLevel >= 4 && UnityEngine.Random.Range(0f, 1f) < 0.3f)
+            {
+                shouldCrouch = true;
+                shouldRun = false;
+            }
+        }
+
+        private void DetermineExploreMovement(int intelligenceLevel)
+        {
+            // 探索中は通常歩行
+            if (intelligenceLevel >= 3 && UnityEngine.Random.Range(0f, 1f) < 0.2f)
+            {
+                shouldCrouch = true; // 偶にしゃがみで慎重に行動
+            }
+        }
+
+        private void DetermineSupportMovement(int intelligenceLevel)
+        {
+            // 支援行動中は迅速に移動
+            shouldRun = intelligenceLevel >= 2;
+        }
+
+        /// <summary>
+        /// NavMeshAgentに移動速度を適用
+        /// </summary>
+        private void ApplyMovementSpeed()
+        {
+            if (navAgent == null) return;
+            
+            float targetSpeed;
+            
+            if (isCrouching)
+            {
+                targetSpeed = crouchSpeed;
+            }
+            else if (isRunning)
+            {
+                targetSpeed = runSpeed;
+            }
+            else
+            {
+                targetSpeed = walkSpeed;
+            }
+            
+            navAgent.speed = targetSpeed;
+        }
+
+        /// <summary>
+        /// ダッジロールを実行（知能レベルに応じて）
+        /// </summary>
+        public void TryPerformDodgeRoll()
+        {
+            if (!canDodge || animatorController == null) return;
+            
+            int intelligenceLevel = GetIntelligenceLevelFromTrust();
+            
+            // 知能レベル3以上でダッジロール可能
+            if (intelligenceLevel < 3) return;
+            
+            // ダッジロール中でない場合のみ実行
+            if (!animatorController.IsDodging)
+            {
+                animatorController.TriggerDodge();
+                
+                // ダッジロール方向を計算（敵から離れる方向）
+                Vector3 dodgeDirection = Vector3.zero;
+                
+                if (currentTarget != null)
+                {
+                    dodgeDirection = (transform.position - currentTarget.transform.position).normalized;
+                }
+                else if (player != null)
+                {
+                    // ターゲットがない場合はプレイヤーの側方にダッジ
+                    dodgeDirection = Vector3.Cross(player.forward, Vector3.up).normalized;
+                    if (UnityEngine.Random.Range(0f, 1f) > 0.5f)
+                        dodgeDirection = -dodgeDirection;
+                }
+                
+                // ダッジロール先の位置を計算
+                Vector3 dodgeTarget = transform.position + dodgeDirection * 3f;
+                
+                if (UnityEngine.AI.NavMesh.SamplePosition(dodgeTarget, out UnityEngine.AI.NavMeshHit hit, 3f, UnityEngine.AI.NavMesh.AllAreas))
+                {
+                    navAgent.SetDestination(hit.position);
+                }
             }
         }
 
