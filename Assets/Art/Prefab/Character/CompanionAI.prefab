@@ -48,6 +48,7 @@ GameObject:
   - component: {fileID: 6792100724070896434}
   - component: {fileID: 1104567319099991210}
   - component: {fileID: 937253184694271039}
+  - component: {fileID: 576896521102965193}
   m_Layer: 8
   m_Name: CompanionAI
   m_TagString: Untagged
@@ -108,7 +109,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterName: " \u30DE\u30AD\u30BF"
   role: 0
-  trustLevel: 50
+  trustLevel: 85
   characterId: 
   stats:
     health: 100
@@ -148,6 +149,9 @@ MonoBehaviour:
   maxFollowDistance: 5
   baseUpdateRate: 0.2
   stoppingDistance: 1
+  teleportDistance: 10
+  teleportOffscreenMargin: 1
+  enableSmartTeleport: 1
   walkSpeed: 4
   runSpeed: 8
   crouchSpeed: 1.5
@@ -162,6 +166,11 @@ MonoBehaviour:
   obstacleLayerMask:
     serializedVersion: 2
     m_Bits: 9
+  destructibleLayers:
+    serializedVersion: 2
+    m_Bits: 648
+  attackRange: 2
+  attackPoint: {fileID: 0}
   player: {fileID: 0}
   interactionPromptAnchor: {fileID: 1593819854123328363}
   showDebugGizmos: 1
@@ -351,6 +360,7 @@ MonoBehaviour:
   smoothAngleTransition: 1
   smoothSpeed: 5
   debugAngle: 0
+  debugSpeed: 0
   angleParameterName: Angle
   deathParameterName: Death
   attackParameterName: Attack
@@ -358,10 +368,29 @@ MonoBehaviour:
   speedParameterName: Speed
   dodgeParameterName: Dodge
   crouchParameterName: Crouch
-  idleSpeed: 0
-  crouchSpeed: 0.5
-  walkSpeed: 1
-  runSpeed: 2
+  idleSpeedThreshold: 0.1
+  crouchSpeedThreshold: 2
+  walkSpeedThreshold: 4
+  runSpeedThreshold: 8
+--- !u!114 &576896521102965193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4601225622746221893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8aa775826e3e4643825d5ebe912784c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  miningRange: 3
+  miningBoxSize: {x: 2, y: 2, z: 3}
+  mineableLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  defaultToolType: 1
+  defaultDamage: 15
 --- !u!1 &6195070814820800851
 GameObject:
   m_ObjectHideFlags: 0
@@ -373,6 +402,7 @@ GameObject:
   - component: {fileID: 2500127600325588898}
   - component: {fileID: 8748517836812838625}
   - component: {fileID: 4972783984286411978}
+  - component: {fileID: 1449669753836085894}
   m_Layer: 0
   m_Name: PlayerVisuals
   m_TagString: Untagged
@@ -427,7 +457,7 @@ Animator:
   m_GameObject: {fileID: 6195070814820800851}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 71cb7dec4f2403943a71ef6cf0403b22, type: 2}
+  m_Controller: {fileID: 22100000, guid: 8d89910dbd05e7a45a97ea186725855f, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -438,6 +468,19 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1449669753836085894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6195070814820800851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36e27e8e965418941af00441fa617b83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableCombatEvents: 1
 --- !u!1 &7937031782915748241
 GameObject:
   m_ObjectHideFlags: 0

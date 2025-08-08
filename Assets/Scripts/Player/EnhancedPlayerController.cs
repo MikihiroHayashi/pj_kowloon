@@ -1647,8 +1647,8 @@ namespace KowloonBreak.Player
         {
             if (animatorController != null)
             {
-                float normalizedSpeed = CalculateNormalizedSpeed();
-                animatorController.SetSpeed(normalizedSpeed);
+                float actualSpeed = CalculateActualSpeed();
+                animatorController.SetRealSpeed(actualSpeed);
                 
                 // しゃがみ状態も毎フレーム同期（安全のため）
                 animatorController.SetCrouch(crouchModeEnabled);
@@ -1656,32 +1656,29 @@ namespace KowloonBreak.Player
         }
 
         /// <summary>
-        /// アニメーター用の正規化された速度を計算
+        /// 実際の移動速度を計算してアニメーターに送信
         /// </summary>
-        /// <returns>PlayerAnimatorControllerで設定された速度値</returns>
-        private float CalculateNormalizedSpeed()
+        /// <returns>実際の移動速度 (units/sec)</returns>
+        private float CalculateActualSpeed()
         {
-            if (animatorController == null)
+            // 移動していない場合は0
+            if (moveDirection.magnitude < 0.1f)
                 return 0f;
 
-            // ダッジ中はアニメーションで制御
-            if (currentMovementState == MovementState.Dodging)
-                return animatorController.IdleSpeed;
-
-            // 移動していない場合は停止
-            if (moveDirection.magnitude < 0.1f)
-                return animatorController.IdleSpeed;
-
-            // しゃがみモード中
-            if (crouchModeEnabled)
-                return animatorController.CrouchSpeed;
-
-            // 走行モード中（スタミナがある場合のみ）
-            if (runModeEnabled && currentStamina > 0f)
-                return animatorController.RunSpeed;
-
-            // 通常歩行
-            return animatorController.WalkSpeed;
+            // 現在の実際の移動速度を取得
+            float actualSpeed = GetCurrentSpeed();
+            
+            // CharacterControllerの実際の速度も考慮（より正確な計算）
+            Vector3 horizontalVelocity = new Vector3(characterController.velocity.x, 0f, characterController.velocity.z);
+            float realTimeSpeed = horizontalVelocity.magnitude;
+            
+            // より正確な値を使用（実際の移動が発生している場合は実測値を優先）
+            if (realTimeSpeed > 0.1f)
+            {
+                return realTimeSpeed;
+            }
+            
+            return actualSpeed;
         }
 
         #region Animation Event Methods

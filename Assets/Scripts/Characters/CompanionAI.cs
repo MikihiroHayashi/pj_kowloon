@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 using KowloonBreak.Core;
@@ -16,6 +17,11 @@ namespace KowloonBreak.Characters
         [SerializeField] private float baseUpdateRate = 0.2f;
         [SerializeField] private float stoppingDistance = 1.5f;
         
+        [Header("Smart Teleport System")]
+        [SerializeField] private float teleportDistance = 10f;
+        [SerializeField] private float teleportOffscreenMargin = 1f;
+        [SerializeField] private bool enableSmartTeleport = true;
+        
         [Header("Movement Settings")]
         [SerializeField] private float walkSpeed = 3f;
         [SerializeField] private float runSpeed = 6f;
@@ -30,6 +36,11 @@ namespace KowloonBreak.Characters
         [SerializeField] private LayerMask enemyLayerMask = -1;
         [SerializeField] private LayerMask obstacleLayerMask = -1;
         
+        [Header("Attack System")]
+        [SerializeField] private LayerMask destructibleLayers = -1;
+        [SerializeField] private float attackRange = 2f;
+        [SerializeField] private Transform attackPoint;
+        
         [Header("References")]
         [SerializeField] private Transform player;
         [SerializeField] private Transform interactionPromptAnchor;
@@ -41,9 +52,11 @@ namespace KowloonBreak.Characters
         private NavMeshAgent navAgent;
         private CompanionCharacter companionCharacter;
         private CompanionAnimatorController animatorController;
+        private CompanionMiningSystem miningSystem;
         private GameObject currentTarget;
         private Vector3 lastPlayerPosition;
         private float lastUpdateTime;
+        private UnityEngine.Camera playerCamera;
         
         // Movement state tracking
         private CompanionMovementState currentMovementState = CompanionMovementState.Idle;
@@ -65,6 +78,7 @@ namespace KowloonBreak.Characters
             navAgent = GetComponent<NavMeshAgent>();
             companionCharacter = GetComponent<CompanionCharacter>();
             animatorController = GetComponent<CompanionAnimatorController>();
+            miningSystem = GetComponent<CompanionMiningSystem>();
             
             if (animatorController == null)
             {
@@ -77,8 +91,29 @@ namespace KowloonBreak.Characters
         private void Start()
         {
             FindPlayer();
+            FindPlayerCamera();
             SetState(AIState.Follow);
             StartCoroutine(UpdateAILoop());
+        }
+        
+        private void FindPlayerCamera()
+        {
+            if (player != null)
+            {
+                // プレイヤーの子オブジェクトからカメラを探す
+                playerCamera = player.GetComponentInChildren<UnityEngine.Camera>();
+                
+                // 見つからない場合はメインカメラを使用
+                if (playerCamera == null)
+                {
+                    playerCamera = UnityEngine.Camera.main;
+                }
+                
+                if (playerCamera == null)
+                {
+                    Debug.LogWarning("[CompanionAI] Player camera not found! Smart teleport may not work properly.");
+                }
+            }
         }
 
         private void InitializeAgent()
@@ -241,12 +276,23 @@ namespace KowloonBreak.Characters
 
             foreach (var enemy in nearbyEnemies)
             {
+                // シンプルなエネミーかチェック
+                if (!IsSimpleEnemy(enemy.gameObject))
+                {
+                    continue;
+                }
+                
                 float threatLevel = CalculateThreatLevel(enemy.gameObject);
                 if (threatLevel > highestThreatLevel)
                 {
                     highestThreatLevel = threatLevel;
                     mostThreatening = enemy.gameObject;
                 }
+            }
+
+            if (mostThreatening != null)
+            {
+                Debug.Log($"[CompanionAI] {gameObject.name} - Most threatening enemy: {mostThreatening.name} (threat level: {highestThreatLevel:F2})");
             }
 
             return mostThreatening;
@@ -277,14 +323,10 @@ namespace KowloonBreak.Characters
         {
             float distanceToPlayer = Vector3.Distance(transform.position, player.position);
             
-            if (distanceToPlayer > maxFollowDistance)
+            // スマートワープシステムの適用
+            if (enableSmartTeleport && ShouldSmartTeleport(distanceToPlayer))
             {
-                Vector3 teleportPosition = player.position - player.forward * followDistance;
-                if (NavMesh.SamplePosition(teleportPosition, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-                {
-                    transform.position = hit.position;
-                    navAgent.Warp(hit.position);
-                }
+                PerformSmartTeleport();
                 return;
             }
             
@@ -314,6 +356,158 @@ namespace KowloonBreak.Characters
             
             return player.position;
         }
+        
+        #region Smart Teleport System
+        
+        /// <summary>
+        /// スマートワープの条件をチェック
+        /// </summary>
+        private bool ShouldSmartTeleport(float distanceToPlayer)
+        {
+            // 距離条件：設定した距離以上離れている
+            if (distanceToPlayer < teleportDistance) return false;
+            
+            // カメラ視野条件：画面外にいる
+            if (IsVisibleInCamera()) return false;
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// カメラの視野内にいるかどうかを判定
+        /// </summary>
+        private bool IsVisibleInCamera()
+        {
+            if (playerCamera == null) return false;
+            
+            // コンパニオンの位置をスクリーン座標に変換
+            Vector3 screenPoint = playerCamera.WorldToViewportPoint(transform.position);
+            
+            // 画面内判定（0-1の範囲内で、かつカメラの前方にある）
+            bool isInView = screenPoint.x >= 0 && screenPoint.x <= 1 &&
+                           screenPoint.y >= 0 && screenPoint.y <= 1 &&
+                           screenPoint.z > 0;
+                           
+            // 障害物による遮蔽判定（オプション）
+            if (isInView)
+            {
+                Vector3 directionToCompanion = (transform.position - playerCamera.transform.position).normalized;
+                float distanceToCompanion = Vector3.Distance(playerCamera.transform.position, transform.position);
+                
+                // カメラからコンパニオンへのレイキャストで障害物チェック
+                if (Physics.Raycast(playerCamera.transform.position, directionToCompanion, out RaycastHit hit, distanceToCompanion, obstacleLayerMask))
+                {
+                    // 障害物に遮られている場合は見えていないと判定
+                    return false;
+                }
+            }
+            
+            return isInView;
+        }
+        
+        /// <summary>
+        /// スマートワープを実行
+        /// </summary>
+        private void PerformSmartTeleport()
+        {
+            Vector3 teleportPosition = CalculateSmartTeleportPosition();
+            
+            if (NavMesh.SamplePosition(teleportPosition, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                transform.position = hit.position;
+                navAgent.Warp(hit.position);
+                
+                // デバッグ用ログ
+                if (showDebugGizmos)
+                {
+                    Debug.Log($"[CompanionAI] Smart teleport executed to position: {hit.position}");
+                }
+            }
+            else
+            {
+                // フォールバック：従来の方式でワープ
+                Vector3 fallbackPosition = player.position - player.forward * followDistance;
+                if (NavMesh.SamplePosition(fallbackPosition, out NavMeshHit fallbackHit, 2f, NavMesh.AllAreas))
+                {
+                    transform.position = fallbackHit.position;
+                    navAgent.Warp(fallbackHit.position);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 画面外1メートルの位置を計算
+        /// </summary>
+        private Vector3 CalculateSmartTeleportPosition()
+        {
+            if (playerCamera == null) return player.position - player.forward * followDistance;
+            
+            // カメラの視野から画面外1メートルの位置を計算
+            UnityEngine.Camera cam = playerCamera;
+            
+            // プレイヤーからの方向ベクトルを複数候補で試す
+            Vector3[] candidateDirections = {
+                -cam.transform.right,      // 左側
+                cam.transform.right,       // 右側
+                -cam.transform.forward,    // 後ろ側
+                (-cam.transform.right - cam.transform.forward).normalized,  // 左後ろ
+                (cam.transform.right - cam.transform.forward).normalized    // 右後ろ
+            };
+            
+            foreach (Vector3 direction in candidateDirections)
+            {
+                // 画面外1メートルの位置を計算
+                Vector3 candidatePosition = CalculateOffscreenPosition(direction);
+                
+                // NavMesh上にある有効な位置かチェック
+                if (NavMesh.SamplePosition(candidatePosition, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+                {
+                    // この位置が本当に画面外かチェック
+                    Vector3 testScreenPoint = cam.WorldToViewportPoint(hit.position);
+                    bool isOffscreen = testScreenPoint.x < -0.1f || testScreenPoint.x > 1.1f ||
+                                      testScreenPoint.y < -0.1f || testScreenPoint.y > 1.1f ||
+                                      testScreenPoint.z <= 0;
+                    
+                    if (isOffscreen)
+                    {
+                        return hit.position;
+                    }
+                }
+            }
+            
+            // 適切な位置が見つからない場合は、プレイヤーの後方に配置
+            return player.position - cam.transform.forward * (followDistance + teleportOffscreenMargin);
+        }
+        
+        /// <summary>
+        /// 指定方向の画面外位置を計算
+        /// </summary>
+        private Vector3 CalculateOffscreenPosition(Vector3 direction)
+        {
+            // カメラから見て画面外1メートルの距離を計算
+            float distanceFromCamera = Vector3.Distance(playerCamera.transform.position, player.position);
+            
+            // 画面端を超える距離を計算（視野角を考慮）
+            float halfFOV = playerCamera.fieldOfView * 0.5f * Mathf.Deg2Rad;
+            float offscreenDistance = distanceFromCamera * Mathf.Tan(halfFOV) + teleportOffscreenMargin;
+            
+            // プレイヤー位置から指定方向にオフセット
+            Vector3 basePosition = player.position + direction * offscreenDistance;
+            
+            // 地面の高さに調整
+            if (Physics.Raycast(basePosition + Vector3.up * 10f, Vector3.down, out RaycastHit hit, 20f))
+            {
+                basePosition.y = hit.point.y;
+            }
+            else
+            {
+                basePosition.y = player.position.y;
+            }
+            
+            return basePosition;
+        }
+        
+        #endregion
 
         private void HandleCombatState()
         {
@@ -323,236 +517,32 @@ namespace KowloonBreak.Characters
                 return;
             }
 
+            // ターゲットまでの距離チェック
             float distanceToTarget = Vector3.Distance(transform.position, currentTarget.transform.position);
-            int intelligenceLevel = GetIntelligenceLevelFromTrust();
             
-            // Intelligence-based combat range adjustment
-            float combatRange = GetCombatRange(intelligenceLevel);
-            float retreatRange = GetRetreatRange(intelligenceLevel);
-            
-            if (distanceToTarget > retreatRange)
+            // 15メートル以上離れたら諦める
+            if (distanceToTarget > 15f)
             {
                 currentTarget = null;
                 SetState(AIState.Follow);
                 return;
             }
             
-            // Advanced tactical positioning for higher intelligence levels
-            if (intelligenceLevel >= 3)
-            {
-                HandleTacticalCombat(distanceToTarget, combatRange);
-            }
-            else
-            {
-                HandleBasicCombat(distanceToTarget, combatRange);
-            }
-        }
-
-        private void HandleBasicCombat(float distanceToTarget, float combatRange)
-        {
-            if (distanceToTarget > combatRange)
-            {
-                MoveToPosition(currentTarget.transform.position);
-            }
-            else
+            // 3メートル以内なら攻撃
+            if (distanceToTarget <= 3f)
             {
                 navAgent.ResetPath();
                 LookAtTarget(currentTarget.transform.position);
                 PerformAttack();
             }
-        }
-
-        private void HandleTacticalCombat(float distanceToTarget, float combatRange)
-        {
-            int intelligenceLevel = GetIntelligenceLevelFromTrust();
-            
-            // ダッジロールの使用判定（知能レベル4以上でランダムに使用）
-            if (intelligenceLevel >= 4 && 
-                distanceToTarget < combatRange * 0.7f && 
-                UnityEngine.Random.Range(0f, 1f) < 0.1f) // 10%の確率
-            {
-                TryPerformDodgeRoll();
-                return;
-            }
-            
-            // Try to position tactically (flanking, maintaining distance)
-            Vector3 tacticalPosition = CalculateTacticalPosition();
-            
-            if (distanceToTarget > combatRange)
-            {
-                MoveToPosition(tacticalPosition);
-            }
-            else if (distanceToTarget < combatRange * 0.5f && intelligenceLevel >= 4)
-            {
-                // Smart retreat when too close
-                Vector3 retreatPosition = CalculateRetreatPosition();
-                MoveToPosition(retreatPosition);
-            }
             else
             {
-                LookAtTarget(currentTarget.transform.position);
-                PerformAttack();
+                // ターゲットに向かって移動
+                MoveToPosition(currentTarget.transform.position);
             }
         }
 
-        private Vector3 CalculateTacticalPosition()
-        {
-            if (currentTarget == null || player == null) return transform.position;
-            
-            int intelligenceLevel = GetIntelligenceLevelFromTrust();
-            
-            // Level 5 AI: Coordinated flanking with other companions
-            if (intelligenceLevel >= 5)
-            {
-                return CalculateCoordinatedPosition();
-            }
-            // Level 4 AI: Smart flanking
-            else if (intelligenceLevel >= 4)
-            {
-                return CalculateFlankingPosition();
-            }
-            // Level 3 AI: Basic positioning
-            else
-            {
-                return CalculateBasicTacticalPosition();
-            }
-        }
 
-        private Vector3 CalculateCoordinatedPosition()
-        {
-            // Find other companions and coordinate positioning
-            var otherCompanions = FindNearbyCompanions();
-            Vector3 playerToEnemy = (currentTarget.transform.position - player.position).normalized;
-            Vector3 flankDirection = Vector3.Cross(playerToEnemy, Vector3.up);
-            
-            // Coordinate with other companions to avoid clustering
-            int companionCount = otherCompanions.Count + 1; // Include self
-            int myIndex = GetCompanionIndex(otherCompanions);
-            
-            float angleStep = 360f / (companionCount + 1); // +1 for player space
-            float myAngle = angleStep * (myIndex + 1);
-            
-            Vector3 coordinatedDirection = Quaternion.AngleAxis(myAngle, Vector3.up) * playerToEnemy;
-            Vector3 tacticalPos = currentTarget.transform.position + coordinatedDirection * 4f;
-            
-            return tacticalPos;
-        }
-
-        private Vector3 CalculateFlankingPosition()
-        {
-            Vector3 playerToEnemy = (currentTarget.transform.position - player.position).normalized;
-            Vector3 enemyToPlayer = -playerToEnemy;
-            
-            // Calculate optimal flanking angle (90 degrees from player-enemy line)
-            Vector3 flankDirection = Vector3.Cross(playerToEnemy, Vector3.up);
-            
-            // Choose the side that provides better cover or tactical advantage
-            Vector3 leftFlank = currentTarget.transform.position + flankDirection * 3.5f;
-            Vector3 rightFlank = currentTarget.transform.position - flankDirection * 3.5f;
-            
-            // Choose the flank position that has better navigation path
-            if (NavMesh.SamplePosition(leftFlank, out NavMeshHit leftHit, 2f, NavMesh.AllAreas) &&
-                NavMesh.SamplePosition(rightFlank, out NavMeshHit rightHit, 2f, NavMesh.AllAreas))
-            {
-                // Choose based on current position to avoid unnecessary movement
-                float leftDistance = Vector3.Distance(transform.position, leftHit.position);
-                float rightDistance = Vector3.Distance(transform.position, rightHit.position);
-                
-                return leftDistance < rightDistance ? leftHit.position : rightHit.position;
-            }
-            else if (NavMesh.SamplePosition(leftFlank, out leftHit, 2f, NavMesh.AllAreas))
-            {
-                return leftHit.position;
-            }
-            else if (NavMesh.SamplePosition(rightFlank, out rightHit, 2f, NavMesh.AllAreas))
-            {
-                return rightHit.position;
-            }
-            
-            return CalculateBasicTacticalPosition();
-        }
-
-        private Vector3 CalculateBasicTacticalPosition()
-        {
-            Vector3 playerToEnemy = (currentTarget.transform.position - player.position).normalized;
-            Vector3 flankDirection = Vector3.Cross(playerToEnemy, Vector3.up);
-            
-            // Simple left or right flank
-            if (Random.value > 0.5f) flankDirection = -flankDirection;
-            
-            Vector3 tacticalPos = currentTarget.transform.position + flankDirection * 3f;
-            
-            if (NavMesh.SamplePosition(tacticalPos, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-            {
-                return hit.position;
-            }
-            
-            return transform.position;
-        }
-
-        private List<CompanionAI> FindNearbyCompanions()
-        {
-            var companions = new List<CompanionAI>();
-            Collider[] nearbyColliders = Physics.OverlapSphere(transform.position, 15f);
-            
-            foreach (var collider in nearbyColliders)
-            {
-                var companion = collider.GetComponent<CompanionAI>();
-                if (companion != null && companion != this && companion.CurrentState == AIState.Combat)
-                {
-                    companions.Add(companion);
-                }
-            }
-            
-            return companions;
-        }
-
-        private int GetCompanionIndex(List<CompanionAI> companions)
-        {
-            for (int i = 0; i < companions.Count; i++)
-            {
-                if (Vector3.Distance(transform.position, companions[i].transform.position) > 
-                    Vector3.Distance(transform.position, transform.position))
-                {
-                    return i;
-                }
-            }
-            return companions.Count;
-        }
-
-        private Vector3 CalculateRetreatPosition()
-        {
-            if (currentTarget == null) return transform.position;
-            
-            Vector3 retreatDirection = (transform.position - currentTarget.transform.position).normalized;
-            return transform.position + retreatDirection * 2f;
-        }
-
-        private float GetCombatRange(int intelligenceLevel)
-        {
-            return intelligenceLevel switch
-            {
-                1 => 1.5f,  // Very close combat only
-                2 => 2f,    // Basic combat range
-                3 => 2.5f,  // Improved combat range
-                4 => 3f,    // Advanced combat range
-                5 => 3.5f,  // Optimal combat range
-                _ => 2f
-            };
-        }
-
-        private float GetRetreatRange(int intelligenceLevel)
-        {
-            return intelligenceLevel switch
-            {
-                1 => detectionRange,         // Give up easily
-                2 => detectionRange * 1.2f,  // Basic persistence
-                3 => detectionRange * 1.4f,  // Good persistence
-                4 => detectionRange * 1.6f,  // High persistence
-                5 => detectionRange * 1.8f,  // Maximum persistence
-                _ => detectionRange * 1.5f
-            };
-        }
 
         private void HandleIdleState()
         {
@@ -596,59 +586,45 @@ namespace KowloonBreak.Characters
             int intelligenceLevel = GetIntelligenceLevelFromTrust();
             
             // Level 1: No combat participation
-            if (intelligenceLevel < 2) return;
-
-            float effectiveDetectionRange = GetEffectiveDetectionRange();
-            float effectiveAngle = GetEffectiveDetectionAngle();
-            
-            Collider[] enemiesInRange = Physics.OverlapSphere(transform.position, effectiveDetectionRange, enemyLayerMask);
-            
-            foreach (Collider enemy in enemiesInRange)
+            if (intelligenceLevel < 2) 
             {
-                Vector3 directionToEnemy = (enemy.transform.position - transform.position).normalized;
-                float angle = Vector3.Angle(transform.forward, directionToEnemy);
+                return;
+            }
+
+            // シンプルな10メートル範囲検索
+            float searchRange = 10f;
+            Collider[] allColliders = Physics.OverlapSphere(transform.position, searchRange);
+            
+            GameObject nearestEnemy = null;
+            float nearestDistance = float.MaxValue;
+            
+            foreach (var collider in allColliders)
+            {
+                if (collider == null || collider.gameObject == gameObject) continue;
                 
-                if (angle < effectiveAngle * 0.5f)
+                // シンプルな判定：Enemyタグ または enemyLayerMaskに含まれる
+                bool isEnemy = collider.CompareTag("Enemy") || 
+                              ((1 << collider.gameObject.layer) & enemyLayerMask) != 0;
+                
+                if (isEnemy)
                 {
-                    if (HasLineOfSight(enemy.transform.position))
+                    float distance = Vector3.Distance(transform.position, collider.transform.position);
+                    if (distance < nearestDistance)
                     {
-                        currentTarget = enemy.gameObject;
-                        SetState(AIState.Combat);
-                        break;
+                        nearestDistance = distance;
+                        nearestEnemy = collider.gameObject;
                     }
                 }
             }
+            
+            if (nearestEnemy != null)
+            {
+                Debug.Log($"[CompanionAI] {gameObject.name} - Found enemy target: {nearestEnemy.name} at distance {nearestDistance:F1}");
+                currentTarget = nearestEnemy;
+                SetState(AIState.Combat);
+            }
         }
 
-        private float GetEffectiveDetectionRange()
-        {
-            int intelligenceLevel = GetIntelligenceLevelFromTrust();
-            
-            return intelligenceLevel switch
-            {
-                1 => detectionRange * 0.5f,  // Very limited detection
-                2 => detectionRange * 0.7f,  // Basic detection
-                3 => detectionRange * 0.9f,  // Good detection
-                4 => detectionRange * 1.1f,  // Enhanced detection
-                5 => detectionRange * 1.3f,  // Superior detection
-                _ => detectionRange
-            };
-        }
-
-        private float GetEffectiveDetectionAngle()
-        {
-            int intelligenceLevel = GetIntelligenceLevelFromTrust();
-            
-            return intelligenceLevel switch
-            {
-                1 => detectionAngle * 0.6f,  // Narrow vision
-                2 => detectionAngle * 0.8f,  // Limited vision
-                3 => detectionAngle,         // Normal vision
-                4 => detectionAngle * 1.2f,  // Wide vision
-                5 => detectionAngle * 1.4f,  // Very wide vision
-                _ => detectionAngle
-            };
-        }
 
         private bool HasLineOfSight(Vector3 targetPosition)
         {
@@ -657,6 +633,18 @@ namespace KowloonBreak.Characters
             float distanceToTarget = Vector3.Distance(rayStart, targetPosition);
             
             return !Physics.Raycast(rayStart, directionToTarget, distanceToTarget, obstacleLayerMask);
+        }
+
+        /// <summary>
+        /// シンプルなエネミー判定：Enemyタグまたはレイヤーがあれば攻撃対象
+        /// </summary>
+        private bool IsSimpleEnemy(GameObject target)
+        {
+            if (target == null || target == gameObject) return false;
+            
+            // Enemyタグ または enemyLayerMaskに含まれる
+            return target.CompareTag("Enemy") || 
+                   ((1 << target.layer) & enemyLayerMask) != 0;
         }
 
         private void MoveToPosition(Vector3 targetPosition)
@@ -685,54 +673,106 @@ namespace KowloonBreak.Characters
             
             lastUpdateTime = Time.time;
             
-            if (currentTarget != null)
+            if (currentTarget != null && animatorController != null)
             {
-                ExecuteAttackDamage();
                 Debug.Log($"{gameObject.name} attacking {currentTarget.name}");
-            }
-        }
-
-        public virtual void ExecuteAttackDamage()
-        {
-            if (currentTarget == null) return;
-
-            // 攻撃アニメーションをトリガー
-            if (animatorController != null)
-            {
+                
+                // MiningSystemで攻撃準備
+                if (miningSystem != null)
+                {
+                    bool attackPrepared = miningSystem.TryAttackWithTool(currentTarget);
+                    Debug.Log($"{gameObject.name} - Mining system attack prepared: {attackPrepared}");
+                }
+                
+                // アニメーション開始
                 animatorController.TriggerAttack();
             }
+        }
 
-            var destructible = currentTarget.GetComponent<Environment.IDestructible>();
-            if (destructible != null && destructible.CanBeDestroyedBy(Core.ToolType.IronPipe))
+        /// <summary>
+        /// ツール使用効果実行（プレイヤーシステムと同等）
+        /// </summary>
+        public virtual void ExecuteToolUsageEffect()
+        {
+            Debug.Log($"{gameObject.name} - ExecuteToolUsageEffect called");
+            
+            // MiningSystemがある場合はそれを使用
+            if (miningSystem != null)
             {
-                float damage = CalculateAttackDamage();
-                destructible.TakeDamage(damage, Core.ToolType.IronPipe);
-                
-                // Trust level gain on successful attack
-                companionCharacter.ChangeTrustLevel(1);
-                
-                Debug.Log($"{gameObject.name} dealt {damage} damage to {currentTarget.name}");
+                Debug.Log($"{gameObject.name} - Using CompanionMiningSystem for tool usage");
+                miningSystem.ExecuteMiningDamage();
+            }
+            else
+            {
+                // フォールバック: 従来の直接攻撃
+                Debug.Log($"{gameObject.name} - Using fallback attack system");
+                if (currentTarget != null)
+                {
+                    ExecuteAttackDamage();
+                }
             }
         }
 
-        private float CalculateAttackDamage()
+        /// <summary>
+        /// シンプルな攻撃ダメージ処理（アニメーションイベントから呼ばれる）
+        /// </summary>
+        public virtual void ExecuteAttackDamage()
         {
-            float baseDamage = 15f; // Base companion attack damage
-            float intelligenceMultiplier = 1f + (GetIntelligenceLevelFromTrust() - 1) * 0.2f;
+            float damage = 15f; // 固定ダメージ
+            Vector3 attackPos = transform.position + transform.forward * 1.5f;
             
-            // Role-based damage modifiers
-            float roleMultiplier = companionCharacter.Role switch
+            Debug.Log($"{gameObject.name} - ExecuteAttackDamage called, damage: {damage}");
+            Debug.Log($"{gameObject.name} - Attack position: {attackPos}, My position: {transform.position}");
+            
+            // シンプルに2m範囲ですべてのコライダーを取得
+            Collider[] hits = Physics.OverlapSphere(attackPos, 2f);
+            Debug.Log($"{gameObject.name} - OverlapSphere found {hits.Length} colliders");
+            
+            bool hitSomething = false;
+            
+            foreach (var hit in hits)
             {
-                CharacterRole.Fighter => 1.3f,
-                CharacterRole.Scout => 0.9f,
-                CharacterRole.Medic => 0.7f,
-                CharacterRole.Engineer => 1.0f,
-                CharacterRole.Negotiator => 0.8f,
-                _ => 1.0f
-            };
-
-            return baseDamage * intelligenceMultiplier * roleMultiplier;
+                if (hit == null || hit.gameObject == gameObject) continue;
+                
+                Debug.Log($"{gameObject.name} - Checking collider: {hit.name}, tag: {hit.tag}, layer: {hit.gameObject.layer}");
+                
+                // EnemyBaseコンポーネントを直接探す
+                var enemy = hit.GetComponent<Enemies.EnemyBase>();
+                if (enemy != null)
+                {
+                    Debug.Log($"{gameObject.name} - Found EnemyBase component on {hit.name}, calling TakeDamage({damage})");
+                    enemy.TakeDamage(damage);
+                    hitSomething = true;
+                    
+                    // ダメージテキスト表示
+                    if (UI.UIManager.Instance != null)
+                    {
+                        UI.UIManager.Instance.ShowDamageText(hit.transform.position + Vector3.up * 1.5f, damage, false);
+                    }
+                    continue;
+                }
+                
+                // 破壊可能オブジェクトもチェック
+                var destructible = hit.GetComponent<Environment.IDestructible>();
+                if (destructible != null && destructible.CanBeDestroyedBy(Core.ToolType.IronPipe))
+                {
+                    Debug.Log($"{gameObject.name} - Hitting destructible: {hit.name}");
+                    destructible.TakeDamage(damage, Core.ToolType.IronPipe);
+                    hitSomething = true;
+                }
+            }
+            
+            if (hitSomething)
+            {
+                companionCharacter.ChangeTrustLevel(1);
+                Debug.Log($"{gameObject.name} - Attack hit!");
+            }
+            else
+            {
+                Debug.Log($"{gameObject.name} - Attack missed");
+            }
         }
+
 
         private void UpdateLastPlayerPosition()
         {
@@ -749,11 +789,11 @@ namespace KowloonBreak.Characters
         {
             if (animatorController == null || navAgent == null) return;
 
-            // NavMeshAgentの速度から移動状態を判定
-            float velocity = navAgent.velocity.magnitude;
+            // NavMeshAgentの実際の速度を取得
+            float actualVelocity = navAgent.velocity.magnitude;
             CompanionMovementState targetMovementState;
             
-            if (velocity < 0.1f)
+            if (actualVelocity < 0.1f)
             {
                 targetMovementState = CompanionMovementState.Idle;
                 isRunning = false;
@@ -767,15 +807,22 @@ namespace KowloonBreak.Characters
                 
                 // NavMeshAgentの速度を設定（実際の移動速度）
                 ApplyMovementSpeed();
+                
+                // 実際の移動速度から走行状態を判定
+                isRunning = actualVelocity > walkSpeed + 0.5f;
             }
 
-            // アニメーションステートが変化した場合のみ更新
+            // 実際の速度をアニメーターに送信（新しいシステム）
+            animatorController.SetRealSpeed(actualVelocity);
+            
+            // アニメーションステートが変化した場合のみ更新（後方互換性のため）
             if (currentMovementState != targetMovementState || 
                 animatorController.IsCrouching != isCrouching ||
                 HasMovementStateChanged())
             {
                 currentMovementState = targetMovementState;
-                animatorController.SetMovementState(currentMovementState, isRunning, isCrouching);
+                // 新しいメソッドを使用して実際の速度でステートを設定
+                animatorController.SetMovementStateWithRealSpeed(currentMovementState, actualVelocity, isCrouching);
             }
         }
         
@@ -910,47 +957,6 @@ namespace KowloonBreak.Characters
             navAgent.speed = targetSpeed;
         }
 
-        /// <summary>
-        /// ダッジロールを実行（知能レベルに応じて）
-        /// </summary>
-        public void TryPerformDodgeRoll()
-        {
-            if (!canDodge || animatorController == null) return;
-            
-            int intelligenceLevel = GetIntelligenceLevelFromTrust();
-            
-            // 知能レベル3以上でダッジロール可能
-            if (intelligenceLevel < 3) return;
-            
-            // ダッジロール中でない場合のみ実行
-            if (!animatorController.IsDodging)
-            {
-                animatorController.TriggerDodge();
-                
-                // ダッジロール方向を計算（敵から離れる方向）
-                Vector3 dodgeDirection = Vector3.zero;
-                
-                if (currentTarget != null)
-                {
-                    dodgeDirection = (transform.position - currentTarget.transform.position).normalized;
-                }
-                else if (player != null)
-                {
-                    // ターゲットがない場合はプレイヤーの側方にダッジ
-                    dodgeDirection = Vector3.Cross(player.forward, Vector3.up).normalized;
-                    if (UnityEngine.Random.Range(0f, 1f) > 0.5f)
-                        dodgeDirection = -dodgeDirection;
-                }
-                
-                // ダッジロール先の位置を計算
-                Vector3 dodgeTarget = transform.position + dodgeDirection * 3f;
-                
-                if (UnityEngine.AI.NavMesh.SamplePosition(dodgeTarget, out UnityEngine.AI.NavMeshHit hit, 3f, UnityEngine.AI.NavMesh.AllAreas))
-                {
-                    navAgent.SetDestination(hit.position);
-                }
-            }
-        }
 
         private int GetIntelligenceLevelFromTrust()
         {
@@ -1083,13 +1089,30 @@ namespace KowloonBreak.Characters
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(transform.position, followDistance);
             
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, maxFollowDistance);
+            // Smart teleport range (replaces old maxFollowDistance)
+            if (enableSmartTeleport)
+            {
+                Gizmos.color = new Color(1f, 0.5f, 0f); // オレンジ色
+                Gizmos.DrawWireSphere(transform.position, teleportDistance);
+            }
+            else
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(transform.position, maxFollowDistance);
+            }
             
             if (player != null)
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawLine(transform.position, player.position);
+                
+                // Camera visibility indicator
+                if (enableSmartTeleport && playerCamera != null)
+                {
+                    bool isVisible = IsVisibleInCamera();
+                    Gizmos.color = isVisible ? Color.green : Color.red;
+                    Gizmos.DrawWireCube(transform.position + Vector3.up * 2f, Vector3.one * 0.3f);
+                }
             }
             
             Vector3 leftBoundary = Quaternion.Euler(0, -detectionAngle * 0.5f, 0) * transform.forward * detectionRange;
@@ -1098,6 +1121,39 @@ namespace KowloonBreak.Characters
             Gizmos.color = Color.cyan;
             Gizmos.DrawRay(transform.position, leftBoundary);
             Gizmos.DrawRay(transform.position, rightBoundary);
+            
+            // シンプルな視覚化
+            
+            // 10メートル検出範囲
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(transform.position, 10f);
+            
+            // 3メートル接近範囲
+            if (currentState == AIState.Combat)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(transform.position, 3f);
+                
+                // プレイヤーと同じ攻撃範囲表示
+                Vector3 attackPosition = attackPoint != null ? attackPoint.position : transform.position + transform.forward * 1f;
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawWireSphere(attackPosition, attackRange);
+            }
+            
+            // Current target visualization
+            if (currentTarget != null)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(transform.position, currentTarget.transform.position);
+                Gizmos.DrawWireSphere(currentTarget.transform.position, 0.5f);
+            }
+            
+            // State visualization
+            string stateText = $"{gameObject.name}\nState: {currentState}\nIntel: {GetIntelligenceLevelFromTrust()}";
+            if (currentTarget != null)
+            {
+                stateText += $"\nTarget: {currentTarget.name}";
+            }
         }
 
         private void OnValidate()
@@ -1105,6 +1161,22 @@ namespace KowloonBreak.Characters
             if (navAgent != null)
             {
                 navAgent.stoppingDistance = stoppingDistance;
+            }
+            
+            // 設定チェック
+            if (enemyLayerMask == 0)
+            {
+                Debug.LogWarning($"[CompanionAI] {gameObject.name} - EnemyLayerMask is not set! Enemy detection may not work properly.");
+            }
+            
+            if (destructibleLayers == 0)
+            {
+                Debug.LogWarning($"[CompanionAI] {gameObject.name} - DestructibleLayers is not set! Attacks will not work properly.");
+            }
+            
+            if (attackRange <= 0)
+            {
+                Debug.LogWarning($"[CompanionAI] {gameObject.name} - AttackRange must be greater than 0!");
             }
         }
     }

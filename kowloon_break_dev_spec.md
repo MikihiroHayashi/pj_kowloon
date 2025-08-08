@@ -12,7 +12,7 @@
 - **ターゲット**: 14歳以上〜30代のゲーマー層
 
 ### プロジェクトファイルパス
-/mnt/d/UnityProject/pj_kowloon\pj_kowloon
+/mnt/d/UnityProject/pj_kowloon/pj_kowloon
 
 ### ゲームコンセプト
 「閉鎖都市サバイバル」×「ギャング抗争」×「ゾンビ感染」×「脱出劇」

@@ -660,6 +660,7 @@ namespace KowloonBreak.Enemies
         // 既存のTakeDamageメソッドをオーバーロードとして残す
         public virtual void TakeDamage(float damage)
         {
+            Debug.Log($"[EnemyBase] {gameObject.name} - TakeDamage called with damage: {damage}");
             TakeDamage(damage, ToolType.IronPipe); // デフォルトツール
         }
 

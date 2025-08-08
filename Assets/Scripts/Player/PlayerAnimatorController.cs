@@ -26,15 +26,15 @@ namespace KowloonBreak.Player
         [SerializeField] private string dodgeParameterName = "Dodge";
         [SerializeField] private string crouchParameterName = "Crouch";
         
-        [Header("Speed Values")]
-        [Tooltip("アニメーター速度値: 停止状態")]
-        [SerializeField] private float idleSpeed = 0f;
-        [Tooltip("アニメーター速度値: しゃがみ移動")]
-        [SerializeField] private float crouchSpeed = 0.5f;
-        [Tooltip("アニメーター速度値: 通常歩行")]
-        [SerializeField] private float walkSpeed = 1f;
-        [Tooltip("アニメーター速度値: 走行")]
-        [SerializeField] private float runSpeed = 2f;
+        [Header("Speed Values - Actual Velocities")]
+        [Tooltip("しきい値: 停止状態の最大速度 (単位/秒)")]
+        [SerializeField] private float idleSpeedThreshold = 0.1f;
+        [Tooltip("しきい値: しゃがみ移動の最大速度 (単位/秒)")]
+        [SerializeField] private float crouchSpeedThreshold = 2f;
+        [Tooltip("しきい値: 通常歩行の最大速度 (単位/秒)")]
+        [SerializeField] private float walkSpeedThreshold = 4f;
+        [Tooltip("しきい値: 走行の最大速度 (単位/秒)")]
+        [SerializeField] private float runSpeedThreshold = 8f;
         
         private float currentAngle = 0f;
         private float targetAngle = 0f;
@@ -55,11 +55,15 @@ namespace KowloonBreak.Player
         private bool hasDodgeParameter;
         private bool hasCrouchParameter;
         
-        // 速度値のプロパティ
-        public float IdleSpeed => idleSpeed;
-        public float CrouchSpeed => crouchSpeed;
-        public float WalkSpeed => walkSpeed;
-        public float RunSpeed => runSpeed;
+        // 速度しきい値のプロパティ
+        public float IdleSpeedThreshold => idleSpeedThreshold;
+        public float CrouchSpeedThreshold => crouchSpeedThreshold;
+        public float WalkSpeedThreshold => walkSpeedThreshold;
+        public float RunSpeedThreshold => runSpeedThreshold;
+        
+        // 現在の実際の速度値
+        private float currentRealSpeed = 0f;
+        public float CurrentRealSpeed => currentRealSpeed;
         
         private void Awake()
         {
@@ -83,7 +87,6 @@ namespace KowloonBreak.Player
             if (animator != null)
             {
                 CacheParameterHashes();
-                Debug.Log($"[PlayerAnimatorController] Using Inspector-assigned Animator: {animator.name}");
             }
             else
             {
@@ -186,17 +189,9 @@ namespace KowloonBreak.Player
             hasDodgeParameter = HasParameter(dodgeParameterName);
             hasCrouchParameter = HasParameter(crouchParameterName);
             
-            // 存在しないパラメータをログ出力
+            // 存在しないパラメータをログ出力（重要な警告のみ）
             if (!hasAngleParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{angleParameterName}' not found in Animator");
-            if (!hasDeathParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{deathParameterName}' not found in Animator");
-            if (!hasAttackParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{attackParameterName}' not found in Animator");
-            if (!hasDigParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{digParameterName}' not found in Animator");
             if (!hasSpeedParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{speedParameterName}' not found in Animator");
-            if (!hasDodgeParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{dodgeParameterName}' not found in Animator");
-            if (!hasCrouchParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{crouchParameterName}' not found in Animator");
-            
-            // 利用可能なパラメータを一覧表示
-            LogAvailableParameters();
         }
         
         /// <summary>
@@ -216,19 +211,6 @@ namespace KowloonBreak.Player
             return false;
         }
         
-        /// <summary>
-        /// 利用可能なパラメータ一覧をログ出力
-        /// </summary>
-        private void LogAvailableParameters()
-        {
-            if (animator == null) return;
-            
-            Debug.Log($"[PlayerAnimatorController] Available Animator Parameters ({animator.parameters.Length} total):");
-            foreach (AnimatorControllerParameter param in animator.parameters)
-            {
-                Debug.Log($"  - {param.name} ({param.type})");
-            }
-        }
         
         private void UpdateAnimatorAngle(float angle)
         {
@@ -320,16 +302,7 @@ namespace KowloonBreak.Player
         {
             if (animator != null && hasAttackParameter)
             {
-                Debug.Log($"[PlayerAnimatorController] Triggering Attack animation for weapon");
                 animator.SetTrigger(attackParameterHash);
-            }
-            else if (animator == null)
-            {
-                Debug.LogWarning("[PlayerAnimatorController] Cannot trigger Attack - Animator is null");
-            }
-            else
-            {
-                Debug.LogWarning($"[PlayerAnimatorController] Cannot trigger Attack - Parameter '{attackParameterName}' not found in Animator");
             }
         }
         
@@ -340,22 +313,12 @@ namespace KowloonBreak.Player
         {
             if (animator != null && hasDigParameter)
             {
-                Debug.Log($"[PlayerAnimatorController] Triggering Dig animation for pickaxe");
                 animator.SetTrigger(digParameterHash);
             }
-            else if (animator == null)
+            else if (animator != null && hasAttackParameter)
             {
-                Debug.LogWarning("[PlayerAnimatorController] Cannot trigger Dig - Animator is null");
-            }
-            else
-            {
-                Debug.LogWarning($"[PlayerAnimatorController] Cannot trigger Dig - Parameter '{digParameterName}' not found in Animator");
                 // Digパラメーターがない場合はAttackで代用
-                if (hasAttackParameter)
-                {
-                    Debug.Log("[PlayerAnimatorController] Fallback: Using Attack animation for dig");
-                    animator.SetTrigger(attackParameterHash);
-                }
+                animator.SetTrigger(attackParameterHash);
             }
         }
         
@@ -366,16 +329,7 @@ namespace KowloonBreak.Player
         {
             if (animator != null && hasDeathParameter)
             {
-                Debug.Log($"[PlayerAnimatorController] Triggering Death animation");
                 animator.SetTrigger(deathParameterHash);
-            }
-            else if (animator == null)
-            {
-                Debug.LogWarning("[PlayerAnimatorController] Cannot trigger Death - Animator is null");
-            }
-            else
-            {
-                Debug.LogWarning($"[PlayerAnimatorController] Cannot trigger Death - Parameter '{deathParameterName}' not found in Animator");
             }
         }
 
@@ -388,30 +342,38 @@ namespace KowloonBreak.Player
             {
                 animator.SetTrigger(dodgeParameterHash);
             }
-            else if (animator == null)
+        }
+        
+        /// <summary>
+        /// 実際の移動速度を設定（単位/秒）
+        /// </summary>
+        /// <param name="actualSpeed">実際の移動速度 (単位/秒)</param>
+        public void SetRealSpeed(float actualSpeed)
+        {
+            currentRealSpeed = actualSpeed;
+            
+            if (animator != null && hasSpeedParameter)
             {
-                Debug.LogWarning("[PlayerAnimatorController] Cannot trigger Dodge - Animator is null");
-            }
-            else
-            {
-                Debug.LogWarning($"[PlayerAnimatorController] Cannot trigger Dodge - Parameter '{dodgeParameterName}' not found in Animator");
+                animator.SetFloat(speedParameterHash, actualSpeed);
+                
+                if (debugSpeed)
+                {
+                    Debug.Log($"[PlayerAnimatorController] Set Real Speed: {actualSpeed:F2} units/sec");
+                }
             }
         }
         
         /// <summary>
-        /// 移動速度を設定（歩行・走行・しゃがみをすべて速度値で管理）
+        /// 後方互換性のため維持（旧SetSpeedメソッド）
         /// </summary>
-        /// <param name="speed">速度値（Inspectorで設定された値に対応）</param>
+        /// <param name="speed">正規化された速度値（非推奨）</param>
+        [System.Obsolete("Use SetRealSpeed(float actualSpeed) instead for better animation control")]
         public void SetSpeed(float speed)
         {
             if (animator != null && hasSpeedParameter)
             {
                 animator.SetFloat(speedParameterHash, speed);
                 
-                if (debugSpeed)
-                {
-                    Debug.Log($"[PlayerAnimatorController] Set Speed: {speed:F2}");
-                }
             }
         }
         
@@ -424,27 +386,41 @@ namespace KowloonBreak.Player
             if (animator != null && hasCrouchParameter)
             {
                 animator.SetBool(crouchParameterHash, isCrouching);
-                Debug.Log($"[PlayerAnimatorController] Set Crouch parameter to: {isCrouching}");
             }
         }
         
         /// <summary>
-        /// 速度値をランタイムで変更
+        /// 速度しきい値をランタイムで変更
         /// </summary>
-        public void SetSpeedValues(float idle, float crouch, float walk, float run)
+        public void SetSpeedThresholds(float idle, float crouch, float walk, float run)
         {
-            idleSpeed = idle;
-            crouchSpeed = crouch;
-            walkSpeed = walk;
-            runSpeed = run;
+            idleSpeedThreshold = idle;
+            crouchSpeedThreshold = crouch;
+            walkSpeedThreshold = walk;
+            runSpeedThreshold = run;
         }
         
         /// <summary>
-        /// 現在の速度設定を取得
+        /// 現在の速度しきい値を取得
         /// </summary>
-        public (float idle, float crouch, float walk, float run) GetSpeedValues()
+        public (float idle, float crouch, float walk, float run) GetSpeedThresholds()
         {
-            return (idleSpeed, crouchSpeed, walkSpeed, runSpeed);
+            return (idleSpeedThreshold, crouchSpeedThreshold, walkSpeedThreshold, runSpeedThreshold);
+        }
+        
+        /// <summary>
+        /// 実際の速度から移動状態を判定
+        /// </summary>
+        public string GetMovementStateFromSpeed()
+        {
+            if (currentRealSpeed <= idleSpeedThreshold)
+                return "Idle";
+            else if (currentRealSpeed <= crouchSpeedThreshold)
+                return "Crouch";
+            else if (currentRealSpeed <= walkSpeedThreshold)
+                return "Walk";
+            else
+                return "Run";
         }
         
         private void OnValidate()
@@ -460,22 +436,17 @@ namespace KowloonBreak.Player
         }
         
         /// <summary>
-        /// 速度値の妥当性を検証
+        /// 速度しきい値の妥当性を検証
         /// </summary>
         private void ValidateSpeedValues()
         {
             // 負の値を防ぐ
-            if (idleSpeed < 0f) idleSpeed = 0f;
-            if (crouchSpeed < 0f) crouchSpeed = 0f;
-            if (walkSpeed < 0f) walkSpeed = 0f;
-            if (runSpeed < 0f) runSpeed = 0f;
+            if (idleSpeedThreshold < 0f) idleSpeedThreshold = 0f;
+            if (crouchSpeedThreshold < 0f) crouchSpeedThreshold = 0f;
+            if (walkSpeedThreshold < 0f) walkSpeedThreshold = 0f;
+            if (runSpeedThreshold < 0f) runSpeedThreshold = 0f;
             
-            // 論理的な順序を確認（警告のみ）
-            if (crouchSpeed > walkSpeed)
-                Debug.LogWarning("[PlayerAnimatorController] Crouch speed is higher than walk speed. This might cause unexpected animation behavior.");
-            
-            if (walkSpeed > runSpeed)
-                Debug.LogWarning("[PlayerAnimatorController] Walk speed is higher than run speed. This might cause unexpected animation behavior.");
+            // 論理的な順序を確認（警告は削除）
         }
     }
 }

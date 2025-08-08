@@ -30,15 +30,19 @@ namespace KowloonBreak.Characters
         [SerializeField] private string dodgeParameterName = "Dodge";
         [SerializeField] private string crouchParameterName = "Crouch";
         
-        [Header("Speed Values")]
-        [Tooltip("アニメーター速度値: 停止状態")]
-        [SerializeField] private float idleSpeed = 0f;
-        [Tooltip("アニメーター速度値: しゃがみ移動")]
-        [SerializeField] private float crouchSpeed = 0.5f;
-        [Tooltip("アニメーター速度値: 通常歩行")]
-        [SerializeField] private float walkSpeed = 1f;
-        [Tooltip("アニメーター速度値: 走行")]
-        [SerializeField] private float runSpeed = 2f;
+        [Header("Speed Values - Actual Velocities")]
+        [Tooltip("しきい値: 停止状態の最大速度 (単位/秒)")]
+        [SerializeField] private float idleSpeedThreshold = 0.1f;
+        [Tooltip("しきい値: しゃがみ移動の最大速度 (単位/秒)")]
+        [SerializeField] private float crouchSpeedThreshold = 2f;
+        [Tooltip("しきい値: 通常歩行の最大速度 (単位/秒)")]
+        [SerializeField] private float walkSpeedThreshold = 4f;
+        [Tooltip("しきい値: 走行の最大速度 (単位/秒)")]
+        [SerializeField] private float runSpeedThreshold = 8f;
+        
+        // 現在の実際の速度値
+        private float currentRealSpeed = 0f;
+        public float CurrentRealSpeed => currentRealSpeed;
         
         private float currentAngle = 0f;
         private float targetAngle = 0f;
@@ -202,31 +206,73 @@ namespace KowloonBreak.Characters
             currentMovementState = state;
             isCrouching = isCrouchingState;
             
-            float speed = GetSpeedForState(state, isRunning, isCrouchingState);
-            SetSpeed(speed);
+            // 旧システムとの互換性のため、正規化された値を使用
+            float normalizedSpeed = GetNormalizedSpeedForState(state, isRunning, isCrouchingState);
+            SetSpeed(normalizedSpeed);
             SetCrouch(isCrouchingState);
             
             if (debugSpeed)
             {
-                Debug.Log($"[CompanionAnimatorController] SetMovementState: {state}, Running: {isRunning}, Crouching: {isCrouchingState}, Animator Speed: {speed:F2}");
+                Debug.Log($"[CompanionAnimatorController] SetMovementState: {state}, Running: {isRunning}, Crouching: {isCrouchingState}, Normalized Speed: {normalizedSpeed:F2}");
             }
         }
         
-        private float GetSpeedForState(CompanionMovementState state, bool isRunning, bool isCrouchingState)
+        /// <summary>
+        /// 実際の速度で移動状態を設定
+        /// </summary>
+        public void SetMovementStateWithRealSpeed(CompanionMovementState state, float realSpeed, bool isCrouchingState = false)
         {
-            // PlayerAnimatorControllerと同じ速度値を使用（Animator用の正規化された値）
+            currentMovementState = state;
+            isCrouching = isCrouchingState;
+            
+            SetRealSpeed(realSpeed);
+            SetCrouch(isCrouchingState);
+            
+            if (debugSpeed)
+            {
+                Debug.Log($"[CompanionAnimatorController] SetMovementState: {state}, Real Speed: {realSpeed:F2} units/sec, Crouching: {isCrouchingState}");
+            }
+        }
+        
+        private float GetNormalizedSpeedForState(CompanionMovementState state, bool isRunning, bool isCrouchingState)
+        {
+            // 後方互換性のための正規化された値（非推奨）
             return state switch
             {
-                CompanionMovementState.Idle => idleSpeed,           // 0f
-                CompanionMovementState.Moving when isCrouchingState => crouchSpeed,  // 0.5f
-                CompanionMovementState.Moving when isRunning => runSpeed,           // 2f
-                CompanionMovementState.Moving => walkSpeed,         // 1f
-                CompanionMovementState.Combat => isRunning ? runSpeed : walkSpeed,  // 2f or 1f
-                CompanionMovementState.Dodging => idleSpeed,        // ダッジ中は停止状態として扱う
-                _ => idleSpeed
+                CompanionMovementState.Idle => 0f,
+                CompanionMovementState.Moving when isCrouchingState => 0.5f,
+                CompanionMovementState.Moving when isRunning => 2f,
+                CompanionMovementState.Moving => 1f,
+                CompanionMovementState.Combat => isRunning ? 2f : 1f,
+                CompanionMovementState.Dodging => 0f,
+                _ => 0f
             };
         }
         
+        /// <summary>
+        /// 実際の移動速度を設定（単位/秒）
+        /// </summary>
+        /// <param name="actualSpeed">実際の移動速度 (単位/秒)</param>
+        public void SetRealSpeed(float actualSpeed)
+        {
+            currentRealSpeed = actualSpeed;
+            
+            if (hasSpeedParameter && animator != null)
+            {
+                animator.SetFloat(speedParameterHash, actualSpeed);
+                
+                if (debugSpeed)
+                {
+                    Debug.Log($"[CompanionAnimatorController] Set Real Speed: {actualSpeed:F2} units/sec");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 後方互換性のため維持（旧SetSpeedメソッド）
+        /// </summary>
+        /// <param name="speed">正規化された速度値（非推奨）</param>
+        [System.Obsolete("Use SetRealSpeed(float actualSpeed) instead for better animation control")]
         public void SetSpeed(float speed)
         {
             if (hasSpeedParameter && animator != null)
@@ -235,7 +281,7 @@ namespace KowloonBreak.Characters
                 
                 if (debugSpeed)
                 {
-                    Debug.Log($"[CompanionAnimatorController] Set Speed: {speed:F2}");
+                    Debug.Log($"[CompanionAnimatorController] Set Normalized Speed: {speed:F2} (deprecated)");
                 }
             }
         }

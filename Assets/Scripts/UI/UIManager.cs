@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using KowloonBreak.Core;
 using KowloonBreak.Managers;
@@ -123,6 +124,9 @@ namespace KowloonBreak.UI
             {
                 player = playerObj.transform;
             }
+            
+            // EventSystemの存在を確認・作成
+            EnsureEventSystemExists();
             
             SubscribeToEvents();
             UpdateUI();
@@ -887,6 +891,9 @@ namespace KowloonBreak.UI
             {
                 UpdateCompanionInfo();
                 GenerateCommandButtons();
+                
+                // ボタンが生成された後に初期フォーカスを設定
+                StartCoroutine(SetInitialFocusAfterFrame());
             }
         }
 
@@ -972,6 +979,12 @@ namespace KowloonBreak.UI
             if (button != null)
             {
                 button.onClick.AddListener(() => ExecuteCompanionCommand(command));
+                
+                // UIナビゲーションを明示的に設定
+                Navigation nav = button.navigation;
+                nav.mode = Navigation.Mode.Automatic;
+                button.navigation = nav;
+                
                 activeCommandButtons.Add(button);
             }
         }
@@ -1094,15 +1107,28 @@ namespace KowloonBreak.UI
 
             foreach (var collider in potentialEnemies)
             {
-                if (collider.CompareTag("Enemy") || collider.GetComponent<KowloonBreak.Enemies.EnemyBase>() != null)
+                // より厳密な敵の判定
+                var enemyBase = collider.GetComponent<KowloonBreak.Enemies.EnemyBase>();
+                if (enemyBase != null && !enemyBase.IsDestroyed)
                 {
                     float distance = Vector3.Distance(selectedCompanion.transform.position, collider.transform.position);
                     if (distance < nearestDistance)
                     {
                         nearestDistance = distance;
                         nearestEnemy = collider.gameObject;
+                        Debug.Log($"[UIManager] Found valid enemy target: {collider.name} at distance {distance:F2}");
                     }
                 }
+                else if (collider.CompareTag("Enemy"))
+                {
+                    // Enemyタグはあるけどコンポーネントがない場合の警告
+                    Debug.LogWarning($"[UIManager] Object {collider.name} has Enemy tag but no valid EnemyBase component!");
+                }
+            }
+
+            if (nearestEnemy == null)
+            {
+                Debug.Log($"[UIManager] No valid enemies found near companion within {searchRadius} units");
             }
 
             return nearestEnemy;
@@ -1232,6 +1258,60 @@ namespace KowloonBreak.UI
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 1フレーム待ってから最初のボタンにフォーカスを設定
+        /// </summary>
+        private System.Collections.IEnumerator SetInitialFocusAfterFrame()
+        {
+            // 1フレーム待つ（ボタンが完全に生成されるまで）
+            yield return null;
+            
+            SetInitialButtonFocus();
+        }
+
+        /// <summary>
+        /// CompanionCommandパネルの最初のボタンにフォーカスを設定
+        /// </summary>
+        private void SetInitialButtonFocus()
+        {
+            if (activeCommandButtons.Count > 0 && activeCommandButtons[0] != null)
+            {
+                // EventSystemが存在することを確認
+                EventSystem eventSystem = EventSystem.current;
+                if (eventSystem != null)
+                {
+                    // 最初のボタンを選択状態に設定
+                    eventSystem.SetSelectedGameObject(activeCommandButtons[0].gameObject);
+                    
+                    Debug.Log($"[UIManager] Initial focus set to first command button: {activeCommandButtons[0].name}");
+                }
+                else
+                {
+                    Debug.LogWarning("[UIManager] EventSystem not found! UI navigation will not work properly.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[UIManager] No command buttons available to set initial focus.");
+            }
+        }
+
+        /// <summary>
+        /// EventSystemの状態をチェック・修復
+        /// </summary>
+        public void EnsureEventSystemExists()
+        {
+            if (EventSystem.current == null)
+            {
+                // EventSystemが存在しない場合は新規作成
+                GameObject eventSystemObj = new GameObject("EventSystem");
+                eventSystemObj.AddComponent<EventSystem>();
+                eventSystemObj.AddComponent<StandaloneInputModule>();
+                
+                Debug.Log("[UIManager] EventSystem created automatically.");
+            }
         }
 
         #endregion
