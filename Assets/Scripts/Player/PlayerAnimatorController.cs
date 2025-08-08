@@ -15,6 +15,7 @@ namespace KowloonBreak.Player
         [SerializeField] private bool smoothAngleTransition = true;
         [SerializeField] private float smoothSpeed = 5f;
         [SerializeField] private bool debugAngle = false;
+        [SerializeField] private bool debugSpeed = false;
         
         [Header("Parameter Names")]
         [SerializeField] private string angleParameterName = "Angle";
@@ -112,6 +113,8 @@ namespace KowloonBreak.Player
             if (smoothAngleTransition)
             {
                 currentAngle = Mathf.LerpAngle(currentAngle, targetAngle, Time.deltaTime * smoothSpeed);
+                // LerpAngle結果も正規化して累積を防ぐ
+                currentAngle = NormalizeAngle360(currentAngle);
             }
             else
             {
@@ -124,7 +127,7 @@ namespace KowloonBreak.Player
             // デバッグ表示
             if (debugAngle)
             {
-                Debug.Log($"Player Angle: {currentAngle:F1}°");
+                Debug.Log($"Player Angle: {currentAngle:F1}° (Target: {targetAngle:F1}°)");
             }
         }
         
@@ -146,13 +149,17 @@ namespace KowloonBreak.Player
             // Y軸周りの角度を計算（0度 = 前方、時計回りに360度）
             float angle = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
             
-            // 0-360度の範囲に正規化
-            if (angle < 0)
-            {
-                angle += 360f;
-            }
-            
-            return angle;
+            // 確実な0-360度正規化
+            return NormalizeAngle360(angle);
+        }
+        
+        /// <summary>
+        /// 角度を0-360度の範囲に正規化
+        /// </summary>
+        private static float NormalizeAngle360(float angle)
+        {
+            // Mathf.Repeat使用でより安全な正規化
+            return Mathf.Repeat(angle, 360f);
         }
         
         /// <summary>
@@ -227,8 +234,9 @@ namespace KowloonBreak.Player
         {
             if (animator == null || !hasAngleParameter) return;
             
-            // Animatorパラメータを更新
-            animator.SetFloat(angleParameterHash, angle);
+            // 角度を正規化してからAnimatorパラメータを更新
+            float normalizedAngle = NormalizeAngle360(angle);
+            animator.SetFloat(angleParameterHash, normalizedAngle);
         }
         
         /// <summary>
@@ -238,11 +246,8 @@ namespace KowloonBreak.Player
         {
             if (!hasAngleParameter) return;
             
-            // 0-360度の範囲に正規化
-            while (angle < 0) angle += 360f;
-            while (angle >= 360f) angle -= 360f;
-            
-            targetAngle = angle;
+            // 確実な0-360度正規化
+            targetAngle = NormalizeAngle360(angle);
             
             if (!smoothAngleTransition)
             {
@@ -402,6 +407,11 @@ namespace KowloonBreak.Player
             if (animator != null && hasSpeedParameter)
             {
                 animator.SetFloat(speedParameterHash, speed);
+                
+                if (debugSpeed)
+                {
+                    Debug.Log($"[PlayerAnimatorController] Set Speed: {speed:F2}");
+                }
             }
         }
         

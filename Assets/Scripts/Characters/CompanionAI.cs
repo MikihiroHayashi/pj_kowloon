@@ -765,17 +765,28 @@ namespace KowloonBreak.Characters
                 // 知能レベルに応じて移動速度を調整
                 DetermineMovementBehavior();
                 
-                // NavMeshAgentの速度を設定
+                // NavMeshAgentの速度を設定（実際の移動速度）
                 ApplyMovementSpeed();
             }
 
             // アニメーションステートが変化した場合のみ更新
             if (currentMovementState != targetMovementState || 
-                animatorController.IsCrouching != isCrouching)
+                animatorController.IsCrouching != isCrouching ||
+                HasMovementStateChanged())
             {
                 currentMovementState = targetMovementState;
                 animatorController.SetMovementState(currentMovementState, isRunning, isCrouching);
             }
+        }
+        
+        /// <summary>
+        /// 移動状態の変化をチェック
+        /// </summary>
+        private bool HasMovementStateChanged()
+        {
+            bool previousIsRunning = animatorController.CurrentMovementState == CompanionMovementState.Moving && 
+                                   navAgent.speed > walkSpeed + 0.1f;
+            return isRunning != previousIsRunning;
         }
 
         /// <summary>

@@ -148,8 +148,8 @@ MonoBehaviour:
   maxFollowDistance: 5
   baseUpdateRate: 0.2
   stoppingDistance: 1
-  walkSpeed: 3
-  runSpeed: 6
+  walkSpeed: 4
+  runSpeed: 8
   crouchSpeed: 1.5
   canRun: 1
   canCrouch: 1

@@ -19,6 +19,7 @@ namespace KowloonBreak.Characters
         [SerializeField] private bool smoothAngleTransition = true;
         [SerializeField] private float smoothSpeed = 5f;
         [SerializeField] private bool debugAngle = false;
+        [SerializeField] private bool debugSpeed = false;
         
         [Header("Parameter Names")]
         [SerializeField] private string angleParameterName = "Angle";
@@ -135,36 +136,62 @@ namespace KowloonBreak.Characters
         {
             if (!hasAngleParameter || animator == null || targetTransform == null) return;
             
-            Vector3 velocity = targetTransform.GetComponent<UnityEngine.AI.NavMeshAgent>()?.velocity ?? Vector3.zero;
-            
-            if (velocity.magnitude > 0.1f)
-            {
-                // 移動方向を基に角度を計算
-                Vector3 direction = velocity.normalized;
-                Vector3 forward = useLocalRotation ? targetTransform.forward : Vector3.forward;
-                Vector3 right = useLocalRotation ? targetTransform.right : Vector3.right;
-                
-                float dotForward = Vector3.Dot(direction, forward);
-                float dotRight = Vector3.Dot(direction, right);
-                
-                targetAngle = Mathf.Atan2(dotRight, dotForward) * Mathf.Rad2Deg;
-            }
+            // PlayerAnimatorControllerと同じ計算方法を使用
+            targetAngle = CalculateAngle();
             
             if (smoothAngleTransition)
             {
                 currentAngle = Mathf.LerpAngle(currentAngle, targetAngle, Time.deltaTime * smoothSpeed);
+                // LerpAngle結果も正規化して累積を防ぐ
+                currentAngle = NormalizeAngle360(currentAngle);
             }
             else
             {
                 currentAngle = targetAngle;
             }
             
-            animator.SetFloat(angleParameterHash, currentAngle);
+            // 角度を正規化してからAnimatorパラメータを更新
+            float normalizedAngle = NormalizeAngle360(currentAngle);
+            animator.SetFloat(angleParameterHash, normalizedAngle);
             
             if (debugAngle)
             {
-                Debug.Log($"[CompanionAnimatorController] Angle: {currentAngle:F1}°");
+                Debug.Log($"[CompanionAnimatorController] Angle: {normalizedAngle:F1}° (current: {currentAngle:F1}°)");
             }
+        }
+        
+        /// <summary>
+        /// PlayerAnimatorControllerと同じ角度計算方法
+        /// </summary>
+        private float CalculateAngle()
+        {
+            Vector3 forward;
+            
+            if (useLocalRotation)
+            {
+                // ローカル回転を使用
+                forward = targetTransform.forward;
+            }
+            else
+            {
+                // ワールド回転を使用
+                forward = targetTransform.rotation * Vector3.forward;
+            }
+            
+            // Y軸周りの角度を計算（0度 = 前方、時計回りに360度）
+            float angle = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+            
+            // 確実な0-360度正規化
+            return NormalizeAngle360(angle);
+        }
+        
+        /// <summary>
+        /// 角度を0-360度の範囲に正規化
+        /// </summary>
+        private static float NormalizeAngle360(float angle)
+        {
+            // Mathf.Repeat使用でより安全な正規化
+            return Mathf.Repeat(angle, 360f);
         }
         
         /// <summary>
@@ -178,18 +205,24 @@ namespace KowloonBreak.Characters
             float speed = GetSpeedForState(state, isRunning, isCrouchingState);
             SetSpeed(speed);
             SetCrouch(isCrouchingState);
+            
+            if (debugSpeed)
+            {
+                Debug.Log($"[CompanionAnimatorController] SetMovementState: {state}, Running: {isRunning}, Crouching: {isCrouchingState}, Animator Speed: {speed:F2}");
+            }
         }
         
         private float GetSpeedForState(CompanionMovementState state, bool isRunning, bool isCrouchingState)
         {
+            // PlayerAnimatorControllerと同じ速度値を使用（Animator用の正規化された値）
             return state switch
             {
-                CompanionMovementState.Idle => idleSpeed,
-                CompanionMovementState.Moving when isCrouchingState => crouchSpeed,
-                CompanionMovementState.Moving when isRunning => runSpeed,
-                CompanionMovementState.Moving => walkSpeed,
-                CompanionMovementState.Combat => isRunning ? runSpeed : walkSpeed,
-                CompanionMovementState.Dodging => walkSpeed, // ダッジ中は歩行速度
+                CompanionMovementState.Idle => idleSpeed,           // 0f
+                CompanionMovementState.Moving when isCrouchingState => crouchSpeed,  // 0.5f
+                CompanionMovementState.Moving when isRunning => runSpeed,           // 2f
+                CompanionMovementState.Moving => walkSpeed,         // 1f
+                CompanionMovementState.Combat => isRunning ? runSpeed : walkSpeed,  // 2f or 1f
+                CompanionMovementState.Dodging => idleSpeed,        // ダッジ中は停止状態として扱う
                 _ => idleSpeed
             };
         }
@@ -199,6 +232,11 @@ namespace KowloonBreak.Characters
             if (hasSpeedParameter && animator != null)
             {
                 animator.SetFloat(speedParameterHash, speed);
+                
+                if (debugSpeed)
+                {
+                    Debug.Log($"[CompanionAnimatorController] Set Speed: {speed:F2}");
+                }
             }
         }
         
@@ -255,6 +293,52 @@ namespace KowloonBreak.Characters
             // 攻撃アニメーション終了処理
         }
         
+        /// <summary>
+        /// 手動で角度を設定
+        /// </summary>
+        public void SetAngle(float angle)
+        {
+            if (!hasAngleParameter) return;
+            
+            // 確実な0-360度正規化
+            targetAngle = NormalizeAngle360(angle);
+            
+            if (!smoothAngleTransition)
+            {
+                currentAngle = targetAngle;
+                if (animator != null)
+                {
+                    float normalizedAngle = NormalizeAngle360(currentAngle);
+                    animator.SetFloat(angleParameterHash, normalizedAngle);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 現在の角度を取得
+        /// </summary>
+        public float GetCurrentAngle()
+        {
+            return currentAngle;
+        }
+        
+        /// <summary>
+        /// ターゲット角度を取得
+        /// </summary>
+        public float GetTargetAngle()
+        {
+            return targetAngle;
+        }
+        
+        /// <summary>
+        /// スムーズ遷移の有効/無効を設定
+        /// </summary>
+        public void SetSmoothTransition(bool enabled, float speed = 5f)
+        {
+            smoothAngleTransition = enabled;
+            smoothSpeed = speed;
+        }
+
         // デバッグ用
         private void OnValidate()
         {
