@@ -19,11 +19,6 @@ namespace KowloonBreak.Environment
         [SerializeField] private AnimationCurve lightIntensityCurve;
         [SerializeField] private float dayDuration = 1200f;
 
-        [Header("Neon Lighting")]
-        [SerializeField] private NeonSign[] neonSigns;
-        [SerializeField] private Color[] neonColors = { Color.magenta, Color.cyan, Color.yellow, Color.red };
-        [SerializeField] private float neonFlickerIntensity = 0.1f;
-        [SerializeField] private float neonFlickerSpeed = 2f;
 
         [Header("Atmospheric Effects")]
         [SerializeField] private ParticleSystem dustParticles;
@@ -70,7 +65,6 @@ namespace KowloonBreak.Environment
         private void Update()
         {
             UpdateDayNightCycle();
-            UpdateNeonLighting();
             UpdateWeatherSystem();
             UpdateAtmosphericEffects();
         }
@@ -82,7 +76,6 @@ namespace KowloonBreak.Environment
                 CreateDefaultWeatherPresets();
             }
 
-            InitializeNeonSigns();
             SetupInitialLighting();
             
             Debug.Log("Environment Manager Initialized");
@@ -145,18 +138,6 @@ namespace KowloonBreak.Environment
             };
         }
 
-        private void InitializeNeonSigns()
-        {
-            if (neonSigns == null) return;
-
-            foreach (var neonSign in neonSigns)
-            {
-                if (neonSign != null)
-                {
-                    neonSign.Initialize();
-                }
-            }
-        }
 
         private void SetupInitialLighting()
         {
@@ -212,21 +193,6 @@ namespace KowloonBreak.Environment
             }
         }
 
-        private void UpdateNeonLighting()
-        {
-            if (neonSigns == null) return;
-
-            float flickerValue = Mathf.Sin(Time.time * neonFlickerSpeed) * neonFlickerIntensity;
-            float nightMultiplier = IsNight ? 1f : 0.3f;
-
-            foreach (var neonSign in neonSigns)
-            {
-                if (neonSign != null)
-                {
-                    neonSign.UpdateFlicker(flickerValue, nightMultiplier);
-                }
-            }
-        }
 
         private void UpdateWeatherSystem()
         {
@@ -340,25 +306,6 @@ namespace KowloonBreak.Environment
             return $"{hour:00}:{minute:00}";
         }
 
-        public void AddNeonSign(NeonSign neonSign)
-        {
-            if (neonSign == null) return;
-            
-            var signList = new List<NeonSign>(neonSigns ?? new NeonSign[0]);
-            signList.Add(neonSign);
-            neonSigns = signList.ToArray();
-            
-            neonSign.Initialize();
-        }
-
-        public void RemoveNeonSign(NeonSign neonSign)
-        {
-            if (neonSign == null || neonSigns == null) return;
-            
-            var signList = new List<NeonSign>(neonSigns);
-            signList.Remove(neonSign);
-            neonSigns = signList.ToArray();
-        }
 
         public float GetEnvironmentalHazardLevel()
         {

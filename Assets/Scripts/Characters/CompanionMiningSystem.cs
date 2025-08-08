@@ -34,11 +34,31 @@ namespace KowloonBreak.Characters
         /// </summary>
         public bool TryAttackWithTool(GameObject target)
         {
-            if (target == null) return false;
+            if (target == null) 
+            {
+                Debug.LogWarning("[CompanionMiningSystem] TryAttackWithTool: target is null");
+                return false;
+            }
             
-            // IDestructibleコンポーネントを探す
+            Debug.Log($"[CompanionMiningSystem] TryAttackWithTool: attempting to attack {target.name}");
+            
+            // IDestructibleコンポーネントを探す（自身から親に向かって検索）
             var destructible = target.GetComponent<IDestructible>();
-            if (destructible == null) return false;
+            if (destructible == null)
+            {
+                Debug.Log($"[CompanionMiningSystem] TryAttackWithTool: {target.name} does not have IDestructible, checking parent objects");
+                destructible = target.GetComponentInParent<IDestructible>();
+            }
+            
+            if (destructible == null) 
+            {
+                Debug.LogWarning($"[CompanionMiningSystem] TryAttackWithTool: {target.name} and its parents do not have IDestructible component");
+                return false;
+            }
+            
+            // 実際のターゲットオブジェクトを特定
+            string targetName = destructible is MonoBehaviour mono ? mono.gameObject.name : target.name;
+            Debug.Log($"[CompanionMiningSystem] TryAttackWithTool: found IDestructible on {targetName}, preparing attack");
             
             // 攻撃準備
             PrepareAttack(destructible, defaultToolType, defaultDamage);
@@ -82,7 +102,23 @@ namespace KowloonBreak.Characters
         {
             if (pendingTarget == null)
             {
-                Debug.LogWarning("[CompanionMiningSystem] No pending attack to execute");
+                Debug.Log("[CompanionMiningSystem] No pending attack to execute - target may have been destroyed or cleared");
+                return;
+            }
+            
+            // ターゲットが既に破壊されているかチェック
+            if (pendingTarget.IsDestroyed)
+            {
+                Debug.Log("[CompanionMiningSystem] Pending target is already destroyed, skipping attack");
+                pendingTarget = null;
+                return;
+            }
+            
+            // MonoBehaviourとして有効性をチェック（オブジェクトが削除されている場合）
+            if (pendingTarget is MonoBehaviour targetMono && targetMono == null)
+            {
+                Debug.Log("[CompanionMiningSystem] Pending target GameObject has been destroyed, skipping attack");
+                pendingTarget = null;
                 return;
             }
             

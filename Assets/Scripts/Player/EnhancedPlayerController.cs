@@ -61,7 +61,6 @@ namespace KowloonBreak.Player
         [SerializeField] private bool crouchToggleMode = true; // false: Hold to crouch, true: Toggle crouch
 
         [Header("Tool Usage System")]
-        [SerializeField] private float toolUsageRange = 1.5f;
         [SerializeField] private LayerMask destructibleLayers = -1;
         [SerializeField] private float toolUsageCooldown = 0.5f;
         [SerializeField] private Transform toolUsagePoint;
@@ -1298,7 +1297,6 @@ namespace KowloonBreak.Player
 
 
             bool hitSomething = false;
-            bool hitEnemy = false;
 
             foreach (var hitCollider in hitObjects)
             {
@@ -1314,7 +1312,6 @@ namespace KowloonBreak.Player
                         var enemyBase = hitCollider.GetComponent<KowloonBreak.Enemies.EnemyBase>();
                         if (enemyBase != null)
                         {
-                            hitEnemy = true;
                             if (isStealthAttack)
                             {
                                 OnStealthAttack?.Invoke(damage * 3f); // ステルス攻撃イベント発火

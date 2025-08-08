@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using KowloonBreak.Core;
 using KowloonBreak.Player;
+using KowloonBreak.Environment;
 
 namespace KowloonBreak.Characters
 {
@@ -517,6 +518,22 @@ namespace KowloonBreak.Characters
                 return;
             }
 
+            // ターゲットが破壊されているかチェック
+            if (IsTargetDestroyed(currentTarget))
+            {
+                Debug.Log($"{gameObject.name} - Current target {currentTarget.name} has been destroyed, returning to follow state");
+                currentTarget = null;
+                
+                // MiningSystemの保留状態もクリア
+                if (miningSystem != null)
+                {
+                    miningSystem.ClearPendingAttack();
+                }
+                
+                SetState(AIState.Follow);
+                return;
+            }
+
             // ターゲットまでの距離チェック
             float distanceToTarget = Vector3.Distance(transform.position, currentTarget.transform.position);
             
@@ -524,6 +541,13 @@ namespace KowloonBreak.Characters
             if (distanceToTarget > 15f)
             {
                 currentTarget = null;
+                
+                // MiningSystemの保留状態もクリア
+                if (miningSystem != null)
+                {
+                    miningSystem.ClearPendingAttack();
+                }
+                
                 SetState(AIState.Follow);
                 return;
             }
@@ -647,6 +671,41 @@ namespace KowloonBreak.Characters
                    ((1 << target.layer) & enemyLayerMask) != 0;
         }
 
+        /// <summary>
+        /// ターゲットが破壊されているかをチェック
+        /// </summary>
+        private bool IsTargetDestroyed(GameObject target)
+        {
+            if (target == null) return true;
+            
+            // IDestructibleインターフェースで破壊状態をチェック
+            var destructible = target.GetComponent<IDestructible>();
+            if (destructible == null)
+            {
+                destructible = target.GetComponentInParent<IDestructible>();
+            }
+            
+            if (destructible != null && destructible.IsDestroyed)
+            {
+                return true;
+            }
+            
+            // EnemyBaseで死亡状態をチェック
+            var enemyBase = target.GetComponent<Enemies.EnemyBase>();
+            if (enemyBase == null)
+            {
+                enemyBase = target.GetComponentInParent<Enemies.EnemyBase>();
+            }
+            
+            if (enemyBase != null)
+            {
+                // EnemyBaseはIDestructibleを実装しているので、IsDestroyedプロパティを使用
+                return enemyBase.IsDestroyed;
+            }
+            
+            return false;
+        }
+
         private void MoveToPosition(Vector3 targetPosition)
         {
             if (navAgent.isActiveAndEnabled && navAgent.isOnNavMesh)
@@ -678,10 +737,17 @@ namespace KowloonBreak.Characters
                 Debug.Log($"{gameObject.name} attacking {currentTarget.name}");
                 
                 // MiningSystemで攻撃準備
+                bool attackPrepared = false;
                 if (miningSystem != null)
                 {
-                    bool attackPrepared = miningSystem.TryAttackWithTool(currentTarget);
+                    attackPrepared = miningSystem.TryAttackWithTool(currentTarget);
                     Debug.Log($"{gameObject.name} - Mining system attack prepared: {attackPrepared}");
+                }
+                
+                // MiningSystemで準備できなかった場合の対策
+                if (!attackPrepared)
+                {
+                    Debug.Log($"{gameObject.name} - Mining system failed, will use fallback attack system");
                 }
                 
                 // アニメーション開始
@@ -696,15 +762,27 @@ namespace KowloonBreak.Characters
         {
             Debug.Log($"{gameObject.name} - ExecuteToolUsageEffect called");
             
+            bool miningSystemExecuted = false;
+            
             // MiningSystemがある場合はそれを使用
             if (miningSystem != null)
             {
                 Debug.Log($"{gameObject.name} - Using CompanionMiningSystem for tool usage");
-                miningSystem.ExecuteMiningDamage();
+                try
+                {
+                    miningSystem.ExecuteMiningDamage();
+                    miningSystemExecuted = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"{gameObject.name} - CompanionMiningSystem failed: {e.Message}");
+                    miningSystemExecuted = false;
+                }
             }
-            else
+            
+            // MiningSystemが失敗した場合、または存在しない場合のフォールバック
+            if (!miningSystemExecuted || miningSystem == null)
             {
-                // フォールバック: 従来の直接攻撃
                 Debug.Log($"{gameObject.name} - Using fallback attack system");
                 if (currentTarget != null)
                 {

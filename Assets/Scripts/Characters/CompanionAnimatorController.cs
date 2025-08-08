@@ -30,15 +30,6 @@ namespace KowloonBreak.Characters
         [SerializeField] private string dodgeParameterName = "Dodge";
         [SerializeField] private string crouchParameterName = "Crouch";
         
-        [Header("Speed Values - Actual Velocities")]
-        [Tooltip("しきい値: 停止状態の最大速度 (単位/秒)")]
-        [SerializeField] private float idleSpeedThreshold = 0.1f;
-        [Tooltip("しきい値: しゃがみ移動の最大速度 (単位/秒)")]
-        [SerializeField] private float crouchSpeedThreshold = 2f;
-        [Tooltip("しきい値: 通常歩行の最大速度 (単位/秒)")]
-        [SerializeField] private float walkSpeedThreshold = 4f;
-        [Tooltip("しきい値: 走行の最大速度 (単位/秒)")]
-        [SerializeField] private float runSpeedThreshold = 8f;
         
         // 現在の実際の速度値
         private float currentRealSpeed = 0f;
@@ -206,14 +197,14 @@ namespace KowloonBreak.Characters
             currentMovementState = state;
             isCrouching = isCrouchingState;
             
-            // 旧システムとの互換性のため、正規化された値を使用
-            float normalizedSpeed = GetNormalizedSpeedForState(state, isRunning, isCrouchingState);
-            SetSpeed(normalizedSpeed);
+            // 新しいシステムを使用：実際の速度を推定して設定
+            float estimatedRealSpeed = EstimateRealSpeedForState(state, isRunning, isCrouchingState);
+            SetRealSpeed(estimatedRealSpeed);
             SetCrouch(isCrouchingState);
             
             if (debugSpeed)
             {
-                Debug.Log($"[CompanionAnimatorController] SetMovementState: {state}, Running: {isRunning}, Crouching: {isCrouchingState}, Normalized Speed: {normalizedSpeed:F2}");
+                Debug.Log($"[CompanionAnimatorController] SetMovementState: {state}, Running: {isRunning}, Crouching: {isCrouchingState}, Estimated Speed: {estimatedRealSpeed:F2}");
             }
         }
         
@@ -245,6 +236,24 @@ namespace KowloonBreak.Characters
                 CompanionMovementState.Moving => 1f,
                 CompanionMovementState.Combat => isRunning ? 2f : 1f,
                 CompanionMovementState.Dodging => 0f,
+                _ => 0f
+            };
+        }
+        
+        /// <summary>
+        /// 状態に基づいて実際の速度を推定（新システム用）
+        /// </summary>
+        private float EstimateRealSpeedForState(CompanionMovementState state, bool isRunning, bool isCrouchingState)
+        {
+            // 実際の速度値を推定（単位/秒）
+            return state switch
+            {
+                CompanionMovementState.Idle => 0f,
+                CompanionMovementState.Moving when isCrouchingState => 1.5f,  // しゃがみ歩行
+                CompanionMovementState.Moving when isRunning => 6f,           // 走行
+                CompanionMovementState.Moving => 3f,                          // 通常歩行
+                CompanionMovementState.Combat => isRunning ? 4.5f : 3.5f,     // 戦闘移動
+                CompanionMovementState.Dodging => 0f,                         // 回避中
                 _ => 0f
             };
         }

@@ -9,7 +9,6 @@ namespace KowloonBreak.Player
     public class MiningSystem : MonoBehaviour
     {
         [Header("Mining Settings")]
-        [SerializeField] private float miningRange = 3f;
         [SerializeField] private Vector3 miningBoxSize = new Vector3(2f, 2f, 3f);
         [SerializeField] private LayerMask mineableLayerMask = -1;
         

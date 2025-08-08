@@ -2128,14 +2128,6 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   dayDuration: 1200
-  neonSigns: []
-  neonColors:
-  - {r: 1, g: 0, b: 1, a: 1}
-  - {r: 0, g: 1, b: 1, a: 1}
-  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  - {r: 1, g: 0, b: 0, a: 1}
-  neonFlickerIntensity: 0.1
-  neonFlickerSpeed: 2
   dustParticles: {fileID: 0}
   smokeParticles: {fileID: 0}
   postProcessVolume: {fileID: 0}
