@@ -53,6 +53,9 @@ namespace KowloonBreak.Characters
         [Header("Damage Display")]
         [SerializeField] protected Transform damageDisplayPoint;
         
+        [Header("Visual Effects")]
+        [SerializeField] private SpriteRenderer companionRenderer;
+        
         [Header("References")]
         [SerializeField] private Transform player;
         [SerializeField] private Transform interactionPromptAnchor;
@@ -108,6 +111,12 @@ namespace KowloonBreak.Characters
             if (animatorController == null)
             {
                 animatorController = GetComponentInChildren<CompanionAnimatorController>();
+            }
+            
+            // companionRendererを自動で見つける
+            if (companionRenderer == null)
+            {
+                companionRenderer = GetComponentInChildren<SpriteRenderer>();
             }
             
             // Health system initialization
@@ -1365,6 +1374,27 @@ namespace KowloonBreak.Characters
             }
         }
         
+        /// <summary>
+        /// ダメージエフェクト（マテリアルの_Damage_Amountを一瞬1にする）
+        /// </summary>
+        private System.Collections.IEnumerator DamageEffect()
+        {
+            if (companionRenderer != null && companionRenderer.material != null)
+            {
+                // _Damage_Amountを1に設定
+                companionRenderer.material.SetFloat("_Damage_Amount", 1f);
+
+                // 0.1秒待機
+                yield return new WaitForSeconds(0.1f);
+
+                // _Damage_Amountを0に戻す
+                if (companionRenderer != null && companionRenderer.material != null)
+                {
+                    companionRenderer.material.SetFloat("_Damage_Amount", 0f);
+                }
+            }
+        }
+        
         
         // IDestructible interface implementation
         public virtual bool CanBeDestroyedBy(ToolType toolType)
@@ -1387,6 +1417,9 @@ namespace KowloonBreak.Characters
 
             // ダメージテキストを表示
             ShowDamageText(damage);
+
+            // ダメージエフェクトを開始
+            StartCoroutine(DamageEffect());
 
             // 敵のターゲットを自分に変更させる（プレイヤーから攻撃された場合）
             if (player != null)
@@ -1443,8 +1476,11 @@ namespace KowloonBreak.Characters
             // 死亡アニメーション再生
             if (animatorController != null)
             {
-                // CompanionAnimatorControllerに死亡アニメーションがあれば再生
-                // TODO: 実装に応じて適切なメソッドを呼び出す
+                animatorController.TriggerDeath();
+            }
+            else
+            {
+                Debug.LogWarning("[CompanionAI] CompanionAnimatorController not found on companion");
             }
 
             // コンパニオンキャラクターに死亡を通知

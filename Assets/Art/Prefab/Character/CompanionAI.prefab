@@ -262,6 +262,7 @@ MonoBehaviour:
   healthBarBackground: {fileID: 205716229794694443}
   healthBarFill: {fileID: 566817781091227021}
   damageDisplayPoint: {fileID: 2496835046774683249}
+  companionRenderer: {fileID: 5671558435591580967}
   player: {fileID: 0}
   interactionPromptAnchor: {fileID: 1593819854123328363}
   showDebugGizmos: 1
