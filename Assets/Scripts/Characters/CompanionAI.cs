@@ -10,7 +10,7 @@ using KowloonBreak.Environment;
 namespace KowloonBreak.Characters
 {
     [RequireComponent(typeof(NavMeshAgent), typeof(CompanionCharacter))]
-    public class CompanionAI : MonoBehaviour
+    public class CompanionAI : MonoBehaviour, IDestructible
     {
         [Header("AI Settings")]
         [SerializeField] private float followDistance = 3f;
@@ -42,6 +42,17 @@ namespace KowloonBreak.Characters
         [SerializeField] private float attackRange = 2f;
         [SerializeField] private Transform attackPoint;
         
+        [Header("Health System")]
+        [SerializeField] protected float maxHealth = 100f;
+        [SerializeField] protected float currentHealth;
+        
+        [Header("HP Bar")]
+        [SerializeField] protected SpriteRenderer healthBarBackground;
+        [SerializeField] protected SpriteRenderer healthBarFill;
+        
+        [Header("Damage Display")]
+        [SerializeField] protected Transform damageDisplayPoint;
+        
         [Header("References")]
         [SerializeField] private Transform player;
         [SerializeField] private Transform interactionPromptAnchor;
@@ -59,6 +70,9 @@ namespace KowloonBreak.Characters
         private float lastUpdateTime;
         private UnityEngine.Camera playerCamera;
         
+        // Health System
+        protected bool isDead = false;
+        
         // Movement state tracking
         private CompanionMovementState currentMovementState = CompanionMovementState.Idle;
         private bool isRunning = false;
@@ -73,6 +87,16 @@ namespace KowloonBreak.Characters
         public Transform InteractionPromptAnchor => interactionPromptAnchor;
         
         public System.Action<AIState> OnStateChanged;
+        
+        // Health Properties
+        public float Health => currentHealth;
+        public float MaxHealth => maxHealth;
+        public float HealthPercentage => currentHealth / maxHealth;
+        public bool IsAlive => !isDead && currentHealth > 0f;
+        
+        // IDestructible Properties
+        public bool IsDestroyed => isDead;
+        public float CurrentHealth => currentHealth;
 
         private void Awake()
         {
@@ -86,7 +110,11 @@ namespace KowloonBreak.Characters
                 animatorController = GetComponentInChildren<CompanionAnimatorController>();
             }
             
+            // Health system initialization
+            currentHealth = maxHealth;
+            
             InitializeAgent();
+            InitializeHealthBar();
         }
 
         private void Start()
@@ -178,6 +206,8 @@ namespace KowloonBreak.Characters
 
         private void UpdateAI()
         {
+            if (isDead) return;
+            
             if (player == null)
             {
                 FindPlayer();
@@ -212,6 +242,7 @@ namespace KowloonBreak.Characters
             CheckForEnemies();
             UpdateLastPlayerPosition();
             UpdateMovementAnimation();
+            UpdateHealthBar();
         }
 
         private void CheckPlayerDangerStatus()
@@ -818,8 +849,17 @@ namespace KowloonBreak.Characters
                 var enemy = hit.GetComponent<Enemies.EnemyBase>();
                 if (enemy != null)
                 {
-                    Debug.Log($"{gameObject.name} - Found EnemyBase component on {hit.name}, calling TakeDamage({damage})");
-                    enemy.TakeDamage(damage);
+                    Debug.Log($"[COMPANION ATTACK] {gameObject.name} - Found EnemyBase component on {hit.name}");
+                    Debug.Log($"[COMPANION ATTACK] Enemy current target before: {enemy.CurrentTarget?.name ?? "None"}");
+                    Debug.Log($"[COMPANION ATTACK] Enemy is locked: {enemy.IsTargetLocked}");
+                    Debug.Log($"[COMPANION ATTACK] Calling TakeDamage({damage}) with attacker: {transform.name}");
+                    
+                    enemy.TakeDamage(damage, transform); // 攻撃者として自分を渡す
+                    
+                    Debug.Log($"[COMPANION ATTACK] Enemy current target after: {enemy.CurrentTarget?.name ?? "None"}");
+                    Debug.Log($"[COMPANION ATTACK] Enemy is locked after: {enemy.IsTargetLocked}");
+                    Debug.Log($"[COMPANION ATTACK] Enemy state: {enemy.CurrentState}");
+                    
                     hitSomething = true;
                     
                     // ダメージテキスト表示
@@ -1257,6 +1297,202 @@ namespace KowloonBreak.Characters
                 Debug.LogWarning($"[CompanionAI] {gameObject.name} - AttackRange must be greater than 0!");
             }
         }
+        
+        #region Health System Implementation
+        
+        /// <summary>
+        /// HPバーの初期化
+        /// </summary>
+        protected virtual void InitializeHealthBar()
+        {
+            if (healthBarFill != null && healthBarFill.material != null)
+            {
+                // 初期状態では満タンに設定
+                healthBarFill.material.SetFloat("_Fill_1", 1f);
+                
+                // 初期状態ではMAXなので非表示
+                if (healthBarBackground != null)
+                {
+                    healthBarBackground.gameObject.SetActive(false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// HPバーの更新
+        /// </summary>
+        protected virtual void UpdateHealthBar()
+        {
+            if (healthBarFill == null || healthBarFill.material == null) return;
+
+            float healthPercentage = HealthPercentage;
+
+            // HPがMAXの場合は非表示、それ以外は表示
+            if (healthPercentage >= 1f)
+            {
+                if (healthBarBackground != null)
+                {
+                    healthBarBackground.gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                if (healthBarBackground != null)
+                {
+                    healthBarBackground.gameObject.SetActive(true);
+                }
+                
+                // _Fill_1パラメータでHP量を制御
+                healthBarFill.material.SetFloat("_Fill_1", healthPercentage);
+            }
+        }
+        
+        /// <summary>
+        /// ダメージテキストを表示
+        /// </summary>
+        /// <param name="damage">ダメージ量</param>
+        /// <param name="isCritical">クリティカルダメージかどうか</param>
+        protected virtual void ShowDamageText(float damage, bool isCritical = false)
+        {
+            if (UI.UIManager.Instance != null)
+            {
+                // ダメージ表示位置を決定（専用オブジェクトがあればそれを使用、なければデフォルト位置）
+                Vector3 damagePosition = damageDisplayPoint != null 
+                    ? damageDisplayPoint.position 
+                    : transform.position + Vector3.up * 1.5f;
+                    
+                UI.UIManager.Instance.ShowDamageText(damagePosition, damage, isCritical);
+            }
+        }
+        
+        
+        // IDestructible interface implementation
+        public virtual bool CanBeDestroyedBy(ToolType toolType)
+        {
+            // コンパニオンは攻撃可能（必要に応じて制限可能）
+            return toolType == ToolType.Pickaxe || toolType == ToolType.IronPipe;
+        }
+
+        public virtual void TakeDamage(float damage, ToolType toolType)
+        {
+            if (isDead) return;
+
+            Debug.Log($"[CompanionAI] {gameObject.name} - Taking damage: {damage} from {toolType}");
+
+            currentHealth -= damage;
+            currentHealth = Mathf.Max(0f, currentHealth);
+
+            // HPバーを更新
+            UpdateHealthBar();
+
+            // ダメージテキストを表示
+            ShowDamageText(damage);
+
+            // 敵のターゲットを自分に変更させる（プレイヤーから攻撃された場合）
+            if (player != null)
+            {
+                NotifyEnemiesOfAttack(transform.position, transform);
+            }
+
+            // 信頼度を少し下げる（味方に攻撃されたため）
+            if (companionCharacter != null)
+            {
+                companionCharacter.ChangeTrustLevel(-5);
+            }
+
+            if (currentHealth <= 0f)
+            {
+                Die();
+            }
+        }
+        
+        // 既存のTakeDamageメソッドをオーバーロードとして残す
+        public virtual void TakeDamage(float damage)
+        {
+            Debug.Log($"[CompanionAI] {gameObject.name} - TakeDamage called with damage: {damage}");
+            TakeDamage(damage, ToolType.IronPipe); // デフォルトツール
+        }
+        
+        /// <summary>
+        /// ヒーリング処理
+        /// </summary>
+        public virtual void Heal(float amount)
+        {
+            if (isDead) return;
+
+            currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+            Debug.Log($"[CompanionAI] {gameObject.name} - Healed for {amount}. Current health: {currentHealth}/{maxHealth}");
+        }
+        
+        /// <summary>
+        /// 死亡処理
+        /// </summary>
+        protected virtual void Die()
+        {
+            if (isDead) return;
+            
+            isDead = true;
+            Debug.Log($"[CompanionAI] {gameObject.name} - Companion has died");
+
+            // NavMeshAgentを停止
+            if (navAgent != null)
+            {
+                navAgent.enabled = false;
+            }
+
+            // 死亡アニメーション再生
+            if (animatorController != null)
+            {
+                // CompanionAnimatorControllerに死亡アニメーションがあれば再生
+                // TODO: 実装に応じて適切なメソッドを呼び出す
+            }
+
+            // コンパニオンキャラクターに死亡を通知
+            if (companionCharacter != null)
+            {
+                // CompanionCharacterクラスの死亡処理を呼び出す（最大ダメージを与えて死亡状態にする）
+                companionCharacter.Stats?.TakeDamage(companionCharacter.Stats.MaxHealth);
+            }
+
+            // 数秒後にオブジェクトを削除または無効化
+            StartCoroutine(HandleDeathSequence());
+        }
+        
+        /// <summary>
+        /// 死亡シーケンス処理
+        /// </summary>
+        private System.Collections.IEnumerator HandleDeathSequence()
+        {
+            // 3秒間死亡状態を維持
+            yield return new WaitForSeconds(3f);
+            
+            // オブジェクトを非アクティブ化（完全に削除せず、復活可能性を残す）
+            gameObject.SetActive(false);
+        }
+        
+        /// <summary>
+        /// 敵に攻撃を通知してターゲットを切り替えさせる
+        /// </summary>
+        private void NotifyEnemiesOfAttack(Vector3 attackPosition, Transform newTarget)
+        {
+            Enemies.EnemyBase[] allEnemies = FindObjectsOfType<Enemies.EnemyBase>();
+
+            foreach (var enemy in allEnemies)
+            {
+                if (enemy.IsDestroyed) continue;
+
+                float distance = Vector3.Distance(enemy.transform.position, attackPosition);
+
+                // 攻撃時の感知範囲内にいる場合はターゲットを切り替える
+                if (distance <= 15f) // 15メートル以内の敵が反応
+                {
+                    enemy.ForceSetTarget(newTarget);
+                    Debug.Log($"[CompanionAI] {gameObject.name} - Enemy {enemy.name} target switched to {newTarget.name}");
+                }
+            }
+        }
+        
+        #endregion
     }
 
     public enum AIState

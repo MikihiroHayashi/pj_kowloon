@@ -1300,30 +1300,27 @@ namespace KowloonBreak.Player
 
             foreach (var hitCollider in hitObjects)
             {
-                var destructible = hitCollider.GetComponent<IDestructible>();
-                if (destructible != null)
+                // 敵を優先的にチェック（攻撃者情報を渡すため）
+                var enemyBase = hitCollider.GetComponent<KowloonBreak.Enemies.EnemyBase>();
+                if (enemyBase != null && enemyBase.CanBeDestroyedBy(itemData.toolType))
                 {
-                    if (destructible.CanBeDestroyedBy(itemData.toolType))
+                    enemyBase.TakeDamage(damage, itemData.toolType, transform); // 攻撃者として自分を渡す
+                    hitSomething = true;
+                    
+                    if (isStealthAttack)
                     {
-                        destructible.TakeDamage(damage, itemData.toolType);
-                        hitSomething = true;
-
-                        // 敵に攻撃した場合の特別処理
-                        var enemyBase = hitCollider.GetComponent<KowloonBreak.Enemies.EnemyBase>();
-                        if (enemyBase != null)
-                        {
-                            if (isStealthAttack)
-                            {
-                                OnStealthAttack?.Invoke(damage * 3f); // ステルス攻撃イベント発火
-                            }
-                        }
-                    }
-                    else
-                    {
+                        OnStealthAttack?.Invoke(damage * 3f); // ステルス攻撃イベント発火
                     }
                 }
                 else
                 {
+                    // 一般的な破壊可能オブジェクト
+                    var destructible = hitCollider.GetComponent<IDestructible>();
+                    if (destructible != null && destructible.CanBeDestroyedBy(itemData.toolType))
+                    {
+                        destructible.TakeDamage(damage, itemData.toolType);
+                        hitSomething = true;
+                    }
                 }
             }
 

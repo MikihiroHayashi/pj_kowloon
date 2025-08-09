@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.UI;
 using KowloonBreak.Core;
 using KowloonBreak.Environment;
 using KowloonBreak.Player;
+using KowloonBreak.Characters;
 
 namespace KowloonBreak.Enemies
 {
@@ -69,7 +69,8 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected Renderer modelRenderer;
 
         [Header("HP Bar")]
-        [SerializeField] protected Slider healthBar;
+        [SerializeField] protected SpriteRenderer healthBarBackground;
+        [SerializeField] protected SpriteRenderer healthBarFill;
 
         [Header("Damage Display")]
         [SerializeField] protected Transform damageDisplayPoint;
@@ -78,6 +79,13 @@ namespace KowloonBreak.Enemies
         protected EnhancedPlayerController playerController;
         protected float lastAttackTime;
         protected bool isDead = false;
+        
+        // Target System
+        protected Transform currentTarget;
+        protected bool hasTarget = false;
+        protected bool targetLocked = false; // 強制設定されたターゲットをロック
+        protected float targetLockTime = 0f; // ロック時間
+        protected const float TARGET_LOCK_DURATION = 3f; // 3秒間ロック
 
         // 検知システム関連
         protected bool playerDetected = false;
@@ -86,6 +94,9 @@ namespace KowloonBreak.Enemies
         protected float lastDetectionCheck = 0f;
         protected bool lastDetectionResult = false;
         protected float attackDetectionRange = 8f; // 攻撃時の感知範囲
+        
+        // Target System用
+        protected float lastTargetSeenTime = 0f;
 
         // 障害物回避関連
         protected Vector3 avoidanceDirection;
@@ -113,6 +124,9 @@ namespace KowloonBreak.Enemies
         public EnemyState CurrentState => currentState;
         public PatrolRoute PatrolRoute => patrolRoute;
         public int CurrentPatrolIndex => currentPatrolIndex;
+        public Transform CurrentTarget => currentTarget;
+        public bool HasTarget => hasTarget;
+        public bool IsTargetLocked => targetLocked;
         
         // 速度関連プロパティ
         public float BaseMoveSpeed => moveSpeed;
@@ -196,10 +210,14 @@ namespace KowloonBreak.Enemies
         {
             if (isDead || player == null) return;
 
-            bool canDetectPlayer = UpdatePlayerDetection();
+            // 新しいターゲットシステム
+            UpdateTargetDetection();
+            
+            // 現在のターゲットが見えるかどうかを判定
+            bool canSeeCurrentTarget = hasTarget && (targetLocked || CanSeeTarget(currentTarget));
             
             // 統合された移動システム
-            UpdateMovement(canDetectPlayer);
+            UpdateMovement(canSeeCurrentTarget);
             
             UpdateAnimations();
             CheckNavMeshAgentStatus();
@@ -209,12 +227,12 @@ namespace KowloonBreak.Enemies
         /// <summary>
         /// 統合された移動制御システム
         /// </summary>
-        protected virtual void UpdateMovement(bool canSeePlayer)
+        protected virtual void UpdateMovement(bool canSeeTarget)
         {
             switch (currentState)
             {
                 case EnemyState.Patrol:
-                    if (canSeePlayer)
+                    if (canSeeTarget)
                     {
                         ChangeState(EnemyState.Chase);
                     }
@@ -225,18 +243,18 @@ namespace KowloonBreak.Enemies
                     break;
                     
                 case EnemyState.Chase:
-                    if (canSeePlayer)
+                    if (canSeeTarget)
                     {
-                        lastPlayerSeenTime = Time.time;
+                        lastTargetSeenTime = Time.time;
                         UpdateChase();
                     }
-                    else if (Time.time - lastPlayerSeenTime > lostPlayerReturnDelay)
+                    else if (Time.time - lastTargetSeenTime > lostPlayerReturnDelay)
                     {
                         ChangeState(EnemyState.Return);
                     }
                     else
                     {
-                        // プレイヤーを見失ったが、まだ記憶している間は最後の位置を探索
+                        // ターゲットを見失ったが、まだ記憶している間は最後の位置を探索
                         UpdateChase();
                     }
                     break;
@@ -276,9 +294,16 @@ namespace KowloonBreak.Enemies
                     
                 case EnemyState.Chase:
                     // 追跡開始時の処理
-                    lastPlayerSeenTime = Time.time;
+                    lastTargetSeenTime = Time.time;
                     float chaseSpeed = GetChaseSpeed();
                     SetMovementSpeed(chaseSpeed);
+                    
+                    // 現在のターゲットがいる場合、そちらを向く
+                    if (currentTarget != null)
+                    {
+                        LookAtTarget(currentTarget.position);
+                    }
+                    
                     Debug.Log($"[{gameObject.name}] State changed to Chase. Speed: {chaseSpeed} (Move Speed: {moveSpeed} × {chaseSpeedMultiplier})");
                     break;
                     
@@ -417,19 +442,27 @@ namespace KowloonBreak.Enemies
         /// </summary>
         protected virtual void UpdateChase()
         {
-            if (player == null) return;
+            if (currentTarget == null) return;
             
-            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+            // ターゲットが死亡している場合は攻撃を停止
+            if (!IsTargetAlive(currentTarget))
+            {
+                Debug.Log($"[{gameObject.name}] Target {currentTarget.name} is dead during chase, losing target");
+                LoseTarget();
+                return;
+            }
+            
+            float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
             float effectiveAttackRange = GetEffectiveAttackRange();
             
-            if (distanceToPlayer <= effectiveAttackRange)
+            if (distanceToTarget <= effectiveAttackRange)
             {
                 StopMoving();
                 TryAttack();
             }
             else
             {
-                MoveToTarget(player.position);
+                MoveToTarget(currentTarget.position);
             }
         }
         
@@ -560,8 +593,17 @@ namespace KowloonBreak.Enemies
         /// </summary>
         public virtual void ExecuteAttackDamage()
         {
-            // プレイヤーにダメージを与える処理
-            if (player != null)
+            if (currentTarget == null) return;
+            
+            // ターゲットが死亡している場合は攻撃しない
+            if (!IsTargetAlive(currentTarget))
+            {
+                Debug.Log($"[{gameObject.name}] Target {currentTarget.name} is dead, canceling attack");
+                return;
+            }
+            
+            // プレイヤーの場合
+            if (currentTarget == player)
             {
                 var enhancedPlayerController = player.GetComponent<EnhancedPlayerController>();
 
@@ -580,6 +622,24 @@ namespace KowloonBreak.Enemies
                 if (enhancedPlayerController != null)
                 {
                     enhancedPlayerController.TakeDamage(attackDamage);
+                }
+            }
+            // CompanionAIの場合
+            else
+            {
+                var companionAI = currentTarget.GetComponent<CompanionAI>();
+                if (companionAI != null && companionAI.IsAlive)
+                {
+                    companionAI.TakeDamage(attackDamage);
+                }
+                else
+                {
+                    // IDestructibleインターフェースを試す
+                    var destructible = currentTarget.GetComponent<IDestructible>();
+                    if (destructible != null && !destructible.IsDestroyed)
+                    {
+                        destructible.TakeDamage(attackDamage, ToolType.IronPipe);
+                    }
                 }
             }
         }
@@ -602,24 +662,46 @@ namespace KowloonBreak.Enemies
 
         public virtual void TakeDamage(float damage, ToolType toolType)
         {
+            TakeDamage(damage, toolType, null);
+        }
+        
+        public virtual void TakeDamage(float damage, ToolType toolType, Transform attacker)
+        {
             if (isDead) return;
 
-            // 攻撃を受けたら必ず発見状態になる（しゃがみ状態でも）
-            bool wasUndetected = !playerDetected;
-            playerDetected = true;
-            playerDetectionTime = Time.time;
+            Debug.Log($"[ENEMY TAKE DAMAGE] {gameObject.name} - TakeDamage called");
+            Debug.Log($"[ENEMY TAKE DAMAGE] Damage: {damage}, ToolType: {toolType}");
+            Debug.Log($"[ENEMY TAKE DAMAGE] Attacker: {attacker?.name ?? "None"}");
+            Debug.Log($"[ENEMY TAKE DAMAGE] Current target before: {currentTarget?.name ?? "None"}");
+            Debug.Log($"[ENEMY TAKE DAMAGE] Is target locked before: {targetLocked}");
 
-            // 確実に追跡状態を維持するため、記憶期間を延長
-            detectionMemoryDuration = 10f; // 5秒→10秒に延長
-
-            // 攻撃を周囲の敵に通知
-            if (player != null)
+            // 攻撃者がいる場合、そいつをターゲットに設定
+            if (attacker != null)
             {
-                NotifyPlayerAttack(player.position);
+                Debug.Log($"[ENEMY TAKE DAMAGE] Calling ForceSetTarget with {attacker.name}");
+                ForceSetTarget(attacker);
+                Debug.Log($"[ENEMY TAKE DAMAGE] After ForceSetTarget - Current target: {currentTarget?.name ?? "None"}");
+                Debug.Log($"[ENEMY TAKE DAMAGE] After ForceSetTarget - Is locked: {targetLocked}");
+            }
+            else
+            {
+                // 攻撃を受けたら必ず発見状態になる（しゃがみ状態でも）
+                bool wasUndetected = !playerDetected;
+                playerDetected = true;
+                playerDetectionTime = Time.time;
+
+                // 確実に追跡状態を維持するため、記憶期間を延長
+                detectionMemoryDuration = 10f; // 5秒→10秒に延長
+
+                // 攻撃を周囲の敵に通知
+                if (player != null)
+                {
+                    NotifyPlayerAttack(player.position);
+                }
             }
 
             // ステルス攻撃の判定（プレイヤーが発見されていない場合）
-            bool isStealthAttack = wasUndetected;
+            bool isStealthAttack = !hasTarget;
             float finalDamage = damage;
 
             if (isStealthAttack)
@@ -661,7 +743,13 @@ namespace KowloonBreak.Enemies
         public virtual void TakeDamage(float damage)
         {
             Debug.Log($"[EnemyBase] {gameObject.name} - TakeDamage called with damage: {damage}");
-            TakeDamage(damage, ToolType.IronPipe); // デフォルトツール
+            TakeDamage(damage, ToolType.IronPipe, null); // デフォルトツール、攻撃者なし
+        }
+        
+        public virtual void TakeDamage(float damage, Transform attacker)
+        {
+            Debug.Log($"[EnemyBase] {gameObject.name} - TakeDamage called with damage: {damage}, attacker: {attacker?.name}");
+            TakeDamage(damage, ToolType.IronPipe, attacker);
         }
 
         /// <summary>
@@ -1165,6 +1253,274 @@ namespace KowloonBreak.Enemies
         }
 
         #endregion
+        
+        #region Target Detection System (新システム)
+        
+        /// <summary>
+        /// ターゲット検知システムのメイン更新メソッド
+        /// </summary>
+        protected virtual void UpdateTargetDetection()
+        {
+            float currentTime = Time.time;
+            
+            // ターゲットロックの期限チェック
+            if (targetLocked && currentTime - targetLockTime > TARGET_LOCK_DURATION)
+            {
+                targetLocked = false;
+                Debug.Log($"[{gameObject.name}] Target lock expired");
+            }
+            
+            if (!hasTarget)
+            {
+                // ターゲットがロックされていない場合のみ新しいターゲットを探す
+                if (!targetLocked)
+                {
+                    FindNewTarget();
+                }
+            }
+            else
+            {
+                // 現在のターゲットが生きているかチェック
+                if (!IsTargetAlive(currentTarget))
+                {
+                    Debug.Log($"[{gameObject.name}] Current target {currentTarget.name} is dead, losing target");
+                    LoseTarget();
+                    return;
+                }
+                
+                // ターゲットがロックされている場合は視野角や距離チェックをスキップ
+                if (targetLocked)
+                {
+                    // ロック中は記憶時間を常に更新（ターゲットを失わない）
+                    playerDetectionTime = currentTime;
+                }
+                else
+                {
+                    // 通常の視界チェック
+                    bool canSeeCurrentTarget = CanSeeTarget(currentTarget);
+                    
+                    if (canSeeCurrentTarget)
+                    {
+                        // ターゲットが見える場合、記憶時間を更新
+                        playerDetectionTime = currentTime;
+                    }
+                    else
+                    {
+                        // ターゲットが見えない場合、記憶期間をチェック
+                        if (currentTime - playerDetectionTime > detectionMemoryDuration)
+                        {
+                            LoseTarget();
+                        }
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 新しいターゲットを探す（プレイヤーとコンパニオンの両方）
+        /// </summary>
+        protected virtual void FindNewTarget()
+        {
+            Transform bestTarget = null;
+            float closestDistance = float.MaxValue;
+            
+            // プレイヤーをチェック
+            if (player != null && IsTargetAlive(player) && CanSeeTarget(player))
+            {
+                float distance = Vector3.Distance(transform.position, player.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    bestTarget = player;
+                }
+            }
+            
+            // すべてのCompanionAIをチェック
+            CompanionAI[] companions = FindObjectsOfType<CompanionAI>();
+            foreach (var companion in companions)
+            {
+                if (companion != null && companion.IsAlive && CanSeeTarget(companion.transform))
+                {
+                    float distance = Vector3.Distance(transform.position, companion.transform.position);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        bestTarget = companion.transform;
+                    }
+                }
+            }
+            
+            // 最も近いターゲットを設定
+            if (bestTarget != null)
+            {
+                SetTarget(bestTarget);
+            }
+        }
+        
+        /// <summary>
+        /// 指定されたターゲットが見えるかどうかを判定
+        /// </summary>
+        protected virtual bool CanSeeTarget(Transform target)
+        {
+            if (target == null) return false;
+            
+            Vector3 eyePosition = transform.position + Vector3.up * 1.5f;
+            Vector3 targetPosition = target.position + Vector3.up * 1f;
+            Vector3 directionToTarget = (targetPosition - eyePosition).normalized;
+            float distanceToTarget = Vector3.Distance(eyePosition, targetPosition);
+            
+            // プレイヤーの場合は既存のロジックを使用
+            if (target == player)
+            {
+                return CanSeePlayer();
+            }
+            
+            // CompanionAIの場合はシンプルな視線チェック
+            // 基本的な距離チェック
+            if (distanceToTarget > detectionRange)
+            {
+                return false;
+            }
+            
+            // 視野角チェック
+            float angleToTarget = Vector3.Angle(transform.forward, directionToTarget);
+            if (angleToTarget > visionAngle / 2f)
+                return false;
+            
+            // 視線チェック
+            if (useLineOfSight)
+            {
+                RaycastHit hit;
+                if (Physics.Raycast(eyePosition, directionToTarget, out hit, distanceToTarget, visionBlockingLayers))
+                {
+                    if (hit.collider.transform != target)
+                    {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// ターゲットを設定
+        /// </summary>
+        public virtual void SetTarget(Transform newTarget)
+        {
+            if (currentTarget != newTarget)
+            {
+                currentTarget = newTarget;
+                hasTarget = newTarget != null;
+                playerDetected = hasTarget;
+                playerDetectionTime = Time.time;
+                
+                Debug.Log($"[{gameObject.name}] Target changed to: {(newTarget != null ? newTarget.name : "None")}");
+            }
+        }
+        
+        /// <summary>
+        /// ターゲットを失う
+        /// </summary>
+        protected virtual void LoseTarget()
+        {
+            currentTarget = null;
+            hasTarget = false;
+            playerDetected = false;
+            targetLocked = false; // ロック状態もリセット
+            
+            Debug.Log($"[{gameObject.name}] Lost target");
+        }
+        
+        /// <summary>
+        /// 外部からターゲットを強制設定（攻撃を受けた時など）
+        /// </summary>
+        public virtual void ForceSetTarget(Transform newTarget)
+        {
+            if (newTarget != null)
+            {
+                SetTarget(newTarget);
+                playerDetected = true;
+                playerDetectionTime = Time.time;
+                lastTargetSeenTime = Time.time; // 追跡時間も初期化
+                
+                // ターゲットをロック（一定時間上書き不可能）
+                targetLocked = true;
+                targetLockTime = Time.time;
+                
+                // 新しいターゲットの方を即座に向く
+                LookAtTarget(newTarget.position);
+                
+                // 即座に追跡状態に移行
+                if (currentState != EnemyState.Chase)
+                {
+                    ChangeState(EnemyState.Chase);
+                }
+                
+                Debug.Log($"[{gameObject.name}] Force target set to: {newTarget.name} (locked for {TARGET_LOCK_DURATION}s) and turned to face target");
+            }
+        }
+        
+        /// <summary>
+        /// ターゲットが生きているかどうかを判定
+        /// </summary>
+        protected virtual bool IsTargetAlive(Transform target)
+        {
+            if (target == null) return false;
+            
+            // CompanionAIの場合
+            var companionAI = target.GetComponent<CompanionAI>();
+            if (companionAI != null)
+            {
+                return companionAI.IsAlive;
+            }
+            
+            // プレイヤーの場合
+            var playerController = target.GetComponent<EnhancedPlayerController>();
+            if (playerController != null)
+            {
+                return playerController.IsAlive;
+            }
+            
+            // その他のオブジェクトは常に生きているとみなす
+            return true;
+        }
+        
+        /// <summary>
+        /// 指定された位置の方を向く
+        /// </summary>
+        protected virtual void LookAtTarget(Vector3 targetPosition)
+        {
+            Vector3 lookDirection = (targetPosition - transform.position).normalized;
+            lookDirection.y = 0f; // Y軸の回転を無効化（地面に平行）
+            
+            if (lookDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                
+                // 即座に回転させる場合
+                transform.rotation = targetRotation;
+                
+                Debug.Log($"[{gameObject.name}] Turned to face target at position: {targetPosition}");
+            }
+        }
+        
+        /// <summary>
+        /// 指定された位置の方をスムーズに向く（オプション）
+        /// </summary>
+        protected virtual void LookAtTargetSmooth(Vector3 targetPosition, float rotationSpeed = 5f)
+        {
+            Vector3 lookDirection = (targetPosition - transform.position).normalized;
+            lookDirection.y = 0f; // Y軸の回転を無効化（地面に平行）
+            
+            if (lookDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
+            }
+        }
+        
+        #endregion
 
         #region Detection System (修正版)
 
@@ -1320,12 +1676,16 @@ namespace KowloonBreak.Enemies
         /// </summary>
         protected virtual void InitializeHealthBar()
         {
-            if (healthBar != null)
+            if (healthBarFill != null && healthBarFill.material != null)
             {
-                healthBar.maxValue = 1f;
-                healthBar.value = 1f;
+                // 初期状態では満タンに設定
+                healthBarFill.material.SetFloat("_Fill_1", 1f);
+                
                 // 初期状態ではMAXなので非表示
-                healthBar.gameObject.SetActive(false);
+                if (healthBarBackground != null)
+                {
+                    healthBarBackground.gameObject.SetActive(false);
+                }
             }
         }
 
@@ -1334,45 +1694,30 @@ namespace KowloonBreak.Enemies
         /// </summary>
         protected virtual void UpdateHealthBar()
         {
-            if (healthBar == null) return;
+            if (healthBarFill == null || healthBarFill.material == null) return;
 
             float healthPercentage = currentHealth / maxHealth;
 
             // HPがMAXの場合は非表示、それ以外は表示
             if (healthPercentage >= 1f)
             {
-                healthBar.gameObject.SetActive(false);
+                if (healthBarBackground != null)
+                {
+                    healthBarBackground.gameObject.SetActive(false);
+                }
             }
             else
             {
-                healthBar.gameObject.SetActive(true);
-                healthBar.value = healthPercentage;
-
-                // HPに応じてバーの色を変更
-                UpdateHealthBarColor(healthPercentage);
+                if (healthBarBackground != null)
+                {
+                    healthBarBackground.gameObject.SetActive(true);
+                }
+                
+                // _Fill_1パラメータでHP量を制御
+                healthBarFill.material.SetFloat("_Fill_1", healthPercentage);
             }
         }
 
-        /// <summary>
-        /// HPバーの色を更新
-        /// </summary>
-        protected virtual void UpdateHealthBarColor(float healthPercentage)
-        {
-            if (healthBar == null) return;
-
-            var fillArea = healthBar.fillRect?.GetComponent<Image>();
-            if (fillArea == null) return;
-
-            Color barColor = healthPercentage switch
-            {
-                <= 0.2f => Color.red,        // 20%以下：赤
-                <= 0.5f => new Color(1f, 0.5f, 0f), // 50%以下：オレンジ
-                <= 0.8f => Color.yellow,     // 80%以下：黄色
-                _ => Color.green             // 80%以上：緑
-            };
-
-            fillArea.color = barColor;
-        }
 
         /// <summary>
         /// ダメージテキストを表示

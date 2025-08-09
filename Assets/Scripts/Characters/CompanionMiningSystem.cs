@@ -1,6 +1,7 @@
 using UnityEngine;
 using KowloonBreak.Core;
 using KowloonBreak.Environment;
+using KowloonBreak.Enemies;
 
 namespace KowloonBreak.Characters
 {
@@ -157,8 +158,17 @@ namespace KowloonBreak.Characters
             {
                 Debug.Log($"[CompanionMiningSystem] Dealing {damage} damage to target");
                 
-                // ダメージを与える
-                target.TakeDamage(damage, toolType);
+                // EnemyBaseの場合は攻撃者情報を渡す
+                if (target is Enemies.EnemyBase enemyBase)
+                {
+                    Debug.Log($"[CompanionMiningSystem] Target is EnemyBase, passing attacker info: {transform.name}");
+                    enemyBase.TakeDamage(damage, toolType, transform); // 攻撃者として自分を渡す
+                }
+                else
+                {
+                    // 一般的な破壊可能オブジェクト
+                    target.TakeDamage(damage, toolType);
+                }
                 
                 Debug.Log($"[CompanionMiningSystem] Attack successful: Dealt {damage} damage to {target} with {toolType}");
             }

@@ -111,6 +111,13 @@
         "com.unity.render-pipelines.core": "14.0.10"
       }
     },
+    "com.unity.search.extensions": {
+      "version": "https://github.com/Unity-Technologies/com.unity.search.extensions.git?path=package",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "a56e92836a0b9f1ead9407289c1893842a55f1f6"
+    },
     "com.unity.searcher": {
       "version": "4.9.2",
       "depth": 2,

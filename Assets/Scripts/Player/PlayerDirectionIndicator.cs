@@ -6,7 +6,6 @@ namespace KowloonBreak.Player
     {
         [Header("Direction Indicator Settings")]
         [SerializeField] private bool showInEditor = true;
-        [SerializeField] private bool showInPlayMode = false;
         [SerializeField] private Color arrowColor = Color.green;
         [SerializeField] private float arrowLength = 2f;
         [SerializeField] private float arrowWidth = 0.3f;
