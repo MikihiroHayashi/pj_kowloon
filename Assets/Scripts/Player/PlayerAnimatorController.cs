@@ -373,7 +373,6 @@ namespace KowloonBreak.Player
             if (animator != null && hasSpeedParameter)
             {
                 animator.SetFloat(speedParameterHash, speed);
-                
             }
         }
         

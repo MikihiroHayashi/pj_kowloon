@@ -90,11 +90,15 @@ namespace KowloonBreak.Player
         [SerializeField] private float cameraShakeIntensity = 0.1f;
         [SerializeField] private Renderer playerRenderer;
 
+        [Header("Animation")]
+        [SerializeField] private PlayerAnimationEventHandler playerAnimationEventHandler;
+
         private CharacterController characterController;
         private AudioSource audioSource;
         private CharacterStats playerStats;
         private HealthStatus playerHealth;
         private PlayerAnimatorController animatorController;
+        private PlayerAnimationEventHandler animationEventHandler;
 
         // Health Events
         public event Action<float> OnHealthChanged;
@@ -104,7 +108,7 @@ namespace KowloonBreak.Player
         private InfectionStatus playerInfection;
         private EnhancedResourceManager resourceManager;
         private ToolSelectionHUDController toolSelectionHUD;
-        private MiningSystem miningSystem;
+        private ToolInteractionSystem toolInteractionSystem;
 
         private Vector3 moveDirection;
         private Vector3 velocity;
@@ -172,6 +176,17 @@ namespace KowloonBreak.Player
         public bool RunModeEnabled => runModeEnabled;
         public bool CrouchModeEnabled => crouchModeEnabled;
         public float CurrentMoveSpeed => GetCurrentSpeed();
+        
+        // Tool Interaction Properties (ToolInteractionSystem用)
+        public Transform ToolUsagePoint => toolUsagePoint;
+        
+        /// <summary>
+        /// ステルス攻撃イベントをトリガー（ToolInteractionSystem用）
+        /// </summary>
+        public void TriggerStealthAttackEvent(float damage)
+        {
+            OnStealthAttack?.Invoke(damage);
+        }
 
         public event Action<bool> OnRunStateChanged;
         public event Action<bool> OnCrouchStateChanged;
@@ -210,6 +225,9 @@ namespace KowloonBreak.Player
             characterController = GetComponent<CharacterController>();
             audioSource = GetComponent<AudioSource>();
             animatorController = GetComponent<PlayerAnimatorController>();
+            
+            // PlayerAnimationEventHandlerの設定
+            SetupAnimationEventHandler();
 
             if (playerCamera == null)
             {
@@ -249,6 +267,36 @@ namespace KowloonBreak.Player
         private void SetupCameraFollowTarget()
         {
             // カメラフォローターゲットは手動で設定
+        }
+
+        private void SetupAnimationEventHandler()
+        {
+            // Inspector設定を優先
+            if (playerAnimationEventHandler != null)
+            {
+                animationEventHandler = playerAnimationEventHandler;
+                // 双方向参照を設定
+                animationEventHandler.SetPlayerController(this);
+            }
+            else
+            {
+                // 自動検索（フォールバック）
+                animationEventHandler = GetComponent<PlayerAnimationEventHandler>();
+                if (animationEventHandler == null)
+                {
+                    animationEventHandler = GetComponentInChildren<PlayerAnimationEventHandler>();
+                }
+                
+                if (animationEventHandler != null)
+                {
+                    // 双方向参照を設定
+                    animationEventHandler.SetPlayerController(this);
+                }
+                else
+                {
+                    Debug.LogWarning("[EnhancedPlayerController] PlayerAnimationEventHandler not found. Animation events will not work.");
+                }
+            }
         }
 
         private void InitializeStats()
@@ -686,10 +734,10 @@ namespace KowloonBreak.Player
             }
         }
         
+        [System.Obsolete("InputManager fallback handling removed")]
         private void HandleRunInputFallback()
         {
-            // フォールバック処理は削除し、InputManagerを必須とする
-            Debug.LogWarning("[EnhancedPlayerController] InputManager is not available. Input handling disabled.");
+            // 空の実装（安全な削除のため）
         }
 
         /// <summary>
@@ -831,12 +879,14 @@ namespace KowloonBreak.Player
             }
         }
 
-        // 後方互換性のため旧メソッドを保持
+        // 後方互換性のため旧メソッドを保持（非推奨）
+        [System.Obsolete("Use SetRunMode() instead")]
         private void SetRunning(bool running)
         {
             SetRunMode(running);
         }
 
+        [System.Obsolete("Use SetCrouchMode() instead")]
         private void SetCrouching(bool crouching)
         {
             SetCrouchMode(crouching);
@@ -992,7 +1042,13 @@ namespace KowloonBreak.Player
         {
             resourceManager = EnhancedResourceManager.Instance;
             toolSelectionHUD = FindObjectOfType<ToolSelectionHUDController>();
-            miningSystem = GetComponent<MiningSystem>();
+            toolInteractionSystem = GetComponent<ToolInteractionSystem>();
+            
+            if (toolInteractionSystem == null)
+            {
+                // 自動追加
+                toolInteractionSystem = gameObject.AddComponent<ToolInteractionSystem>();
+            }
 
             if (toolSelectionHUD != null)
             {
@@ -1152,36 +1208,29 @@ namespace KowloonBreak.Player
             isUsingTool = true;
             lastToolUsageTime = Time.time;
 
-            // 採掘系ツール（つるはし、鉄パイプ）の場合はMiningSystemを使用
-            if (miningSystem != null && IsMiningTool(selectedTool))
+            // 統合ツールシステムを使用
+            if (toolInteractionSystem != null)
             {
-                bool miningSuccess = miningSystem.TryMineWithCurrentTool();
-                if (miningSuccess)
+                bool success = toolInteractionSystem.PrepareToolAction(selectedTool);
+                if (success)
                 {
-                    // 採掘対象が見つかった場合、アニメーションを再生
-                    Debug.Log("[EnhancedPlayerController] Mining target found, playing animation");
-                    StartToolUsage(selectedTool);
+                    Debug.Log("[EnhancedPlayerController] Tool target found, starting animation");
                 }
                 else
                 {
-                    // 採掘対象が見つからない場合は通常のツール使用処理にフォールバック
-                    Debug.Log("[EnhancedPlayerController] No mining target found, falling back to normal tool usage");
-                    StartToolUsage(selectedTool);
+                    Debug.Log("[EnhancedPlayerController] No valid targets found, but starting animation anyway");
                 }
+                StartToolUsage(selectedTool);
             }
             else
             {
-                // 通常のツール使用処理
+                // フォールバック: ToolInteractionSystemが見つからない場合
+                Debug.LogWarning("[EnhancedPlayerController] ToolInteractionSystem not found, using legacy tool usage");
                 StartToolUsage(selectedTool);
             }
         }
         
-        private bool IsMiningTool(InventorySlot toolSlot)
-        {
-            if (toolSlot?.ItemData == null) return false;
-            return toolSlot.ItemData.toolType == ToolType.Pickaxe || 
-                   toolSlot.ItemData.toolType == ToolType.IronPipe;
-        }
+        // IsMiningTool メソッドを削除 - ToolInteractionSystemで統一処理
 
         /// <summary>
         /// 道具使用を開始（道具種別に応じて動作を分岐）
@@ -1253,15 +1302,16 @@ namespace KowloonBreak.Player
             var itemData = currentUsedTool.ItemData;
             var toolType = itemData.toolType;
 
-            // 採掘系ツールの場合はMiningSystemを使用
-            if (miningSystem != null && IsMiningTool(currentUsedTool))
+            // 統合ツールシステムを使用
+            if (toolInteractionSystem != null)
             {
-                Debug.Log("[EnhancedPlayerController] Executing mining damage through MiningSystem");
-                miningSystem.ExecuteMiningDamage();
+                Debug.Log("[EnhancedPlayerController] Executing tool damage through ToolInteractionSystem");
+                toolInteractionSystem.ExecuteToolAction();
             }
             else
             {
-                // 通常のツール使用効果を実行
+                // フォールバック: ToolInteractionSystemが見つからない場合は従来のツール効果を使用
+                Debug.LogWarning("[EnhancedPlayerController] ToolInteractionSystem not found, using legacy tool effects");
                 switch (toolType)
                 {
                     case ToolType.Pickaxe:
@@ -1685,10 +1735,10 @@ namespace KowloonBreak.Player
             isUsingTool = false;
             currentUsedTool = null;
             
-            // MiningSystemの保留状態もクリア
-            if (miningSystem != null)
+            // 統合ツールシステムの保留状態をクリア
+            if (toolInteractionSystem != null)
             {
-                miningSystem.ClearPendingMining();
+                toolInteractionSystem.ClearPendingAction();
             }
         }
 

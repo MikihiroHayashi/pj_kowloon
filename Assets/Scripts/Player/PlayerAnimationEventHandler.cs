@@ -16,16 +16,52 @@ namespace KowloonBreak.Player
         
         private void Awake()
         {
-            playerController = GetComponentInParent<EnhancedPlayerController>();
-            if (playerController == null)
-            {
-                playerController = GetComponent<EnhancedPlayerController>();
-            }
+            // EnhancedPlayerControllerのInitializePlayerで設定されるため、
+            // Awake時点ではnullが正常な状態
+        }
+
+        private void Start()
+        {
+            // 1フレーム遅らせてから確認（EnhancedPlayerControllerの初期化完了を待つ）
+            StartCoroutine(LateInitialization());
+        }
+
+        private System.Collections.IEnumerator LateInitialization()
+        {
+            // 1フレーム待機
+            yield return null;
             
+            // PlayerControllerの確認
             if (playerController == null)
             {
-                Debug.LogError("[PlayerAnimationEventHandler] EnhancedPlayerController not found!");
+                Debug.LogError("[PlayerAnimationEventHandler] PlayerController still null after late initialization. EnhancedPlayerController may not be present or SetPlayerController() was not called.");
+                
+                // 最後の手段として直接検索を試す
+                var controller = GetComponentInParent<EnhancedPlayerController>();
+                if (controller == null)
+                {
+                    controller = GetComponent<EnhancedPlayerController>();
+                }
+                
+                if (controller != null)
+                {
+                    Debug.LogWarning("[PlayerAnimationEventHandler] Found EnhancedPlayerController via fallback search. Setting reference manually.");
+                    playerController = controller;
+                }
+                else
+                {
+                    Debug.LogError("[PlayerAnimationEventHandler] Could not find EnhancedPlayerController even with fallback search!");
+                }
             }
+            // PlayerController正常設定時は特にログ出力不要
+        }
+
+        /// <summary>
+        /// EnhancedPlayerControllerから呼び出されてプレイヤー参照を設定
+        /// </summary>
+        public void SetPlayerController(EnhancedPlayerController controller)
+        {
+            playerController = controller;
         }
         
         /// <summary>
@@ -33,7 +69,12 @@ namespace KowloonBreak.Player
         /// </summary>
         public void OnAttackHit()
         {
-            if (!enableToolUsageEvents || playerController == null) return;
+            if (!enableToolUsageEvents || playerController == null) 
+            {
+                if (playerController == null)
+                    Debug.LogWarning("[PlayerAnimationEventHandler] OnAttackHit called but playerController is null!");
+                return;
+            }
             
             Debug.Log("[PlayerAnimationEventHandler] OnAttackHit - Attack animation event triggered");
             playerController.ExecuteToolUsageEffect();
@@ -77,7 +118,11 @@ namespace KowloonBreak.Player
         /// </summary>
         public void OnFootstep()
         {
-            if (playerController == null) return;
+            if (playerController == null) 
+            {
+                Debug.LogWarning("[PlayerAnimationEventHandler] OnFootstep called but playerController is null!");
+                return;
+            }
             
             // 足音再生処理
             playerController.PlayFootstepFromAnimation();

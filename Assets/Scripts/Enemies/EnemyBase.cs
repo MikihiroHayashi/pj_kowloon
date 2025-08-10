@@ -789,6 +789,9 @@ namespace KowloonBreak.Enemies
                 navAgent.enabled = false;
             }
 
+            // ヘルスバーを即座に非表示にする
+            HideHealthBar();
+
             // 死亡アニメーション再生
             if (animator != null)
             {
@@ -1716,6 +1719,19 @@ namespace KowloonBreak.Enemies
                 // _Fill_1パラメータでHP量を制御
                 healthBarFill.material.SetFloat("_Fill_1", healthPercentage);
             }
+        }
+
+        /// <summary>
+        /// ヘルスバーを強制的に非表示にする（死亡時など）
+        /// </summary>
+        protected virtual void HideHealthBar()
+        {
+            if (healthBarBackground != null)
+            {
+                healthBarBackground.gameObject.SetActive(false);
+            }
+            
+            Debug.Log($"[EnemyBase] {gameObject.name} - Health bar hidden");
         }
 
 

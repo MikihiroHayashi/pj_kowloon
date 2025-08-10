@@ -42,11 +42,10 @@ GameObject:
   - component: {fileID: 5104767785950813820}
   - component: {fileID: 2879402903129824497}
   - component: {fileID: 4493808159910058111}
-  - component: {fileID: 6792100724070896434}
+  - component: {fileID: 220816612674348028}
   - component: {fileID: 1104567319099991210}
-  - component: {fileID: 1181695726356699645}
-  - component: {fileID: 4349528835268428539}
   - component: {fileID: 8028166677090169455}
+  - component: {fileID: 6792100724070896434}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -137,7 +136,6 @@ MonoBehaviour:
     m_Bits: 4294967295
   runToggleMode: 0
   crouchToggleMode: 1
-  toolUsageRange: 1.5
   destructibleLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -159,7 +157,81 @@ MonoBehaviour:
   breathingParticles: {fileID: 0}
   cameraShakeTarget: {fileID: 0}
   cameraShakeIntensity: 0.1
-  playerRenderer: {fileID: 0}
+  playerRenderer: {fileID: 5671558435591580967}
+  playerAnimationEventHandler: {fileID: 489548735391818573}
+--- !u!114 &220816612674348028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4601225622746221893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e24ae6ebf8305eb438d1daba5cd2b0ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 4972783984286411978}
+  targetTransform: {fileID: 5104767785950813820}
+  autoFindAnimator: 1
+  autoFindTargetTransform: 1
+  useLocalRotation: 1
+  smoothAngleTransition: 1
+  smoothSpeed: 5
+  debugAngle: 0
+  debugSpeed: 0
+  angleParameterName: Angle
+  deathParameterName: Death
+  attackParameterName: Attack
+  digParameterName: Dig
+  speedParameterName: Speed
+  dodgeParameterName: Dodge
+  crouchParameterName: Crouch
+  idleSpeedThreshold: 0.1
+  crouchSpeedThreshold: 2
+  walkSpeedThreshold: 4
+  runSpeedThreshold: 8
+--- !u!114 &1104567319099991210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4601225622746221893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a36a5ec4efd03cf49b3665920383cb93, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showInEditor: 1
+  arrowColor: {r: 0, g: 1, b: 0, a: 1}
+  arrowLength: 2
+  arrowWidth: 0.3
+  arrowHeadSize: 0.5
+  arrowOffset: {x: 0, y: 0.1, z: 0}
+--- !u!136 &8028166677090169455
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4601225622746221893}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.75
+  m_Height: 1
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!82 &6792100724070896434
 AudioSource:
   m_ObjectHideFlags: 0
@@ -256,97 +328,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1104567319099991210
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4601225622746221893}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a36a5ec4efd03cf49b3665920383cb93, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  showInEditor: 1
-  showInPlayMode: 0
-  arrowColor: {r: 0, g: 1, b: 0, a: 1}
-  arrowLength: 2
-  arrowWidth: 0.3
-  arrowHeadSize: 0.5
-  arrowOffset: {x: 0, y: 0.1, z: 0}
---- !u!114 &1181695726356699645
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4601225622746221893}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e24ae6ebf8305eb438d1daba5cd2b0ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  animator: {fileID: 4972783984286411978}
-  targetTransform: {fileID: 5104767785950813820}
-  autoFindAnimator: 1
-  autoFindTargetTransform: 1
-  useLocalRotation: 1
-  smoothAngleTransition: 0
-  smoothSpeed: 5
-  debugAngle: 0
-  angleParameterName: Angle
-  deathParameterName: Death
-  attackParameterName: Attack
-  digParameterName: Dig
-  speedParameterName: Speed
-  dodgeParameterName: Dodge
-  crouchParameterName: Crouch
-  idleSpeed: 0
-  crouchSpeed: 0.5
-  walkSpeed: 1
-  runSpeed: 2
---- !u!114 &4349528835268428539
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4601225622746221893}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dd05cf9536eb1043b5ea86adb1b5091, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  miningRange: 3
-  miningBoxSize: {x: 2, y: 2, z: 3}
-  mineableLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  showDebugBox: 1
---- !u!136 &8028166677090169455
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4601225622746221893}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.75
-  m_Height: 1
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!1 &6195070814820800851
 GameObject:
   m_ObjectHideFlags: 0

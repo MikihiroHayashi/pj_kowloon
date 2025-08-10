@@ -1355,6 +1355,19 @@ namespace KowloonBreak.Characters
                 healthBarFill.material.SetFloat("_Fill_1", healthPercentage);
             }
         }
+
+        /// <summary>
+        /// ヘルスバーを強制的に非表示にする（死亡時など）
+        /// </summary>
+        protected virtual void HideHealthBar()
+        {
+            if (healthBarBackground != null)
+            {
+                healthBarBackground.gameObject.SetActive(false);
+            }
+            
+            Debug.Log($"[CompanionAI] {gameObject.name} - Health bar hidden");
+        }
         
         /// <summary>
         /// ダメージテキストを表示
@@ -1472,6 +1485,9 @@ namespace KowloonBreak.Characters
             {
                 navAgent.enabled = false;
             }
+
+            // ヘルスバーを即座に非表示にする
+            HideHealthBar();
 
             // 死亡アニメーション再生
             if (animatorController != null)
