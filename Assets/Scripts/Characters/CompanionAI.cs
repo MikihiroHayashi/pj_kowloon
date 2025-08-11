@@ -41,6 +41,9 @@ namespace KowloonBreak.Characters
         [SerializeField] private LayerMask destructibleLayers = -1;
         [SerializeField] private float attackRange = 2f;
         [SerializeField] private Transform attackPoint;
+        [SerializeField] private ToolType weaponType = ToolType.IronPipe;
+        [SerializeField] private float attackDamage = 15f;
+        [SerializeField] private Vector3 attackBoxSize = new Vector3(2f, 2f, 3f);
         
         [Header("Health System")]
         [SerializeField] protected float maxHealth = 100f;
@@ -67,11 +70,16 @@ namespace KowloonBreak.Characters
         private NavMeshAgent navAgent;
         private CompanionCharacter companionCharacter;
         private CompanionAnimatorController animatorController;
-        private CompanionMiningSystem miningSystem;
+        private CompanionToolInteractionSystem toolSystem;
         private GameObject currentTarget;
         private Vector3 lastPlayerPosition;
         private float lastUpdateTime;
         private UnityEngine.Camera playerCamera;
+        
+        // 統合された攻撃システム
+        private IDestructible pendingTarget;
+        private ToolType pendingToolType;
+        private float pendingDamage;
         
         // Health System
         protected bool isDead = false;
@@ -106,7 +114,7 @@ namespace KowloonBreak.Characters
             navAgent = GetComponent<NavMeshAgent>();
             companionCharacter = GetComponent<CompanionCharacter>();
             animatorController = GetComponent<CompanionAnimatorController>();
-            miningSystem = GetComponent<CompanionMiningSystem>();
+            toolSystem = GetComponent<CompanionToolInteractionSystem>();
             
             if (animatorController == null)
             {
@@ -564,11 +572,8 @@ namespace KowloonBreak.Characters
                 Debug.Log($"{gameObject.name} - Current target {currentTarget.name} has been destroyed, returning to follow state");
                 currentTarget = null;
                 
-                // MiningSystemの保留状態もクリア
-                if (miningSystem != null)
-                {
-                    miningSystem.ClearPendingAttack();
-                }
+                // 保留攻撃をクリア
+                ClearPendingAttack();
                 
                 SetState(AIState.Follow);
                 return;
@@ -582,11 +587,8 @@ namespace KowloonBreak.Characters
             {
                 currentTarget = null;
                 
-                // MiningSystemの保留状態もクリア
-                if (miningSystem != null)
-                {
-                    miningSystem.ClearPendingAttack();
-                }
+                // 保留攻撃をクリア
+                ClearPendingAttack();
                 
                 SetState(AIState.Follow);
                 return;
@@ -776,19 +778,9 @@ namespace KowloonBreak.Characters
             {
                 Debug.Log($"{gameObject.name} attacking {currentTarget.name}");
                 
-                // MiningSystemで攻撃準備
-                bool attackPrepared = false;
-                if (miningSystem != null)
-                {
-                    attackPrepared = miningSystem.TryAttackWithTool(currentTarget);
-                    Debug.Log($"{gameObject.name} - Mining system attack prepared: {attackPrepared}");
-                }
-                
-                // MiningSystemで準備できなかった場合の対策
-                if (!attackPrepared)
-                {
-                    Debug.Log($"{gameObject.name} - Mining system failed, will use fallback attack system");
-                }
+                // 統合された攻撃準備
+                bool attackPrepared = PrepareAttack(currentTarget);
+                Debug.Log($"{gameObject.name} - Attack prepared: {attackPrepared}");
                 
                 // アニメーション開始
                 animatorController.TriggerAttack();
@@ -796,55 +788,182 @@ namespace KowloonBreak.Characters
         }
 
         /// <summary>
-        /// ツール使用効果実行（プレイヤーシステムと同等）
+        /// ツール使用効果実行（統合されたツールシステム使用）
         /// </summary>
         public virtual void ExecuteToolUsageEffect()
         {
             Debug.Log($"{gameObject.name} - ExecuteToolUsageEffect called");
             
-            bool miningSystemExecuted = false;
-            
-            // MiningSystemがある場合はそれを使用
-            if (miningSystem != null)
+            // 統合ツールシステムを使用
+            if (toolSystem != null)
             {
-                Debug.Log($"{gameObject.name} - Using CompanionMiningSystem for tool usage");
-                try
-                {
-                    miningSystem.ExecuteMiningDamage();
-                    miningSystemExecuted = true;
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogWarning($"{gameObject.name} - CompanionMiningSystem failed: {e.Message}");
-                    miningSystemExecuted = false;
-                }
+                toolSystem.ExecuteToolUsage();
             }
-            
-            // MiningSystemが失敗した場合、または存在しない場合のフォールバック
-            if (!miningSystemExecuted || miningSystem == null)
+            else
             {
-                Debug.Log($"{gameObject.name} - Using fallback attack system");
-                if (currentTarget != null)
-                {
-                    ExecuteAttackDamage();
-                }
+                // フォールバック：既存の統合システム
+                ExecuteAttack();
             }
         }
 
+        #region 統合された攻撃システム
+        
         /// <summary>
-        /// シンプルな攻撃ダメージ処理（アニメーションイベントから呼ばれる）
+        /// 攻撃を準備（統合ツールシステム使用）
         /// </summary>
-        public virtual void ExecuteAttackDamage()
+        public bool PrepareAttack(GameObject target)
         {
-            float damage = 15f; // 固定ダメージ
+            if (target == null) 
+            {
+                Debug.LogWarning("[CompanionAI] PrepareAttack: target is null");
+                return false;
+            }
+            
+            Debug.Log($"[CompanionAI] PrepareAttack: attempting to attack {target.name}");
+            
+            // 統合ツールシステムを使用
+            if (toolSystem != null)
+            {
+                bool success = toolSystem.PrepareAttackOnTarget(target);
+                if (success)
+                {
+                    Debug.Log($"[CompanionAI] Tool system prepared attack on {target.name}");
+                    return true;
+                }
+            }
+            
+            // フォールバック：既存システムを使用
+            var destructible = target.GetComponent<IDestructible>();
+            if (destructible == null)
+            {
+                destructible = target.GetComponentInParent<IDestructible>();
+            }
+            
+            if (destructible == null) 
+            {
+                Debug.LogWarning($"[CompanionAI] PrepareAttack: {target.name} and its parents do not have IDestructible component");
+                return false;
+            }
+            
+            // 既存の攻撃準備
+            pendingTarget = destructible;
+            pendingToolType = weaponType;
+            pendingDamage = attackDamage;
+            
+            Debug.Log($"[CompanionAI] Prepared fallback attack: {target.name} with {weaponType}, damage: {attackDamage}");
+            return true;
+        }
+        
+        /// <summary>
+        /// 保留攻撃をクリア
+        /// </summary>
+        public void ClearPendingAttack()
+        {
+            if (toolSystem != null)
+            {
+                toolSystem.ClearPendingAction();
+            }
+            
+            if (pendingTarget != null)
+            {
+                Debug.Log("[CompanionAI] Clearing pending attack");
+                pendingTarget = null;
+            }
+        }
+        
+        /// <summary>
+        /// 攻撃を実行（アニメーションイベントから呼ばれる）
+        /// </summary>
+        public void ExecuteAttack()
+        {
+            if (pendingTarget == null)
+            {
+                Debug.Log("[CompanionAI] No pending attack to execute - using fallback system");
+                // フォールバック：既存の範囲攻撃
+                ExecuteFallbackAttack();
+                return;
+            }
+            
+            // ターゲットが既に破壊されているかチェック
+            if (pendingTarget.IsDestroyed)
+            {
+                Debug.Log("[CompanionAI] Pending target is already destroyed, skipping attack");
+                pendingTarget = null;
+                return;
+            }
+            
+            // MonoBehaviourとして有効性をチェック
+            if (pendingTarget is MonoBehaviour targetMono && targetMono == null)
+            {
+                Debug.Log("[CompanionAI] Pending target GameObject has been destroyed, skipping attack");
+                pendingTarget = null;
+                return;
+            }
+            
+            Debug.Log("[CompanionAI] Executing attack damage from animation event");
+            AttemptAttack(pendingTarget, pendingToolType, pendingDamage);
+            
+            // クリア
+            pendingTarget = null;
+        }
+        
+        /// <summary>
+        /// 実際の攻撃処理
+        /// </summary>
+        private void AttemptAttack(IDestructible target, ToolType toolType, float damage)
+        {
+            Debug.Log($"[CompanionAI] Attempting to attack with tool: {toolType}, damage: {damage}");
+            
+            // ターゲットがそのツールで破壊可能かチェック
+            bool canDestroy = target.CanBeDestroyedBy(toolType);
+            Debug.Log($"[CompanionAI] Can destroy target with {toolType}: {canDestroy}");
+            
+            if (canDestroy)
+            {
+                Debug.Log($"[CompanionAI] Dealing {damage} damage to target");
+                
+                // EnemyBaseの場合は攻撃者情報を渡す
+                if (target is Enemies.EnemyBase enemyBase)
+                {
+                    Debug.Log($"[CompanionAI] Target is EnemyBase, passing attacker info: {transform.name}");
+                    enemyBase.TakeDamage(damage, toolType, transform);
+                }
+                else
+                {
+                    // 一般的な破壊可能オブジェクト
+                    target.TakeDamage(damage, toolType);
+                }
+                
+                // ダメージテキスト表示
+                if (UI.UIManager.Instance != null && target is MonoBehaviour targetMono)
+                {
+                    UI.UIManager.Instance.ShowDamageText(targetMono.transform.position + Vector3.up * 1.5f, damage, false);
+                }
+                
+                // 信頼度向上
+                companionCharacter?.ChangeTrustLevel(1);
+                
+                Debug.Log($"[CompanionAI] Attack successful: Dealt {damage} damage to {target} with {toolType}");
+            }
+            else
+            {
+                Debug.Log($"[CompanionAI] Cannot attack this object with {toolType}");
+            }
+        }
+        
+        /// <summary>
+        /// フォールバック攻撃（範囲スキャン）
+        /// </summary>
+        private void ExecuteFallbackAttack()
+        {
             Vector3 attackPos = transform.position + transform.forward * 1.5f;
+            float damage = attackDamage;
             
-            Debug.Log($"{gameObject.name} - ExecuteAttackDamage called, damage: {damage}");
-            Debug.Log($"{gameObject.name} - Attack position: {attackPos}, My position: {transform.position}");
+            Debug.Log($"[CompanionAI] ExecuteFallbackAttack: scanning area around {attackPos}");
             
-            // シンプルに2m範囲ですべてのコライダーを取得
-            Collider[] hits = Physics.OverlapSphere(attackPos, 2f);
-            Debug.Log($"{gameObject.name} - OverlapSphere found {hits.Length} colliders");
+            // 範囲内のコライダーを取得
+            Collider[] hits = Physics.OverlapSphere(attackPos, attackRange);
+            Debug.Log($"[CompanionAI] OverlapSphere found {hits.Length} colliders");
             
             bool hitSomething = false;
             
@@ -852,26 +971,16 @@ namespace KowloonBreak.Characters
             {
                 if (hit == null || hit.gameObject == gameObject) continue;
                 
-                Debug.Log($"{gameObject.name} - Checking collider: {hit.name}, tag: {hit.tag}, layer: {hit.gameObject.layer}");
+                Debug.Log($"[CompanionAI] Checking collider: {hit.name}");
                 
-                // EnemyBaseコンポーネントを直接探す
+                // EnemyBaseを優先チェック
                 var enemy = hit.GetComponent<Enemies.EnemyBase>();
                 if (enemy != null)
                 {
-                    Debug.Log($"[COMPANION ATTACK] {gameObject.name} - Found EnemyBase component on {hit.name}");
-                    Debug.Log($"[COMPANION ATTACK] Enemy current target before: {enemy.CurrentTarget?.name ?? "None"}");
-                    Debug.Log($"[COMPANION ATTACK] Enemy is locked: {enemy.IsTargetLocked}");
-                    Debug.Log($"[COMPANION ATTACK] Calling TakeDamage({damage}) with attacker: {transform.name}");
-                    
-                    enemy.TakeDamage(damage, transform); // 攻撃者として自分を渡す
-                    
-                    Debug.Log($"[COMPANION ATTACK] Enemy current target after: {enemy.CurrentTarget?.name ?? "None"}");
-                    Debug.Log($"[COMPANION ATTACK] Enemy is locked after: {enemy.IsTargetLocked}");
-                    Debug.Log($"[COMPANION ATTACK] Enemy state: {enemy.CurrentState}");
-                    
+                    Debug.Log($"[CompanionAI] Found EnemyBase: {hit.name}");
+                    enemy.TakeDamage(damage, transform);
                     hitSomething = true;
                     
-                    // ダメージテキスト表示
                     if (UI.UIManager.Instance != null)
                     {
                         UI.UIManager.Instance.ShowDamageText(hit.transform.position + Vector3.up * 1.5f, damage, false);
@@ -880,25 +989,27 @@ namespace KowloonBreak.Characters
                 }
                 
                 // 破壊可能オブジェクトもチェック
-                var destructible = hit.GetComponent<Environment.IDestructible>();
-                if (destructible != null && destructible.CanBeDestroyedBy(Core.ToolType.IronPipe))
+                var destructible = hit.GetComponent<IDestructible>();
+                if (destructible != null && destructible.CanBeDestroyedBy(weaponType))
                 {
-                    Debug.Log($"{gameObject.name} - Hitting destructible: {hit.name}");
-                    destructible.TakeDamage(damage, Core.ToolType.IronPipe);
+                    Debug.Log($"[CompanionAI] Hitting destructible: {hit.name}");
+                    destructible.TakeDamage(damage, weaponType);
                     hitSomething = true;
                 }
             }
             
             if (hitSomething)
             {
-                companionCharacter.ChangeTrustLevel(1);
-                Debug.Log($"{gameObject.name} - Attack hit!");
+                companionCharacter?.ChangeTrustLevel(1);
+                Debug.Log($"[CompanionAI] Fallback attack hit!");
             }
             else
             {
-                Debug.Log($"{gameObject.name} - Attack missed");
+                Debug.Log($"[CompanionAI] Fallback attack missed");
             }
         }
+        
+        #endregion
 
 
         private void UpdateLastPlayerPosition()

@@ -728,18 +728,8 @@ namespace KowloonBreak.Player
                     }
                 }
             }
-            else
-            {
-                HandleRunInputFallback();
-            }
         }
         
-        [System.Obsolete("InputManager fallback handling removed")]
-        private void HandleRunInputFallback()
-        {
-            // 空の実装（安全な削除のため）
-        }
-
         /// <summary>
         /// しゃがみ入力を処理
         /// </summary>

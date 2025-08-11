@@ -127,12 +127,11 @@ GameObject:
   - component: {fileID: 8846536509335284193}
   - component: {fileID: 3046308508121097281}
   - component: {fileID: 6173148797356194282}
+  - component: {fileID: 937253184694271039}
   - component: {fileID: 8028166677090169455}
   - component: {fileID: 4712628069155050857}
   - component: {fileID: 6792100724070896434}
   - component: {fileID: 1104567319099991210}
-  - component: {fileID: 937253184694271039}
-  - component: {fileID: 576896521102965193}
   m_Layer: 8
   m_Name: CompanionAI
   m_TagString: Untagged
@@ -257,6 +256,9 @@ MonoBehaviour:
     m_Bits: 648
   attackRange: 2
   attackPoint: {fileID: 0}
+  weaponType: 1
+  attackDamage: 15
+  attackBoxSize: {x: 2, y: 2, z: 3}
   maxHealth: 100
   currentHealth: 0
   healthBarBackground: {fileID: 205716229794694443}
@@ -267,6 +269,34 @@ MonoBehaviour:
   interactionPromptAnchor: {fileID: 1593819854123328363}
   showDebugGizmos: 1
   currentState: 1
+--- !u!114 &937253184694271039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4601225622746221893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7defa83f9a1f0fe489e1d15cb2838994, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 4972783984286411978}
+  targetTransform: {fileID: 5104767785950813820}
+  autoFindAnimator: 1
+  autoFindTargetTransform: 1
+  useLocalRotation: 1
+  smoothAngleTransition: 1
+  smoothSpeed: 5
+  debugAngle: 0
+  debugSpeed: 0
+  angleParameterName: Angle
+  deathParameterName: Death
+  attackParameterName: Attack
+  digParameterName: Dig
+  speedParameterName: Speed
+  dodgeParameterName: Dodge
+  crouchParameterName: Crouch
 --- !u!136 &8028166677090169455
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -431,53 +461,6 @@ MonoBehaviour:
   arrowWidth: 0.3
   arrowHeadSize: 0.5
   arrowOffset: {x: 0, y: 0.1, z: 0}
---- !u!114 &937253184694271039
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4601225622746221893}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7defa83f9a1f0fe489e1d15cb2838994, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  animator: {fileID: 4972783984286411978}
-  targetTransform: {fileID: 5104767785950813820}
-  autoFindAnimator: 1
-  autoFindTargetTransform: 1
-  useLocalRotation: 1
-  smoothAngleTransition: 1
-  smoothSpeed: 5
-  debugAngle: 0
-  debugSpeed: 0
-  angleParameterName: Angle
-  deathParameterName: Death
-  attackParameterName: Attack
-  digParameterName: Dig
-  speedParameterName: Speed
-  dodgeParameterName: Dodge
-  crouchParameterName: Crouch
---- !u!114 &576896521102965193
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4601225622746221893}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8aa775826e3e4643825d5ebe912784c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  miningRange: 3
-  miningBoxSize: {x: 2, y: 2, z: 3}
-  mineableLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  defaultToolType: 1
-  defaultDamage: 15
 --- !u!1 &6195070814820800851
 GameObject:
   m_ObjectHideFlags: 0
