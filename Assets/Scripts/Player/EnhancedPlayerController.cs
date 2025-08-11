@@ -107,6 +107,9 @@ namespace KowloonBreak.Player
         public event Action OnPlayerDeath;
         private InfectionStatus playerInfection;
         private EnhancedResourceManager resourceManager;
+        
+        // Input管理
+        private KowloonBreak.Core.InputManager InputManagerInstance => KowloonBreak.Core.InputManager.Instance;
         private ToolSelectionHUDController toolSelectionHUD;
         private ToolInteractionSystem toolInteractionSystem;
 
@@ -316,9 +319,9 @@ namespace KowloonBreak.Player
 
         private void HandleInput()
         {
-            if (InputManager.Instance == null) return;
+            if (InputManagerInstance == null) return;
 
-            if (InputManager.Instance.IsInteractionPressed())
+            if (InputManagerInstance.IsInteractionPressed())
             {
                 TryInteract();
             }
@@ -333,13 +336,13 @@ namespace KowloonBreak.Player
             HandleToolSelection();
 
             // 道具使用
-            if (InputManager.Instance.IsUseToolPressed())
+            if (InputManagerInstance.IsUseToolPressed())
             {
                 TryUseTool();
             }
 
             // ダッジ入力処理
-            if (InputManager.Instance.IsDodgePressed())
+            if (InputManagerInstance.IsDodgePressed())
             {
                 TryDodge();
             }
@@ -377,9 +380,7 @@ namespace KowloonBreak.Player
         
         private Vector3 CalculateNormalMovement()
         {
-            Vector2 inputVector = InputManager.Instance != null ? 
-                InputManager.Instance.GetMovementInput() : 
-                new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+            Vector2 inputVector = InputManagerInstance?.GetMovementInput() ?? Vector2.zero;
 
             // ワールド空間での移動方向を計算
             Vector3 direction = new Vector3(inputVector.x, 0f, inputVector.y);
@@ -705,27 +706,24 @@ namespace KowloonBreak.Player
         /// </summary>
         private void HandleRunInput()
         {
-            if (InputManager.Instance != null)
+            if (runToggleMode)
             {
-                if (runToggleMode)
+                // トグルモード: キーを押すたびにON/OFF切り替え
+                if (InputManagerInstance.IsRunDown())
                 {
-                    // トグルモード: キーを押すたびにON/OFF切り替え
-                    if (InputManager.Instance.IsRunDown())
-                    {
-                        ToggleRunMode();
-                    }
+                    ToggleRunMode();
                 }
-                else
+            }
+            else
+            {
+                // ホールドモード: キーを押している間だけON
+                if (InputManagerInstance.IsRunDown())
                 {
-                    // ホールドモード: キーを押している間だけON
-                    if (InputManager.Instance.IsRunDown())
-                    {
-                        SetRunMode(true);
-                    }
-                    else if (InputManager.Instance.IsRunUp())
-                    {
-                        SetRunMode(false);
-                    }
+                    SetRunMode(true);
+                }
+                else if (InputManagerInstance.IsRunUp())
+                {
+                    SetRunMode(false);
                 }
             }
         }
@@ -735,27 +733,24 @@ namespace KowloonBreak.Player
         /// </summary>
         private void HandleCrouchInput()
         {
-            if (InputManager.Instance != null)
+            if (crouchToggleMode)
             {
-                if (crouchToggleMode)
+                // トグルモード: キーを押すたびにON/OFF切り替え
+                if (InputManagerInstance.IsCrouchDown())
                 {
-                    // トグルモード: キーを押すたびにON/OFF切り替え
-                    if (InputManager.Instance.IsCrouchDown())
-                    {
-                        ToggleCrouchMode();
-                    }
+                    ToggleCrouchMode();
                 }
-                else
+            }
+            else
+            {
+                // ホールドモード: キーを押している間だけON
+                if (InputManagerInstance.IsCrouchDown())
                 {
-                    // ホールドモード: キーを押している間だけON
-                    if (InputManager.Instance.IsCrouchDown())
-                    {
-                        SetCrouchMode(true);
-                    }
-                    else if (InputManager.Instance.IsCrouchUp())
-                    {
-                        SetCrouchMode(false);
-                    }
+                    SetCrouchMode(true);
+                }
+                else if (InputManagerInstance.IsCrouchUp())
+                {
+                    SetCrouchMode(false);
                 }
             }
         }
@@ -1059,24 +1054,21 @@ namespace KowloonBreak.Player
 
         private void HandleToolSelection()
         {
-            if (InputManager.Instance != null)
+            // LB/RB (Q/E) でツール切り替え
+            if (InputManagerInstance.IsToolPreviousPressed())
             {
-                // LB/RB (Q/E) でツール切り替え
-                if (InputManager.Instance.IsToolPreviousPressed())
-                {
-                    SelectPreviousTool();
-                }
-                else if (InputManager.Instance.IsToolNextPressed())
-                {
-                    SelectNextTool();
-                }
-                
-                // レガシー: 1-8キーでの直接選択も残す
-                int selectedTool = InputManager.Instance.GetToolSelectionInput();
-                if (selectedTool >= 0)
-                {
-                    SelectTool(selectedTool);
-                }
+                SelectPreviousTool();
+            }
+            else if (InputManagerInstance.IsToolNextPressed())
+            {
+                SelectNextTool();
+            }
+            
+            // レガシー: 1-8キーでの直接選択も残す
+            int selectedTool = InputManagerInstance.GetToolSelectionInput();
+            if (selectedTool >= 0)
+            {
+                SelectTool(selectedTool);
             }
         }
 
@@ -1795,9 +1787,7 @@ namespace KowloonBreak.Player
             OnStaminaChanged?.Invoke(currentStamina);
 
             // ダッジ方向を決定（通常の移動と同じワールド空間基準）
-            Vector2 inputVector = InputManager.Instance != null ? 
-                InputManager.Instance.GetMovementInputRaw() : 
-                new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            Vector2 inputVector = InputManagerInstance?.GetMovementInputRaw() ?? Vector2.zero;
 
             if (Mathf.Abs(inputVector.x) > 0.1f || Mathf.Abs(inputVector.y) > 0.1f)
             {
