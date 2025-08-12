@@ -1757,6 +1757,9 @@ MonoBehaviour:
   damageTextPrefab: {fileID: 7384800141936034108, guid: 6bc6dd49d50e5e54fa7d714b32edbb7d,
     type: 3}
   damageContainer: {fileID: 300389540}
+  dialogueTextPrefab: {fileID: 6214113087026799006, guid: b6d1f17df19aa5248b7e2562c56f1754,
+    type: 3}
+  dialogueDuration: 2.5
   commandButtonPrefab: {fileID: 4682574315509282890, guid: 1885bfcf33b2ba44d8f18bcb7bca483f,
     type: 3}
   commandButtonContainer: {fileID: 1815738243}
@@ -1769,7 +1772,19 @@ MonoBehaviour:
   companionLayerMask:
     serializedVersion: 2
     m_Bits: 256
+  followCommandText: "\u3053\u3063\u3061\u3060"
+  stayCommandText: "\u3053\u3053\u3067\u5F85\u3066"
+  attackCommandText: "\u653B\u6483\u3057\u308D"
+  defendCommandText: "\u5B88\u5099\u3057\u308D"
+  supportCommandText: "\u63F4\u8B77\u3057\u308D"
+  retreatCommandText: "\u9003\u3052\u308D"
+  advancedCommandText: "\u6226\u8853\u884C\u52D5"
+  commandExecutedPrefix: "\u547D\u4EE4\u5B9F\u884C: "
+  commandFailedText: "\u547D\u4EE4\u3092\u5B9F\u884C\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F"
+  noTargetFoundText: "\u653B\u6483\u5BFE\u8C61\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"
   debugPromptPositioning: 0
+  debugCompanionDetection: 1
+  debugCommandExecution: 1
 --- !u!1 &1371512879
 GameObject:
   m_ObjectHideFlags: 0
@@ -2305,6 +2320,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: CompanionCommandPanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 325461654864533719, guid: f210c6ba21caeba418d91f5bf11ff3a9,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5225838083219454593, guid: f210c6ba21caeba418d91f5bf11ff3a9,
         type: 3}
@@ -2922,6 +2942,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: InventoryDIalog
       objectReference: {fileID: 0}
+    - target: {fileID: 7642656333444240124, guid: 8b4ae5191ef51b0469d2016af6da8b37,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8481621138568708539, guid: 8b4ae5191ef51b0469d2016af6da8b37,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -2964,6 +2989,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: InteractionPrompt
+      objectReference: {fileID: 0}
+    - target: {fileID: 613593935696599199, guid: 919be829145939d44a71731052ffee5b,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6026728523185807774, guid: 919be829145939d44a71731052ffee5b,
         type: 3}
@@ -3317,6 +3347,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: ToolSelectionHUD
       objectReference: {fileID: 0}
+    - target: {fileID: 3909540615326956138, guid: 43a428202896e6a47a448a0a5e5d08f3,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4093680568388153249, guid: 43a428202896e6a47a448a0a5e5d08f3,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -3649,6 +3684,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: MainHUD
+      objectReference: {fileID: 0}
+    - target: {fileID: 5730363773847807390, guid: 7b2261d5055539f47a916b73880a6461,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6471941636035107831, guid: 7b2261d5055539f47a916b73880a6461,
         type: 3}

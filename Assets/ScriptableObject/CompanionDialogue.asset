@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5879ff52b7589d644ba43ec84ca91f21, type: 3}
+  m_Name: CompanionDialogue
+  m_EditorClassIdentifier: 
+  stateDialogues:
+  - state: 0
+    dialogues:
+    - "\u3053\u3053\u3067\u5F85\u6A5F\u3059\u308B\u306D"
+    - "\u5C11\u3057\u4F11\u61A9\u3057\u3088\u3046"
+    - ...
+  - state: 1
+    dialogues:
+    - "\u3064\u3044\u3066\u3044\u304F\u3088\uFF01"
+    - "\u4E86\u89E3\uFF01"
+    - "\u4E00\u7DD2\u306B\u884C\u3053\u3046"
+  - state: 2
+    dialogues:
+    - "\u6226\u95D8\u958B\u59CB\u3060\uFF01"
+    - "\u3084\u3063\u3066\u3084\u308B\uFF01"
+    - "\u5168\u529B\u3067\u884C\u304F\uFF01"
+  - state: 4
+    dialogues:
+    - "\u63F4\u8B77\u3059\u308B\u3088"
+    - "\u4EFB\u305B\u3066\uFF01"
+    - "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3059\u308B"
+  commandDialogues:
+  - command: 0
+    dialogues:
+    - "\u305D\u3063\u3061\u306D"
+    - "\u307E\u3060\u6B69\u304F\u306E\uFF1F"
+  - command: 1
+    dialogues:
+    - "\u3053\u3053\u3067\u5F85\u3064\u306D"
+    - "\u3053\u3053\u306B\u3044\u308B\u308F\n"
+  - command: 2
+    dialogues:
+    - "\u653B\u6483\u958B\u59CB\uFF01"
+    - "\u7A81\u6483\u3060\uFF01"
+  - command: 3
+    dialogues:
+    - "\u5B88\u308A\u3092\u56FA\u3081\u308B\u308F"
+  combatDialogues:
+  - type: 0
+    dialogues:
+    - "\u6575\u3092\u767A\u898B\u3057\u305F\uFF01"
+  - type: 1
+    dialogues:
+    - "\u3084\u3063\u3066\u3084\u308B\uFF01"
+  - type: 2
+    dialogues:
+    - "\u3046\u3063\uFF01"
+  - type: 3
+    dialogues:
+    - "\u3082\u3046\u9650\u754C\u304B\u3082"
+  - type: 4
+    dialogues:
+    - "\u5012\u3057\u305F\uFF01"
+  - type: 5
+    dialogues:
+    - "\u5927\u4E08\u592B\uFF1F"
+  generalDialogues:
+  - type: 0
+    dialogues:
+    - "\u3088\u3046"
+  - type: 2
+    dialogues:
+    - "\u307E\u3060\u307E\u3060\u304B\u304B\u308B\u306E\uFF1F"
+  - type: 3
+    dialogues:
+    - "\u304A\u5B9D\u767A\u898B\uFF01"
+  - type: 4
+    dialogues:
+    - "\u4F53\u529B\u5168\u5FEB\u3088"

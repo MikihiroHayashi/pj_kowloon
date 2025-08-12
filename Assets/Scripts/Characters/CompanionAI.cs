@@ -59,13 +59,32 @@ namespace KowloonBreak.Characters
         [Header("Visual Effects")]
         [SerializeField] private SpriteRenderer companionRenderer;
         
+        [Header("Dialogue System")]
+        [SerializeField] private CompanionDialogue dialogueData;
+        [SerializeField] private Vector3 dialogueOffset = Vector3.up * 2.5f;
+        [SerializeField] private bool enableDialogueSystem = true;
+        [SerializeField] private float dialogueCooldown = 3f;
+        [SerializeField] private float combatDialogueCooldown = 5f;
+        
         [Header("References")]
         [SerializeField] private Transform player;
         [SerializeField] private Transform interactionPromptAnchor;
         
         [Header("Debug")]
         [SerializeField] private bool showDebugGizmos = true;
+        [SerializeField] private bool debugStateChanges = true;
+        [SerializeField] private bool debugCommandExecution = true;
+        [SerializeField] private bool debugNavMeshAgent = false;
         [SerializeField] private AIState currentState = AIState.Follow;
+        
+        // Stay命令の状態を記録
+        private bool isStayCommandActive = false;
+        
+        // セリフ管理
+        private Dictionary<CombatDialogueType, float> combatDialogueTimers = new Dictionary<CombatDialogueType, float>();
+        private Dictionary<CompanionCommand, float> commandDialogueTimers = new Dictionary<CompanionCommand, float>();
+        private Dictionary<AIState, float> stateDialogueTimers = new Dictionary<AIState, float>();
+        private float lastGeneralDialogueTime = 0f;
         
         private NavMeshAgent navAgent;
         private CompanionCharacter companionCharacter;
@@ -301,7 +320,6 @@ namespace KowloonBreak.Characters
             
             if (mostThreatening != null)
             {
-                Debug.Log($"{gameObject.name} responding to player danger - targeting {mostThreatening.name}");
                 currentTarget = mostThreatening;
                 SetState(AIState.Combat);
                 
@@ -339,10 +357,6 @@ namespace KowloonBreak.Characters
                 }
             }
 
-            if (mostThreatening != null)
-            {
-                Debug.Log($"[CompanionAI] {gameObject.name} - Most threatening enemy: {mostThreatening.name} (threat level: {highestThreatLevel:F2})");
-            }
 
             return mostThreatening;
         }
@@ -413,6 +427,9 @@ namespace KowloonBreak.Characters
         /// </summary>
         private bool ShouldSmartTeleport(float distanceToPlayer)
         {
+            // Idle状態（Stay命令中）はテレポートしない
+            if (currentState == AIState.Idle) return false;
+            
             // 距離条件：設定した距離以上離れている
             if (distanceToPlayer < teleportDistance) return false;
             
@@ -466,11 +483,6 @@ namespace KowloonBreak.Characters
                 transform.position = hit.position;
                 navAgent.Warp(hit.position);
                 
-                // デバッグ用ログ
-                if (showDebugGizmos)
-                {
-                    Debug.Log($"[CompanionAI] Smart teleport executed to position: {hit.position}");
-                }
             }
             else
             {
@@ -562,20 +574,35 @@ namespace KowloonBreak.Characters
         {
             if (currentTarget == null)
             {
-                SetState(AIState.Follow);
+                // Stay命令が有効な場合はIdle状態に戻す、そうでなければFollow状態に戻す
+                if (isStayCommandActive)
+                {
+                    SetState(AIState.Idle);
+                }
+                else
+                {
+                    SetState(AIState.Follow);
+                }
                 return;
             }
 
             // ターゲットが破壊されているかチェック
             if (IsTargetDestroyed(currentTarget))
             {
-                Debug.Log($"{gameObject.name} - Current target {currentTarget.name} has been destroyed, returning to follow state");
                 currentTarget = null;
                 
                 // 保留攻撃をクリア
                 ClearPendingAttack();
                 
-                SetState(AIState.Follow);
+                // Stay命令が有効な場合はIdle状態に戻す、そうでなければFollow状態に戻す
+                if (isStayCommandActive)
+                {
+                    SetState(AIState.Idle);
+                }
+                else
+                {
+                    SetState(AIState.Follow);
+                }
                 return;
             }
 
@@ -590,7 +617,15 @@ namespace KowloonBreak.Characters
                 // 保留攻撃をクリア
                 ClearPendingAttack();
                 
-                SetState(AIState.Follow);
+                // Stay命令が有効な場合はIdle状態に戻す、そうでなければFollow状態に戻す
+                if (isStayCommandActive)
+                {
+                    SetState(AIState.Idle);
+                }
+                else
+                {
+                    SetState(AIState.Follow);
+                }
                 return;
             }
             
@@ -612,10 +647,14 @@ namespace KowloonBreak.Characters
 
         private void HandleIdleState()
         {
-            if (Vector3.Distance(transform.position, player.position) > followDistance * 2f)
+            // Stay命令中：その場に留まる
+            // NavMeshAgentのパスをリセットして移動を停止
+            if (navAgent != null && navAgent.isActiveAndEnabled && navAgent.hasPath)
             {
-                SetState(AIState.Follow);
+                navAgent.ResetPath();
             }
+            
+            // 敵検出と戦闘は UpdateAI() の CheckForEnemies() で自動的に処理される
         }
 
         private void HandleExploreState()
@@ -685,8 +724,8 @@ namespace KowloonBreak.Characters
             
             if (nearestEnemy != null)
             {
-                Debug.Log($"[CompanionAI] {gameObject.name} - Found enemy target: {nearestEnemy.name} at distance {nearestDistance:F1}");
                 currentTarget = nearestEnemy;
+                ShowCombatDialogue(CombatDialogueType.EnemySpotted);
                 SetState(AIState.Combat);
             }
         }
@@ -750,10 +789,30 @@ namespace KowloonBreak.Characters
 
         private void MoveToPosition(Vector3 targetPosition)
         {
-            if (navAgent.isActiveAndEnabled && navAgent.isOnNavMesh)
+            
+            if (navAgent == null)
             {
-                navAgent.SetDestination(targetPosition);
+                if (debugNavMeshAgent)
+                    Debug.LogError($"[CompanionAI] {gameObject.name} - NavMeshAgent is null!");
+                return;
             }
+            
+            if (!navAgent.isActiveAndEnabled)
+            {
+                if (debugNavMeshAgent)
+                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - NavMeshAgent is not active or enabled!");
+                return;
+            }
+            
+            if (!navAgent.isOnNavMesh)
+            {
+                if (debugNavMeshAgent)
+                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - NavMeshAgent is not on NavMesh!");
+                return;
+            }
+            
+            bool pathSet = navAgent.SetDestination(targetPosition);
+            
         }
 
         private void LookAtTarget(Vector3 targetPosition)
@@ -776,11 +835,11 @@ namespace KowloonBreak.Characters
             
             if (currentTarget != null && animatorController != null)
             {
-                Debug.Log($"{gameObject.name} attacking {currentTarget.name}");
-                
+                // 攻撃開始のセリフを表示
+                ShowCombatDialogue(CombatDialogueType.AttackStart);
+                    
                 // 統合された攻撃準備
                 bool attackPrepared = PrepareAttack(currentTarget);
-                Debug.Log($"{gameObject.name} - Attack prepared: {attackPrepared}");
                 
                 // アニメーション開始
                 animatorController.TriggerAttack();
@@ -792,7 +851,6 @@ namespace KowloonBreak.Characters
         /// </summary>
         public virtual void ExecuteToolUsageEffect()
         {
-            Debug.Log($"{gameObject.name} - ExecuteToolUsageEffect called");
             
             // 統合ツールシステムを使用
             if (toolSystem != null)
@@ -819,7 +877,6 @@ namespace KowloonBreak.Characters
                 return false;
             }
             
-            Debug.Log($"[CompanionAI] PrepareAttack: attempting to attack {target.name}");
             
             // 統合ツールシステムを使用
             if (toolSystem != null)
@@ -827,7 +884,6 @@ namespace KowloonBreak.Characters
                 bool success = toolSystem.PrepareAttackOnTarget(target);
                 if (success)
                 {
-                    Debug.Log($"[CompanionAI] Tool system prepared attack on {target.name}");
                     return true;
                 }
             }
@@ -850,7 +906,6 @@ namespace KowloonBreak.Characters
             pendingToolType = weaponType;
             pendingDamage = attackDamage;
             
-            Debug.Log($"[CompanionAI] Prepared fallback attack: {target.name} with {weaponType}, damage: {attackDamage}");
             return true;
         }
         
@@ -866,7 +921,6 @@ namespace KowloonBreak.Characters
             
             if (pendingTarget != null)
             {
-                Debug.Log("[CompanionAI] Clearing pending attack");
                 pendingTarget = null;
             }
         }
@@ -878,7 +932,6 @@ namespace KowloonBreak.Characters
         {
             if (pendingTarget == null)
             {
-                Debug.Log("[CompanionAI] No pending attack to execute - using fallback system");
                 // フォールバック：既存の範囲攻撃
                 ExecuteFallbackAttack();
                 return;
@@ -887,7 +940,6 @@ namespace KowloonBreak.Characters
             // ターゲットが既に破壊されているかチェック
             if (pendingTarget.IsDestroyed)
             {
-                Debug.Log("[CompanionAI] Pending target is already destroyed, skipping attack");
                 pendingTarget = null;
                 return;
             }
@@ -895,12 +947,10 @@ namespace KowloonBreak.Characters
             // MonoBehaviourとして有効性をチェック
             if (pendingTarget is MonoBehaviour targetMono && targetMono == null)
             {
-                Debug.Log("[CompanionAI] Pending target GameObject has been destroyed, skipping attack");
                 pendingTarget = null;
                 return;
             }
             
-            Debug.Log("[CompanionAI] Executing attack damage from animation event");
             AttemptAttack(pendingTarget, pendingToolType, pendingDamage);
             
             // クリア
@@ -912,20 +962,14 @@ namespace KowloonBreak.Characters
         /// </summary>
         private void AttemptAttack(IDestructible target, ToolType toolType, float damage)
         {
-            Debug.Log($"[CompanionAI] Attempting to attack with tool: {toolType}, damage: {damage}");
-            
             // ターゲットがそのツールで破壊可能かチェック
             bool canDestroy = target.CanBeDestroyedBy(toolType);
-            Debug.Log($"[CompanionAI] Can destroy target with {toolType}: {canDestroy}");
             
             if (canDestroy)
             {
-                Debug.Log($"[CompanionAI] Dealing {damage} damage to target");
-                
                 // EnemyBaseの場合は攻撃者情報を渡す
                 if (target is Enemies.EnemyBase enemyBase)
                 {
-                    Debug.Log($"[CompanionAI] Target is EnemyBase, passing attacker info: {transform.name}");
                     enemyBase.TakeDamage(damage, toolType, transform);
                 }
                 else
@@ -943,11 +987,6 @@ namespace KowloonBreak.Characters
                 // 信頼度向上
                 companionCharacter?.ChangeTrustLevel(1);
                 
-                Debug.Log($"[CompanionAI] Attack successful: Dealt {damage} damage to {target} with {toolType}");
-            }
-            else
-            {
-                Debug.Log($"[CompanionAI] Cannot attack this object with {toolType}");
             }
         }
         
@@ -959,11 +998,8 @@ namespace KowloonBreak.Characters
             Vector3 attackPos = transform.position + transform.forward * 1.5f;
             float damage = attackDamage;
             
-            Debug.Log($"[CompanionAI] ExecuteFallbackAttack: scanning area around {attackPos}");
-            
             // 範囲内のコライダーを取得
             Collider[] hits = Physics.OverlapSphere(attackPos, attackRange);
-            Debug.Log($"[CompanionAI] OverlapSphere found {hits.Length} colliders");
             
             bool hitSomething = false;
             
@@ -971,13 +1007,10 @@ namespace KowloonBreak.Characters
             {
                 if (hit == null || hit.gameObject == gameObject) continue;
                 
-                Debug.Log($"[CompanionAI] Checking collider: {hit.name}");
-                
                 // EnemyBaseを優先チェック
                 var enemy = hit.GetComponent<Enemies.EnemyBase>();
                 if (enemy != null)
                 {
-                    Debug.Log($"[CompanionAI] Found EnemyBase: {hit.name}");
                     enemy.TakeDamage(damage, transform);
                     hitSomething = true;
                     
@@ -992,7 +1025,6 @@ namespace KowloonBreak.Characters
                 var destructible = hit.GetComponent<IDestructible>();
                 if (destructible != null && destructible.CanBeDestroyedBy(weaponType))
                 {
-                    Debug.Log($"[CompanionAI] Hitting destructible: {hit.name}");
                     destructible.TakeDamage(damage, weaponType);
                     hitSomething = true;
                 }
@@ -1001,11 +1033,6 @@ namespace KowloonBreak.Characters
             if (hitSomething)
             {
                 companionCharacter?.ChangeTrustLevel(1);
-                Debug.Log($"[CompanionAI] Fallback attack hit!");
-            }
-            else
-            {
-                Debug.Log($"[CompanionAI] Fallback attack missed");
             }
         }
         
@@ -1198,11 +1225,15 @@ namespace KowloonBreak.Characters
 
         private int GetIntelligenceLevelFromTrust()
         {
-            if (companionCharacter == null) return 1;
+            if (companionCharacter == null) 
+            {
+                if (debugCommandExecution)
+                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - CompanionCharacter component is null! Returning intelligence level 1");
+                return 1;
+            }
             
             int trust = companionCharacter.TrustLevel;
-            
-            return trust switch
+            int intelligenceLevel = trust switch
             {
                 >= 0 and <= 20 => 1,
                 >= 21 and <= 40 => 2,
@@ -1211,25 +1242,42 @@ namespace KowloonBreak.Characters
                 >= 81 and <= 100 => 5,
                 _ => 1
             };
+            
+            return intelligenceLevel;
         }
 
         public void SetState(AIState newState)
         {
             if (currentState != newState)
             {
+                AIState previousState = currentState;
                 currentState = newState;
+                
+                
                 OnStateChanged?.Invoke(newState);
+                
+                // セリフを表示
+                ShowStateDialogue(newState);
                 
                 switch (newState)
                 {
                     case AIState.Idle:
-                        navAgent.ResetPath();
+                        if (navAgent != null && navAgent.isActiveAndEnabled)
+                        {
+                            navAgent.ResetPath();
+                        }
                         break;
                     case AIState.Combat:
-                        navAgent.speed = 4.5f;
+                        if (navAgent != null && navAgent.isActiveAndEnabled)
+                        {
+                            navAgent.speed = 4.5f;
+                        }
                         break;
                     default:
-                        navAgent.speed = 3.5f;
+                        if (navAgent != null && navAgent.isActiveAndEnabled)
+                        {
+                            navAgent.speed = 3.5f;
+                        }
                         break;
                 }
             }
@@ -1245,9 +1293,6 @@ namespace KowloonBreak.Characters
                 CompanionCommand.Stay => true,                     // Always available
                 CompanionCommand.Attack => intelligenceLevel >= 2,  // Level 2+
                 CompanionCommand.Defend => intelligenceLevel >= 2,  // Level 2+
-                CompanionCommand.MoveTo => intelligenceLevel >= 3,  // Level 3+
-                CompanionCommand.Scout => intelligenceLevel >= 3,   // Level 3+
-                CompanionCommand.Flank => intelligenceLevel >= 4,   // Level 4+
                 CompanionCommand.Support => intelligenceLevel >= 4, // Level 4+
                 CompanionCommand.Retreat => intelligenceLevel >= 5, // Level 5+
                 CompanionCommand.Advanced => intelligenceLevel >= 5, // Level 5+
@@ -1257,15 +1302,26 @@ namespace KowloonBreak.Characters
 
         public bool ExecuteCommand(CompanionCommand command, Vector3 position = default, GameObject target = null)
         {
-            if (!CanExecuteCommand(command)) return false;
+            
+            if (!CanExecuteCommand(command)) 
+            {
+                if (debugCommandExecution)
+                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - Cannot execute command {command} (Intelligence Level: {GetIntelligenceLevelFromTrust()})");
+                return false;
+            }
+            
+            // コマンド受領時のセリフを表示
+            ShowCommandDialogue(command);
             
             switch (command)
             {
                 case CompanionCommand.Follow:
+                    isStayCommandActive = false; // Stay命令を解除
                     SetState(AIState.Follow);
                     return true;
                     
                 case CompanionCommand.Stay:
+                    isStayCommandActive = true; // Stay命令を記録
                     SetState(AIState.Idle);
                     return true;
                     
@@ -1276,31 +1332,93 @@ namespace KowloonBreak.Characters
                         SetState(AIState.Combat);
                         return true;
                     }
-                    return false;
-                    
-                case CompanionCommand.MoveTo:
-                    if (position != default)
+                    else
                     {
-                        SetState(AIState.Explore);
-                        MoveToPosition(position);
-                        return true;
+                        Debug.LogWarning($"[CompanionAI] {gameObject.name} - Attack command failed: no target specified");
+                        return false;
                     }
-                    return false;
+                    
+                case CompanionCommand.Defend:
+                    // 防衛モード：プレイヤーの周囲に留まり、敵を積極的に迎撃
+                    SetState(AIState.Support);
+                    return true;
                     
                 case CompanionCommand.Support:
                     SetState(AIState.Support);
                     return true;
+                    
+                case CompanionCommand.Retreat:
+                    // 撤退：プレイヤーの後方に移動し、追従距離を拡大
+                    Vector3 retreatPosition = player != null ? 
+                        player.position - player.forward * 8f : transform.position - transform.forward * 8f;
+                    SetState(AIState.Follow);
+                    MoveToPosition(retreatPosition);
+                    return true;
+                    
+                case CompanionCommand.Advanced:
+                    // 高度な戦術行動：状況に応じて最適な行動を選択
+                    return ExecuteAdvancedTactics();
                     
                 default:
                     return false;
             }
         }
 
-        // Legacy methods for backward compatibility
-        public void CommandMoveTo(Vector3 position)
+        
+        /// <summary>
+        /// 高度な戦術行動を実行
+        /// </summary>
+        private bool ExecuteAdvancedTactics()
         {
-            ExecuteCommand(CompanionCommand.MoveTo, position);
+            
+            // 状況を分析
+            bool playerInDanger = false;
+            bool enemiesNearby = false;
+            
+            if (player != null)
+            {
+                var playerController = player.GetComponent<EnhancedPlayerController>();
+                if (playerController != null)
+                {
+                    playerInDanger = playerController.HealthPercentage < 0.5f;
+                }
+                
+                // 周囲の敵をチェック
+                Collider[] nearbyEnemies = Physics.OverlapSphere(player.position, 12f, enemyLayerMask);
+                enemiesNearby = nearbyEnemies.Length > 0;
+            }
+            
+            // 状況に応じて最適な行動を選択
+            if (playerInDanger && enemiesNearby)
+            {
+                // プレイヤーが危険で敵が近くにいる：積極的な支援
+                GameObject threatTarget = FindMostThreateningEnemy();
+                if (threatTarget != null)
+                {
+                    currentTarget = threatTarget;
+                    SetState(AIState.Combat);
+                    return true;
+                }
+            }
+            else if (enemiesNearby && !playerInDanger)
+            {
+                // 敵が近くにいるがプレイヤーは安全：偵察行動
+                Vector3 scoutPosition = player.position + player.forward * 10f;
+                SetState(AIState.Explore);
+                MoveToPosition(scoutPosition);
+                return true;
+            }
+            else
+            {
+                // 平常時：支援位置で待機
+                SetState(AIState.Support);
+                return true;
+            }
+            
+            return false;
         }
+
+        // Legacy methods for backward compatibility
 
         public void CommandAttack(GameObject target)
         {
@@ -1477,7 +1595,6 @@ namespace KowloonBreak.Characters
                 healthBarBackground.gameObject.SetActive(false);
             }
             
-            Debug.Log($"[CompanionAI] {gameObject.name} - Health bar hidden");
         }
         
         /// <summary>
@@ -1531,10 +1648,18 @@ namespace KowloonBreak.Characters
         {
             if (isDead) return;
 
-            Debug.Log($"[CompanionAI] {gameObject.name} - Taking damage: {damage} from {toolType}");
 
             currentHealth -= damage;
             currentHealth = Mathf.Max(0f, currentHealth);
+
+            // ダメージ受領時のセリフを表示
+            ShowCombatDialogue(CombatDialogueType.TakingDamage);
+            
+            // 体力が低い場合は別のセリフを表示
+            if (HealthPercentage < 0.3f)
+            {
+                ShowCombatDialogue(CombatDialogueType.LowHealth);
+            }
 
             // HPバーを更新
             UpdateHealthBar();
@@ -1566,7 +1691,6 @@ namespace KowloonBreak.Characters
         // 既存のTakeDamageメソッドをオーバーロードとして残す
         public virtual void TakeDamage(float damage)
         {
-            Debug.Log($"[CompanionAI] {gameObject.name} - TakeDamage called with damage: {damage}");
             TakeDamage(damage, ToolType.IronPipe); // デフォルトツール
         }
         
@@ -1578,7 +1702,6 @@ namespace KowloonBreak.Characters
             if (isDead) return;
 
             currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
-            Debug.Log($"[CompanionAI] {gameObject.name} - Healed for {amount}. Current health: {currentHealth}/{maxHealth}");
         }
         
         /// <summary>
@@ -1589,7 +1712,6 @@ namespace KowloonBreak.Characters
             if (isDead) return;
             
             isDead = true;
-            Debug.Log($"[CompanionAI] {gameObject.name} - Companion has died");
 
             // NavMeshAgentを停止
             if (navAgent != null)
@@ -1650,10 +1772,123 @@ namespace KowloonBreak.Characters
                 if (distance <= 15f) // 15メートル以内の敵が反応
                 {
                     enemy.ForceSetTarget(newTarget);
-                    Debug.Log($"[CompanionAI] {gameObject.name} - Enemy {enemy.name} target switched to {newTarget.name}");
                 }
             }
         }
+        
+        #endregion
+        
+        #region Dialogue System
+        
+        /// <summary>
+        /// ステート変更時にセリフを表示
+        /// </summary>
+        /// <param name="newState">新しいステート</param>
+        private void ShowStateDialogue(AIState newState)
+        {
+            if (!enableDialogueSystem || dialogueData == null || UI.UIManager.Instance == null)
+                return;
+
+            // クールダウンチェック
+            if (stateDialogueTimers.ContainsKey(newState))
+            {
+                if (Time.time - stateDialogueTimers[newState] < dialogueCooldown)
+                    return;
+            }
+
+            string dialogue = dialogueData.GetStateDialogue(newState);
+            if (!string.IsNullOrEmpty(dialogue))
+            {
+                Vector3 dialoguePosition = transform.position + dialogueOffset;
+                UI.UIManager.Instance.ShowDialogueText(dialoguePosition, dialogue);
+                
+                // タイマーを更新
+                stateDialogueTimers[newState] = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// コマンド受領時にセリフを表示
+        /// </summary>
+        /// <param name="command">受領したコマンド</param>
+        private void ShowCommandDialogue(CompanionCommand command)
+        {
+            if (!enableDialogueSystem || dialogueData == null || UI.UIManager.Instance == null)
+                return;
+
+            // クールダウンチェック
+            if (commandDialogueTimers.ContainsKey(command))
+            {
+                if (Time.time - commandDialogueTimers[command] < dialogueCooldown)
+                    return;
+            }
+
+            string dialogue = dialogueData.GetCommandDialogue(command);
+            if (!string.IsNullOrEmpty(dialogue))
+            {
+                Vector3 dialoguePosition = transform.position + dialogueOffset;
+                UI.UIManager.Instance.ShowDialogueText(dialoguePosition, dialogue);
+                
+                // タイマーを更新
+                commandDialogueTimers[command] = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// 戦闘関連のセリフを表示
+        /// </summary>
+        /// <param name="type">戦闘状況タイプ</param>
+        private void ShowCombatDialogue(CombatDialogueType type)
+        {
+            if (!enableDialogueSystem || dialogueData == null || UI.UIManager.Instance == null)
+                return;
+
+            // クールダウンチェック（戦闘セリフは長めのクールダウン）
+            if (combatDialogueTimers.ContainsKey(type))
+            {
+                if (Time.time - combatDialogueTimers[type] < combatDialogueCooldown)
+                    return;
+            }
+
+            string dialogue = dialogueData.GetCombatDialogue(type);
+            if (!string.IsNullOrEmpty(dialogue))
+            {
+                Vector3 dialoguePosition = transform.position + dialogueOffset;
+                UI.UIManager.Instance.ShowDialogueText(dialoguePosition, dialogue);
+                
+                // タイマーを更新
+                combatDialogueTimers[type] = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// 一般的なセリフを表示
+        /// </summary>
+        /// <param name="type">一般状況タイプ</param>
+        public void ShowGeneralDialogue(GeneralDialogueType type)
+        {
+            if (!enableDialogueSystem || dialogueData == null || UI.UIManager.Instance == null)
+                return;
+
+            // 一般セリフのクールダウンチェック
+            if (Time.time - lastGeneralDialogueTime < dialogueCooldown)
+                return;
+
+            string dialogue = dialogueData.GetGeneralDialogue(type);
+            if (!string.IsNullOrEmpty(dialogue))
+            {
+                Vector3 dialoguePosition = transform.position + dialogueOffset;
+                UI.UIManager.Instance.ShowDialogueText(dialoguePosition, dialogue);
+                
+                // タイマーを更新
+                lastGeneralDialogueTime = Time.time;
+            }
+        }
+        
+        #endregion
+        
+        #region Debug and Diagnostics
+        
         
         #endregion
     }
@@ -1673,9 +1908,6 @@ namespace KowloonBreak.Characters
         Stay,       // Always available
         Attack,     // Level 2+
         Defend,     // Level 2+
-        MoveTo,     // Level 3+
-        Scout,      // Level 3+
-        Flank,      // Level 4+
         Support,    // Level 4+
         Retreat,    // Level 5+
         Advanced    // Level 5+

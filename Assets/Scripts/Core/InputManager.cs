@@ -232,7 +232,11 @@ namespace KowloonBreak.Core
         public bool IsDodgePressed() => GetButtonDown("dodge");
         public bool IsMenuPressed() => GetButtonDown("menu");
         public bool IsInventoryPressed() => GetButtonDown("inventory");
-        public bool IsCompanionCommandPressed() => GetButtonDown("companionCommand");
+        public bool IsCompanionCommandPressed() 
+        {
+            // InputBinding.IsDown()を直接呼び出す（より確実）
+            return inputSettings != null && inputSettings.companionCommandInput.IsDown(currentDevice);
+        }
         
         // Tool switching methods
         public bool IsToolPreviousPressed() => GetButtonDown("toolPrevious");

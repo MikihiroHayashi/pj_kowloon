@@ -52,6 +52,10 @@ namespace KowloonBreak.UI
         [Header("Damage Display")]
         [SerializeField] private GameObject damageTextPrefab;
         [SerializeField] private Transform damageContainer;
+        
+        [Header("Dialogue Display")]
+        [SerializeField] private GameObject dialogueTextPrefab;
+        [SerializeField] private float dialogueDuration = 2.5f;
 
         [Header("Companion Command System")]
         [SerializeField] private GameObject commandButtonPrefab;
@@ -64,8 +68,26 @@ namespace KowloonBreak.UI
         [SerializeField] private float interactionRange = 3f;
         [SerializeField] private LayerMask companionLayerMask = -1;
         
+        [Header("Command Text Settings")]
+        [SerializeField] private string followCommandText = "付いてこい";
+        [SerializeField] private string stayCommandText = "ここで待て";
+        [SerializeField] private string attackCommandText = "攻撃しろ";
+        [SerializeField] private string defendCommandText = "守備しろ";
+        [SerializeField] private string supportCommandText = "援護しろ";
+        [SerializeField] private string retreatCommandText = "撤退しろ";
+        [SerializeField] private string advancedCommandText = "戦術行動";
+        
+        [Header("Notification Text Settings")]
+        [SerializeField] private string commandExecutedPrefix = "命令実行: ";
+        [SerializeField] private string commandFailedText = "命令を実行できませんでした";
+        [SerializeField] private string noTargetFoundText = "攻撃対象が見つかりません";
+        
         [Header("Debug - InteractionPrompt Positioning")]
         [SerializeField] private bool debugPromptPositioning = false;
+        
+        [Header("Debug - Companion Command System")]
+        [SerializeField] private bool debugCompanionDetection = true;
+        [SerializeField] private bool debugCommandExecution = true;
 
         private Dictionary<string, GameObject> activePanels;
         private List<GameObject> activeNotifications;
@@ -240,7 +262,12 @@ namespace KowloonBreak.UI
 
         private void HandleInput()
         {
-            if (inputManager == null) return;
+            if (inputManager == null) 
+            {
+                if (debugCommandExecution)
+                    Debug.LogWarning("[UIManager] HandleInput: inputManager is null");
+                return;
+            }
 
             // インベントリ開閉
             if (inputManager.IsInventoryPressed())
@@ -270,7 +297,7 @@ namespace KowloonBreak.UI
                 TogglePanel("BaseManagement");
             }
             
-            // Companion command input (InputManager経由)
+            // Companion command input
             if (inputManager.IsCompanionCommandPressed())
             {
                 HandleCompanionCommandInput();
@@ -692,6 +719,68 @@ namespace KowloonBreak.UI
             }
         }
 
+        /// <summary>
+        /// 指定位置にセリフテキストを表示
+        /// </summary>
+        /// <param name="worldPosition">ワールド座標</param>
+        /// <param name="dialogue">表示するセリフ</param>
+        public void ShowDialogueText(Vector3 worldPosition, string dialogue)
+        {
+            if (string.IsNullOrEmpty(dialogue) || dialogueTextPrefab == null || damageContainer == null)
+                return;
+
+            UnityEngine.Camera cameraForDialogue = UnityEngine.Camera.main;
+            if (cameraForDialogue == null)
+                return;
+
+            // World座標をScreen座標に変換
+            Vector3 screenPos = cameraForDialogue.WorldToScreenPoint(worldPosition);
+            
+            // 画面外の場合は表示しない
+            if (screenPos.z < 0 || screenPos.x < 0 || screenPos.x > Screen.width || 
+                screenPos.y < 0 || screenPos.y > Screen.height)
+                return;
+
+            // セリフテキストオブジェクトを生成
+            GameObject dialogueObj = Instantiate(dialogueTextPrefab, damageContainer);
+            RectTransform rectTransform = dialogueObj.GetComponent<RectTransform>();
+
+            if (rectTransform != null)
+            {
+                RectTransform containerRect = damageContainer.GetComponent<RectTransform>();
+                if (containerRect != null)
+                {
+                    // CanvasのRender ModeがScreen Space - Overlayの場合
+                    Canvas canvas = damageContainer.GetComponentInParent<Canvas>();
+                    UnityEngine.Camera canvasCamera = canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera ? canvas.worldCamera : null;
+                    
+                    // Screen座標をCanvas座標に変換
+                    Vector2 canvasPos;
+                    bool success = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                        containerRect,
+                        screenPos,
+                        canvasCamera,
+                        out canvasPos);
+
+                    if (success)
+                    {
+                        rectTransform.localPosition = canvasPos;
+                    }
+                    else
+                    {
+                        rectTransform.localPosition = Vector3.zero;
+                    }
+                }
+            }
+
+            // DialogueTextコンポーネントを初期化
+            DialogueText dialogueComponent = dialogueObj.GetComponent<DialogueText>();
+            if (dialogueComponent != null)
+            {
+                dialogueComponent.Initialize(dialogue, dialogueDuration);
+            }
+        }
+
         public void UpdateUI()
         {
             if (resourceManager != null)
@@ -782,13 +871,20 @@ namespace KowloonBreak.UI
 
         private void CheckForNearbyCompanions()
         {
-            if (player == null) return;
+            if (player == null) 
+            {
+                if (debugCompanionDetection)
+                    Debug.LogWarning("[UIManager] CheckForNearbyCompanions: player is null");
+                return;
+            }
+
 
             KowloonBreak.Characters.CompanionAI nearestCompanion = null;
             float nearestDistance = float.MaxValue;
 
             // まずLayerMaskを使って検索
             Collider[] companionsInRange = Physics.OverlapSphere(player.position, interactionRange, companionLayerMask);
+            
             
             // LayerMaskで見つからない場合、フォールバック検索（全レイヤー対象）
             if (companionsInRange.Length == 0)
@@ -814,6 +910,7 @@ namespace KowloonBreak.UI
                 if (companion != null)
                 {
                     float distance = Vector3.Distance(player.position, companion.transform.position);
+                    
                     if (distance < nearestDistance)
                     {
                         nearestDistance = distance;
@@ -822,7 +919,9 @@ namespace KowloonBreak.UI
                 }
             }
 
+            bool companionChanged = currentNearbyCompanion != nearestCompanion;
             currentNearbyCompanion = nearestCompanion;
+            
         }
 
         private void UpdateInteractionPrompt()
@@ -872,13 +971,18 @@ namespace KowloonBreak.UI
 
         private void HandleCompanionCommandInput()
         {
-            if (!IsPanelOpen("CompanionCommand") && currentNearbyCompanion != null)
+            // シンプルなトグル処理
+            if (IsPanelOpen("CompanionCommand"))
+            {
+                ClosePanel("CompanionCommand");
+            }
+            else if (currentNearbyCompanion != null)
             {
                 OpenCompanionCommandUI(currentNearbyCompanion);
             }
-            else if (IsPanelOpen("CompanionCommand"))
+            else
             {
-                ClosePanel("CompanionCommand");
+                ShowNotification("近くにコンパニオンがいません", NotificationType.Warning);
             }
         }
 
@@ -891,8 +995,6 @@ namespace KowloonBreak.UI
             {
                 UpdateCompanionInfo();
                 GenerateCommandButtons();
-                
-                // ボタンが生成された後に初期フォーカスを設定
                 StartCoroutine(SetInitialFocusAfterFrame());
             }
         }
@@ -991,22 +1093,17 @@ namespace KowloonBreak.UI
 
         private string GetCommandDisplayText(KowloonBreak.Characters.CompanionCommand command)
         {
-            var commandDescriptions = new Dictionary<KowloonBreak.Characters.CompanionCommand, string>
+            string description = command switch
             {
-                { KowloonBreak.Characters.CompanionCommand.Follow, "付いてこい" },
-                { KowloonBreak.Characters.CompanionCommand.Stay, "ここで待て" },
-                { KowloonBreak.Characters.CompanionCommand.Attack, "攻撃しろ" },
-                { KowloonBreak.Characters.CompanionCommand.Defend, "守備しろ" },
-                { KowloonBreak.Characters.CompanionCommand.MoveTo, "ここに移動しろ" },
-                { KowloonBreak.Characters.CompanionCommand.Scout, "偵察に行け" },
-                { KowloonBreak.Characters.CompanionCommand.Flank, "側面を取れ" },
-                { KowloonBreak.Characters.CompanionCommand.Support, "援護しろ" },
-                { KowloonBreak.Characters.CompanionCommand.Retreat, "撤退しろ" },
-                { KowloonBreak.Characters.CompanionCommand.Advanced, "戦術行動" }
+                KowloonBreak.Characters.CompanionCommand.Follow => followCommandText,
+                KowloonBreak.Characters.CompanionCommand.Stay => stayCommandText,
+                KowloonBreak.Characters.CompanionCommand.Attack => attackCommandText,
+                KowloonBreak.Characters.CompanionCommand.Defend => defendCommandText,
+                KowloonBreak.Characters.CompanionCommand.Support => supportCommandText,
+                KowloonBreak.Characters.CompanionCommand.Retreat => retreatCommandText,
+                KowloonBreak.Characters.CompanionCommand.Advanced => advancedCommandText,
+                _ => command.ToString()
             };
-
-            string description = commandDescriptions.ContainsKey(command) ? 
-                commandDescriptions[command] : command.ToString();
                 
             int requiredLevel = GetRequiredIntelligenceLevel(command);
             if (requiredLevel > 1)
@@ -1025,9 +1122,6 @@ namespace KowloonBreak.UI
                 KowloonBreak.Characters.CompanionCommand.Stay => 1,
                 KowloonBreak.Characters.CompanionCommand.Attack => 2,
                 KowloonBreak.Characters.CompanionCommand.Defend => 2,
-                KowloonBreak.Characters.CompanionCommand.MoveTo => 3,
-                KowloonBreak.Characters.CompanionCommand.Scout => 3,
-                KowloonBreak.Characters.CompanionCommand.Flank => 4,
                 KowloonBreak.Characters.CompanionCommand.Support => 4,
                 KowloonBreak.Characters.CompanionCommand.Retreat => 5,
                 KowloonBreak.Characters.CompanionCommand.Advanced => 5,
@@ -1037,16 +1131,24 @@ namespace KowloonBreak.UI
 
         private void ExecuteCompanionCommand(KowloonBreak.Characters.CompanionCommand command)
         {
-            if (selectedCompanion == null) return;
+            if (selectedCompanion == null)
+            {
+                Debug.LogError("[UIManager] ExecuteCompanionCommand: selectedCompanion is null");
+                return;
+            }
+
 
             bool success = false;
 
             switch (command)
             {
-                case KowloonBreak.Characters.CompanionCommand.MoveTo:
-                    Vector3 movePosition = player.position + player.forward * 5f;
-                    success = selectedCompanion.ExecuteCommand(command, movePosition);
+                case KowloonBreak.Characters.CompanionCommand.Follow:
+                case KowloonBreak.Characters.CompanionCommand.Stay:
+                case KowloonBreak.Characters.CompanionCommand.Support:
+                    // シンプルなコマンド - 追加パラメーターなし
+                    success = selectedCompanion.ExecuteCommand(command);
                     break;
+
 
                 case KowloonBreak.Characters.CompanionCommand.Attack:
                     GameObject nearestEnemy = FindNearestEnemyForCompanion();
@@ -1056,10 +1158,27 @@ namespace KowloonBreak.UI
                     }
                     else
                     {
-                        ShowNotification("攻撃対象が見つかりません", NotificationType.Warning);
-                        ClosePanel("CompanionCommand");
+                        ShowNotification(noTargetFoundText, NotificationType.Warning);
+                        // パネルを即座に閉じずに、短時間待ってから閉じる
+                        StartCoroutine(CloseCommandPanelAfterDelay(1.5f));
                         return;
                     }
+                    break;
+
+                case KowloonBreak.Characters.CompanionCommand.Defend:
+                    // 防衛モード
+                    success = selectedCompanion.ExecuteCommand(command);
+                    break;
+
+
+                case KowloonBreak.Characters.CompanionCommand.Retreat:
+                    // 撤退
+                    success = selectedCompanion.ExecuteCommand(command);
+                    break;
+
+                case KowloonBreak.Characters.CompanionCommand.Advanced:
+                    // 高度な戦術行動
+                    success = selectedCompanion.ExecuteCommand(command);
                     break;
 
                 default:
@@ -1067,31 +1186,41 @@ namespace KowloonBreak.UI
                     break;
             }
 
+            // 結果のフィードバック
             if (success)
             {
-                var commandDescriptions = new Dictionary<KowloonBreak.Characters.CompanionCommand, string>
+                string commandName = command switch
                 {
-                    { KowloonBreak.Characters.CompanionCommand.Follow, "付いてこい" },
-                    { KowloonBreak.Characters.CompanionCommand.Stay, "ここで待て" },
-                    { KowloonBreak.Characters.CompanionCommand.Attack, "攻撃しろ" },
-                    { KowloonBreak.Characters.CompanionCommand.Defend, "守備しろ" },
-                    { KowloonBreak.Characters.CompanionCommand.MoveTo, "ここに移動しろ" },
-                    { KowloonBreak.Characters.CompanionCommand.Scout, "偵察に行け" },
-                    { KowloonBreak.Characters.CompanionCommand.Flank, "側面を取れ" },
-                    { KowloonBreak.Characters.CompanionCommand.Support, "援護しろ" },
-                    { KowloonBreak.Characters.CompanionCommand.Retreat, "撤退しろ" },
-                    { KowloonBreak.Characters.CompanionCommand.Advanced, "戦術行動" }
+                    KowloonBreak.Characters.CompanionCommand.Follow => followCommandText,
+                    KowloonBreak.Characters.CompanionCommand.Stay => stayCommandText,
+                    KowloonBreak.Characters.CompanionCommand.Attack => attackCommandText,
+                    KowloonBreak.Characters.CompanionCommand.Defend => defendCommandText,
+                    KowloonBreak.Characters.CompanionCommand.Support => supportCommandText,
+                    KowloonBreak.Characters.CompanionCommand.Retreat => retreatCommandText,
+                    KowloonBreak.Characters.CompanionCommand.Advanced => advancedCommandText,
+                    _ => command.ToString()
                 };
                 
-                string commandName = commandDescriptions.ContainsKey(command) ? 
-                    commandDescriptions[command] : command.ToString();
-                ShowNotification($"命令実行: {commandName}", NotificationType.Success);
+                ShowNotification($"{commandExecutedPrefix}{commandName}", NotificationType.Success);
+                
+                // 成功時は短時間待ってからパネルを閉じる
+                StartCoroutine(CloseCommandPanelAfterDelay(0.8f));
             }
             else
             {
-                ShowNotification("命令を実行できませんでした", NotificationType.Error);
+                ShowNotification(commandFailedText, NotificationType.Error);
+                
+                // 失敗時はより長く待ってからパネルを閉じる
+                StartCoroutine(CloseCommandPanelAfterDelay(2.0f));
             }
+        }
 
+        /// <summary>
+        /// 指定時間後にコマンドパネルを閉じる
+        /// </summary>
+        private System.Collections.IEnumerator CloseCommandPanelAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
             ClosePanel("CompanionCommand");
         }
 
@@ -1116,20 +1245,10 @@ namespace KowloonBreak.UI
                     {
                         nearestDistance = distance;
                         nearestEnemy = collider.gameObject;
-                        Debug.Log($"[UIManager] Found valid enemy target: {collider.name} at distance {distance:F2}");
                     }
-                }
-                else if (collider.CompareTag("Enemy"))
-                {
-                    // Enemyタグはあるけどコンポーネントがない場合の警告
-                    Debug.LogWarning($"[UIManager] Object {collider.name} has Enemy tag but no valid EnemyBase component!");
                 }
             }
 
-            if (nearestEnemy == null)
-            {
-                Debug.Log($"[UIManager] No valid enemies found near companion within {searchRadius} units");
-            }
 
             return nearestEnemy;
         }
@@ -1193,25 +1312,17 @@ namespace KowloonBreak.UI
         {
             if (mainCamera == null || interactionPromptRectTransform == null || damageContainer == null)
             {
-                if (debugPromptPositioning)
-                    Debug.LogWarning("[UIManager] UpdatePromptPosition: Missing components");
                 return false;
             }
 
             // ワールド座標をスクリーン座標に変換（DamageTextと同じ方法）
             Vector3 screenPosition = mainCamera.WorldToScreenPoint(worldPosition);
             
-            if (debugPromptPositioning)
-            {
-                Debug.Log($"[UIManager] World: {worldPosition} -> Screen: {screenPosition}");
-            }
             
             // 画面外の場合は非表示（DamageTextと同じ条件）
             if (screenPosition.z < 0 || screenPosition.x < 0 || screenPosition.x > Screen.width || 
                 screenPosition.y < 0 || screenPosition.y > Screen.height)
             {
-                if (debugPromptPositioning)
-                    Debug.Log("[UIManager] Position is off-screen or behind camera");
                 return false;
             }
 
@@ -1231,21 +1342,12 @@ namespace KowloonBreak.UI
                     canvasCamera,
                     out canvasPosition);
 
-                if (debugPromptPositioning)
-                {
-                    Debug.Log($"[UIManager] Canvas position conversion success: {success}, Result: {canvasPosition}");
-                    Debug.Log($"[UIManager] Canvas Camera: {(canvasCamera != null ? canvasCamera.name : "null")}");
-                }
 
                 if (success)
                 {
                     // DamageTextと同じようにlocalPositionを使用
                     interactionPromptRectTransform.localPosition = canvasPosition;
                     
-                    if (debugPromptPositioning)
-                    {
-                        Debug.Log($"[UIManager] Final local position: {interactionPromptRectTransform.localPosition}");
-                    }
                     
                     return true;
                 }
@@ -1285,7 +1387,6 @@ namespace KowloonBreak.UI
                     // 最初のボタンを選択状態に設定
                     eventSystem.SetSelectedGameObject(activeCommandButtons[0].gameObject);
                     
-                    Debug.Log($"[UIManager] Initial focus set to first command button: {activeCommandButtons[0].name}");
                 }
                 else
                 {
@@ -1294,7 +1395,7 @@ namespace KowloonBreak.UI
             }
             else
             {
-                Debug.LogWarning("[UIManager] No command buttons available to set initial focus.");
+                // コマンドボタンが利用できない場合（特に問題なし）
             }
         }
 
@@ -1310,10 +1411,14 @@ namespace KowloonBreak.UI
                 eventSystemObj.AddComponent<EventSystem>();
                 eventSystemObj.AddComponent<StandaloneInputModule>();
                 
-                Debug.Log("[UIManager] EventSystem created automatically.");
             }
         }
 
+        #endregion
+        
+        #region Debug and Diagnostics
+        
+        
         #endregion
     }
 

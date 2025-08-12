@@ -265,9 +265,15 @@ MonoBehaviour:
   healthBarFill: {fileID: 566817781091227021}
   damageDisplayPoint: {fileID: 2496835046774683249}
   companionRenderer: {fileID: 5671558435591580967}
+  dialogueData: {fileID: 11400000, guid: 3406d9cfad078ba4181c2761361d6813, type: 2}
+  dialogueOffset: {x: 0, y: 2.5, z: 0}
+  enableDialogueSystem: 1
   player: {fileID: 0}
   interactionPromptAnchor: {fileID: 1593819854123328363}
   showDebugGizmos: 1
+  debugStateChanges: 1
+  debugCommandExecution: 1
+  debugNavMeshAgent: 0
   currentState: 1
 --- !u!114 &937253184694271039
 MonoBehaviour:
