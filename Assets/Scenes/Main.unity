@@ -1132,7 +1132,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1000000009
 Transform:
   m_ObjectHideFlags: 0
@@ -1785,6 +1785,7 @@ MonoBehaviour:
   debugPromptPositioning: 0
   debugCompanionDetection: 1
   debugCommandExecution: 1
+  debugPanelControls: 0
 --- !u!1 &1371512879
 GameObject:
   m_ObjectHideFlags: 0
@@ -2004,6 +2005,82 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1548105757
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1548105759}
+  - component: {fileID: 1548105758}
+  m_Layer: 0
+  m_Name: DungeonGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1548105758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1548105757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 330c9aeee8d4d08429de535eee650c29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dungeonSize: {x: 20, y: 20}
+  cellSize: 1
+  generationSeed: 12345
+  useRandomSeed: 1
+  blockPrefabs:
+  - prefab: {fileID: 8847296823842949343, guid: c979ec95a7e81534792f0fc36d83a9da,
+      type: 3}
+    blockType: 0
+    size: {x: 0, y: 0}
+    spawnWeight: 0
+    maxInstances: 0
+  - prefab: {fileID: 2355232654601495622, guid: 87f8d3f52781bd94cb621836b39b1678,
+      type: 3}
+    blockType: 0
+    size: {x: 0, y: 0}
+    spawnWeight: 0
+    maxInstances: -1
+  - prefab: {fileID: 5264043457847829272, guid: fa1f74c5530fd82409b47b233744d364,
+      type: 3}
+    blockType: 0
+    size: {x: 0, y: 0}
+    spawnWeight: 0
+    maxInstances: 0
+  roomDensity: 0.3
+  corridorDensity: 0.4
+  junctionDensity: 0.2
+  specialRoomDensity: 0.1
+  minSpacing: 0
+  fillEmptySpaces: 1
+  preventOverlap: 1
+  showDebugGizmos: 1
+  logGenerationProcess: 0
+--- !u!4 &1548105759
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1548105757}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1572859477
 GameObject:
   m_ObjectHideFlags: 0
@@ -3752,6 +3829,7 @@ SceneRoots:
   - {fileID: 1000000014}
   - {fileID: 1371512880}
   - {fileID: 1267877482}
+  - {fileID: 1548105759}
   - {fileID: 592813702}
   - {fileID: 1367927531}
   - {fileID: 460335357}
