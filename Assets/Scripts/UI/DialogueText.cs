@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using TMPro;
+using KowloonBreak.Characters;
 
 namespace KowloonBreak.UI
 {
@@ -13,15 +14,19 @@ namespace KowloonBreak.UI
         [SerializeField] private float fadeInDuration = 0.3f;
         [SerializeField] private float displayDuration = 2.5f;
         [SerializeField] private float fadeOutDuration = 0.5f;
-        [SerializeField] private float floatHeight = 30f;
-        [SerializeField] private AnimationCurve movementCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
         [Header("Components")]
         [SerializeField] private TextMeshProUGUI textComponent;
         private RectTransform rectTransform;
         private CanvasGroup canvasGroup;
-        private Vector3 startPosition;
-        private Vector3 targetPosition;
+        
+        // 頭上追従機能
+        private CompanionAI targetCompanion;
+        private UnityEngine.Camera mainCamera;
+        private bool followCompanion = false;
+        
+        // イベント
+        public System.Action OnDialogueDestroyed;
 
         private void Awake()
         {
@@ -56,12 +61,84 @@ namespace KowloonBreak.UI
                 displayDuration = duration;
             }
 
-            // 位置の設定
-            startPosition = rectTransform.localPosition;
-            targetPosition = startPosition + Vector3.up * floatHeight;
-
             // アニメーション開始
             StartCoroutine(PlayDialogueAnimation());
+        }
+        
+        /// <summary>
+        /// コンパニオンの頭上追従用の初期化
+        /// </summary>
+        /// <param name="companion">追従対象のコンパニオン</param>
+        /// <param name="dialogue">表示するセリフ</param>
+        /// <param name="duration">表示時間（オプション）</param>
+        public void InitializeForCompanion(CompanionAI companion, string dialogue, float duration = -1f)
+        {
+            targetCompanion = companion;
+            followCompanion = true;
+            mainCamera = UnityEngine.Camera.main;
+            
+            Initialize(dialogue, duration);
+        }
+        
+        private void Update()
+        {
+            // コンパニオン追従処理
+            if (followCompanion && targetCompanion != null)
+            {
+                UpdateFollowPosition();
+            }
+        }
+        
+        /// <summary>
+        /// コンパニオンの頭上位置に追従
+        /// </summary>
+        private void UpdateFollowPosition()
+        {
+            if (mainCamera == null || targetCompanion == null) return;
+            
+            Vector3 worldPosition = targetCompanion.GetDialoguePosition();
+            
+            // ワールド座標をスクリーン座標に変換
+            Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPosition);
+            
+            // 画面外の場合は非表示
+            if (screenPos.z < 0 || screenPos.x < 0 || screenPos.x > Screen.width || 
+                screenPos.y < 0 || screenPos.y > Screen.height)
+            {
+                if (canvasGroup != null && canvasGroup.alpha > 0f)
+                    canvasGroup.alpha = 0f;
+                return;
+            }
+            
+            // UIManagerと同じ方法で座標変換（damageContainerを基準とする）
+            // damageContainerを探す
+            Transform damageContainer = FindDamageContainer();
+            if (damageContainer != null)
+            {
+                RectTransform containerRect = damageContainer.GetComponent<RectTransform>();
+                if (containerRect != null)
+                {
+                    Canvas canvas = damageContainer.GetComponentInParent<Canvas>();
+                    UnityEngine.Camera canvasCamera = canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera ? canvas.worldCamera : null;
+                    
+                    Vector2 canvasPos;
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                        containerRect, screenPos, canvasCamera, out canvasPos))
+                    {
+                        rectTransform.localPosition = canvasPos;
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// damageContainerを見つける（UIManagerのdamageContainerと同じもの）
+        /// </summary>
+        private Transform FindDamageContainer()
+        {
+            // 自分の親から探す
+            Transform parent = transform.parent;
+            return parent; // DialogueTextはdamageContainerの子として作成されるため
         }
 
         private IEnumerator PlayDialogueAnimation()
@@ -92,14 +169,15 @@ namespace KowloonBreak.UI
                     canvasGroup.alpha = 1f;
                 }
 
-                // 移動処理
-                float moveProgress = movementCurve.Evaluate(normalizedTime);
-                rectTransform.localPosition = Vector3.Lerp(startPosition, targetPosition, moveProgress);
+                // 位置移動アニメーションは削除（追従機能と競合するため）
 
                 elapsedTime += Time.deltaTime;
                 yield return null;
             }
 
+            // 削除前にイベントを発火
+            OnDialogueDestroyed?.Invoke();
+            
             // 表示完了後に削除
             Destroy(gameObject);
         }
@@ -110,6 +188,10 @@ namespace KowloonBreak.UI
         public void ForceDestroy()
         {
             StopAllCoroutines();
+            
+            // 削除前にイベントを発火
+            OnDialogueDestroyed?.Invoke();
+            
             Destroy(gameObject);
         }
     }

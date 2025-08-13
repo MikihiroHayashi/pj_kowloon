@@ -135,7 +135,8 @@ namespace KowloonBreak.Core
         TakingDamage,      // ダメージを受けた
         LowHealth,         // 体力低下
         EnemyDefeated,     // 敵を倒した
-        PlayerInDanger     // プレイヤーが危険
+        PlayerInDanger,    // プレイヤーが危険
+        Death              // 死亡時
     }
 
     public enum GeneralDialogueType

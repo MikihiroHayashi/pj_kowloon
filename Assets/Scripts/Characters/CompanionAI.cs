@@ -6,6 +6,7 @@ using UnityEngine.AI;
 using KowloonBreak.Core;
 using KowloonBreak.Player;
 using KowloonBreak.Environment;
+using KowloonBreak.UI;
 
 namespace KowloonBreak.Characters
 {
@@ -65,6 +66,10 @@ namespace KowloonBreak.Characters
         [SerializeField] private bool enableDialogueSystem = true;
         [SerializeField] private float dialogueCooldown = 3f;
         [SerializeField] private float combatDialogueCooldown = 5f;
+        
+        // 現在表示中のDialogueText管理
+        private GameObject currentDialogueText;
+        private bool hasActiveDialogue => currentDialogueText != null;
         
         [Header("References")]
         [SerializeField] private Transform player;
@@ -633,12 +638,14 @@ namespace KowloonBreak.Characters
             if (distanceToTarget <= 3f)
             {
                 navAgent.ResetPath();
+                // 攻撃範囲内では継続的に敵を向く（滑らかな回転）
                 LookAtTarget(currentTarget.transform.position);
                 PerformAttack();
             }
             else
             {
-                // ターゲットに向かって移動
+                // ターゲットに向かって移動（移動中も徐々に敵を向く）
+                LookAtTarget(currentTarget.transform.position);
                 MoveToPosition(currentTarget.transform.position);
             }
         }
@@ -725,6 +732,10 @@ namespace KowloonBreak.Characters
             if (nearestEnemy != null)
             {
                 currentTarget = nearestEnemy;
+                
+                // 敵発見時に即座に敵を向く
+                LookAtTargetInstantly(nearestEnemy.transform.position);
+                
                 ShowCombatDialogue(CombatDialogueType.EnemySpotted);
                 SetState(AIState.Combat);
             }
@@ -826,6 +837,24 @@ namespace KowloonBreak.Characters
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
             }
         }
+        
+        /// <summary>
+        /// 攻撃時に即座にターゲットを向く（補間なし）
+        /// </summary>
+        private void LookAtTargetInstantly(Vector3 targetPosition)
+        {
+            Vector3 lookDirection = (targetPosition - transform.position).normalized;
+            lookDirection.y = 0f; // Y軸の回転のみ
+            
+            if (lookDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                transform.rotation = targetRotation; // 即座に回転
+                
+                if (debugCommandExecution)
+                    Debug.Log($"[CompanionAI] {gameObject.name} instantly turned to face target at {targetPosition}");
+            }
+        }
 
         private void PerformAttack()
         {
@@ -835,6 +864,9 @@ namespace KowloonBreak.Characters
             
             if (currentTarget != null && animatorController != null)
             {
+                // 攻撃前に必ず敵を向く（即座に向く）
+                LookAtTargetInstantly(currentTarget.transform.position);
+                
                 // 攻撃開始のセリフを表示
                 ShowCombatDialogue(CombatDialogueType.AttackStart);
                     
@@ -1329,6 +1361,10 @@ namespace KowloonBreak.Characters
                     if (target != null)
                     {
                         currentTarget = target;
+                        
+                        // 攻撃コマンド受領時に即座に敵を向く
+                        LookAtTargetInstantly(target.transform.position);
+                        
                         SetState(AIState.Combat);
                         return true;
                     }
@@ -1713,6 +1749,9 @@ namespace KowloonBreak.Characters
             
             isDead = true;
 
+            // 死亡時のセリフを表示
+            ShowDeathDialogue();
+
             // NavMeshAgentを停止
             if (navAgent != null)
             {
@@ -1739,7 +1778,7 @@ namespace KowloonBreak.Characters
                 companionCharacter.Stats?.TakeDamage(companionCharacter.Stats.MaxHealth);
             }
 
-            // 数秒後にオブジェクトを削除または無効化
+            // 死亡セリフが表示される時間を考慮して少し遅らせて死亡シーケンス開始
             StartCoroutine(HandleDeathSequence());
         }
         
@@ -1748,8 +1787,8 @@ namespace KowloonBreak.Characters
         /// </summary>
         private System.Collections.IEnumerator HandleDeathSequence()
         {
-            // 3秒間死亡状態を維持
-            yield return new WaitForSeconds(3f);
+            // 死亡セリフが表示される時間を確保（4秒間死亡状態を維持）
+            yield return new WaitForSeconds(4f);
             
             // オブジェクトを非アクティブ化（完全に削除せず、復活可能性を残す）
             gameObject.SetActive(false);
@@ -1786,7 +1825,11 @@ namespace KowloonBreak.Characters
         /// <param name="newState">新しいステート</param>
         private void ShowStateDialogue(AIState newState)
         {
-            if (!enableDialogueSystem || dialogueData == null || UI.UIManager.Instance == null)
+            if (!enableDialogueSystem || dialogueData == null)
+                return;
+
+            // 既に表示中の場合はスキップ
+            if (hasActiveDialogue)
                 return;
 
             // クールダウンチェック
@@ -1799,8 +1842,7 @@ namespace KowloonBreak.Characters
             string dialogue = dialogueData.GetStateDialogue(newState);
             if (!string.IsNullOrEmpty(dialogue))
             {
-                Vector3 dialoguePosition = transform.position + dialogueOffset;
-                UI.UIManager.Instance.ShowDialogueText(dialoguePosition, dialogue);
+                ShowDialogueTextAboveHead(dialogue);
                 
                 // タイマーを更新
                 stateDialogueTimers[newState] = Time.time;
@@ -1813,7 +1855,11 @@ namespace KowloonBreak.Characters
         /// <param name="command">受領したコマンド</param>
         private void ShowCommandDialogue(CompanionCommand command)
         {
-            if (!enableDialogueSystem || dialogueData == null || UI.UIManager.Instance == null)
+            if (!enableDialogueSystem || dialogueData == null)
+                return;
+
+            // 既に表示中の場合はスキップ
+            if (hasActiveDialogue)
                 return;
 
             // クールダウンチェック
@@ -1826,8 +1872,7 @@ namespace KowloonBreak.Characters
             string dialogue = dialogueData.GetCommandDialogue(command);
             if (!string.IsNullOrEmpty(dialogue))
             {
-                Vector3 dialoguePosition = transform.position + dialogueOffset;
-                UI.UIManager.Instance.ShowDialogueText(dialoguePosition, dialogue);
+                ShowDialogueTextAboveHead(dialogue);
                 
                 // タイマーを更新
                 commandDialogueTimers[command] = Time.time;
@@ -1840,7 +1885,11 @@ namespace KowloonBreak.Characters
         /// <param name="type">戦闘状況タイプ</param>
         private void ShowCombatDialogue(CombatDialogueType type)
         {
-            if (!enableDialogueSystem || dialogueData == null || UI.UIManager.Instance == null)
+            if (!enableDialogueSystem || dialogueData == null)
+                return;
+
+            // 既に表示中の場合はスキップ
+            if (hasActiveDialogue)
                 return;
 
             // クールダウンチェック（戦闘セリフは長めのクールダウン）
@@ -1853,8 +1902,7 @@ namespace KowloonBreak.Characters
             string dialogue = dialogueData.GetCombatDialogue(type);
             if (!string.IsNullOrEmpty(dialogue))
             {
-                Vector3 dialoguePosition = transform.position + dialogueOffset;
-                UI.UIManager.Instance.ShowDialogueText(dialoguePosition, dialogue);
+                ShowDialogueTextAboveHead(dialogue);
                 
                 // タイマーを更新
                 combatDialogueTimers[type] = Time.time;
@@ -1867,7 +1915,11 @@ namespace KowloonBreak.Characters
         /// <param name="type">一般状況タイプ</param>
         public void ShowGeneralDialogue(GeneralDialogueType type)
         {
-            if (!enableDialogueSystem || dialogueData == null || UI.UIManager.Instance == null)
+            if (!enableDialogueSystem || dialogueData == null)
+                return;
+
+            // 既に表示中の場合はスキップ
+            if (hasActiveDialogue)
                 return;
 
             // 一般セリフのクールダウンチェック
@@ -1877,11 +1929,76 @@ namespace KowloonBreak.Characters
             string dialogue = dialogueData.GetGeneralDialogue(type);
             if (!string.IsNullOrEmpty(dialogue))
             {
-                Vector3 dialoguePosition = transform.position + dialogueOffset;
-                UI.UIManager.Instance.ShowDialogueText(dialoguePosition, dialogue);
+                ShowDialogueTextAboveHead(dialogue);
                 
                 // タイマーを更新
                 lastGeneralDialogueTime = Time.time;
+            }
+        }
+        
+        /// <summary>
+        /// 頭上にDialogueTextを表示（一つのみ）
+        /// </summary>
+        /// <param name="dialogue">表示するセリフ</param>
+        private void ShowDialogueTextAboveHead(string dialogue)
+        {
+            // 既存のDialogueTextがある場合は削除
+            if (currentDialogueText != null)
+            {
+                var existingDialogue = currentDialogueText.GetComponent<DialogueText>();
+                if (existingDialogue != null)
+                {
+                    existingDialogue.ForceDestroy();
+                }
+                currentDialogueText = null;
+            }
+
+            // UIManagerが利用可能かチェック
+            if (UI.UIManager.Instance == null || UI.UIManager.Instance.DialogueTextPrefab == null)
+                return;
+
+            // 新しいDialogueTextを作成
+            currentDialogueText = UI.UIManager.Instance.CreateDialogueTextForCompanion(this, dialogue);
+            
+            // DialogueTextが削除される際の通知を受け取る
+            if (currentDialogueText != null)
+            {
+                var dialogueComponent = currentDialogueText.GetComponent<DialogueText>();
+                if (dialogueComponent != null)
+                {
+                    dialogueComponent.OnDialogueDestroyed += OnDialogueTextDestroyed;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// DialogueTextが削除された際のコールバック
+        /// </summary>
+        private void OnDialogueTextDestroyed()
+        {
+            currentDialogueText = null;
+        }
+        
+        /// <summary>
+        /// 現在のDialogueTextの位置を取得（頭上追従用）
+        /// </summary>
+        public Vector3 GetDialoguePosition()
+        {
+            return transform.position + dialogueOffset;
+        }
+        
+        /// <summary>
+        /// 死亡時のセリフを表示（クールダウン無視）
+        /// </summary>
+        private void ShowDeathDialogue()
+        {
+            if (!enableDialogueSystem || dialogueData == null)
+                return;
+
+            string dialogue = dialogueData.GetCombatDialogue(CombatDialogueType.Death);
+            if (!string.IsNullOrEmpty(dialogue))
+            {
+                ShowDialogueTextAboveHead(dialogue);
             }
         }
         

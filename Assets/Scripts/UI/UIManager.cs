@@ -56,6 +56,9 @@ namespace KowloonBreak.UI
         [Header("Dialogue Display")]
         [SerializeField] private GameObject dialogueTextPrefab;
         [SerializeField] private float dialogueDuration = 2.5f;
+        
+        // Public access for DialogueTextPrefab
+        public GameObject DialogueTextPrefab => dialogueTextPrefab;
 
         [Header("Companion Command System")]
         [SerializeField] private GameObject commandButtonPrefab;
@@ -88,6 +91,7 @@ namespace KowloonBreak.UI
         [Header("Debug - Companion Command System")]
         [SerializeField] private bool debugCompanionDetection = true;
         [SerializeField] private bool debugCommandExecution = true;
+        [SerializeField] private bool debugPanelControls = false;
 
         private Dictionary<string, GameObject> activePanels;
         private List<GameObject> activeNotifications;
@@ -102,6 +106,11 @@ namespace KowloonBreak.UI
         private List<Button> activeCommandButtons = new List<Button>();
         private Transform player;
         private KowloonBreak.Core.InputManager inputManager;
+        
+        // コマンド更新管理
+        private bool lastCombatState = false;
+        private float lastCommandUpdateTime = 0f;
+        private const float COMMAND_UPDATE_INTERVAL = 0.5f; // 0.5秒間隔で更新チェック
         
         // InteractionPrompt 3D positioning
         private UnityEngine.Camera mainCamera;
@@ -275,10 +284,25 @@ namespace KowloonBreak.UI
                 TogglePanel("Inventory");
             }
 
-            // エスケープキーでパネルを閉じる
+            // Bボタン（メニューキー）でパネルを閉じる
             if (inputManager.IsMenuPressed() && IsAnyPanelOpen)
             {
-                CloseAllPanels();
+                if (debugPanelControls)
+                    Debug.Log("[UIManager] Menu button pressed - closing panels");
+                
+                // CompanionCommandパネルが開いている場合は個別に処理
+                if (IsPanelOpen("CompanionCommand"))
+                {
+                    if (debugPanelControls)
+                        Debug.Log("[UIManager] Closing CompanionCommand panel with B button");
+                    ClosePanel("CompanionCommand");
+                }
+                else
+                {
+                    if (debugPanelControls)
+                        Debug.Log("[UIManager] Closing all panels with B button");
+                    CloseAllPanels();
+                }
             }
 
             // その他のUIショートカット (直接Input.GetKeyDownを使用)
@@ -720,7 +744,7 @@ namespace KowloonBreak.UI
         }
 
         /// <summary>
-        /// 指定位置にセリフテキストを表示
+        /// 指定位置にセリフテキストを表示（非推奨：コンパニオンはCreateDialogueTextForCompanionを使用）
         /// </summary>
         /// <param name="worldPosition">ワールド座標</param>
         /// <param name="dialogue">表示するセリフ</param>
@@ -779,6 +803,30 @@ namespace KowloonBreak.UI
             {
                 dialogueComponent.Initialize(dialogue, dialogueDuration);
             }
+        }
+        
+        /// <summary>
+        /// コンパニオン用のDialogueTextを作成（頭上追従機能付き）
+        /// </summary>
+        /// <param name="companion">追従対象のコンパニオン</param>
+        /// <param name="dialogue">表示するセリフ</param>
+        /// <returns>作成されたDialogueText GameObject</returns>
+        public GameObject CreateDialogueTextForCompanion(KowloonBreak.Characters.CompanionAI companion, string dialogue)
+        {
+            if (string.IsNullOrEmpty(dialogue) || dialogueTextPrefab == null || damageContainer == null)
+                return null;
+
+            // DialogueTextオブジェクトを生成
+            GameObject dialogueObj = Instantiate(dialogueTextPrefab, damageContainer);
+
+            // DialogueTextコンポーネントを初期化（コンパニオン追従モード）
+            DialogueText dialogueComponent = dialogueObj.GetComponent<DialogueText>();
+            if (dialogueComponent != null)
+            {
+                dialogueComponent.InitializeForCompanion(companion, dialogue, dialogueDuration);
+            }
+            
+            return dialogueObj;
         }
 
         public void UpdateUI()
@@ -867,6 +915,106 @@ namespace KowloonBreak.UI
 
             CheckForNearbyCompanions();
             UpdateInteractionPrompt();
+            
+            // コマンドパネルが開いている場合、コンパニオンの状態変化に応じて更新
+            if (IsPanelOpen("CompanionCommand") && selectedCompanion != null)
+            {
+                UpdateCompanionCommandPanel();
+            }
+        }
+        
+        /// <summary>
+        /// コンパニオンコマンドパネルの内容を更新
+        /// </summary>
+        private void UpdateCompanionCommandPanel()
+        {
+            if (selectedCompanion == null) return;
+            
+            // 更新頻度を制限
+            if (Time.time - lastCommandUpdateTime < COMMAND_UPDATE_INTERVAL)
+            {
+                // 頻繁な更新は情報のみ
+                UpdateCompanionInfo();
+                return;
+            }
+            
+            // 戦闘状態の変化をチェック
+            bool currentCombatState = IsCompanionInCombat();
+            
+            if (currentCombatState != lastCombatState)
+            {
+                // 戦闘状態が変化した場合のみコマンドボタンを再生成
+                lastCombatState = currentCombatState;
+                lastCommandUpdateTime = Time.time;
+                
+                // 現在選択されているボタンのインデックスを保存
+                int selectedIndex = GetCurrentSelectedButtonIndex();
+                
+                // コンパニオン情報を更新
+                UpdateCompanionInfo();
+                
+                // コマンドボタンを再生成
+                GenerateCommandButtons();
+                
+                // フォーカスを復元
+                RestoreButtonFocus(selectedIndex);
+            }
+            else
+            {
+                // 戦闘状態に変化がない場合は情報のみ更新
+                UpdateCompanionInfo();
+            }
+        }
+        
+        /// <summary>
+        /// 現在選択されているボタンのインデックスを取得
+        /// </summary>
+        private int GetCurrentSelectedButtonIndex()
+        {
+            if (EventSystem.current == null || EventSystem.current.currentSelectedGameObject == null)
+                return 0;
+            
+            GameObject selected = EventSystem.current.currentSelectedGameObject;
+            
+            for (int i = 0; i < activeCommandButtons.Count; i++)
+            {
+                if (activeCommandButtons[i] != null && activeCommandButtons[i].gameObject == selected)
+                {
+                    return i;
+                }
+            }
+            
+            return 0;
+        }
+        
+        /// <summary>
+        /// 指定インデックスのボタンにフォーカスを復元
+        /// </summary>
+        private void RestoreButtonFocus(int index)
+        {
+            if (activeCommandButtons.Count == 0) return;
+            
+            // インデックスを有効範囲にクランプ
+            index = Mathf.Clamp(index, 0, activeCommandButtons.Count - 1);
+            
+            StartCoroutine(SetFocusToButtonAfterFrame(index));
+        }
+        
+        /// <summary>
+        /// 1フレーム後に指定ボタンにフォーカスを設定
+        /// </summary>
+        private System.Collections.IEnumerator SetFocusToButtonAfterFrame(int index)
+        {
+            yield return null;
+            
+            if (index < activeCommandButtons.Count && activeCommandButtons[index] != null)
+            {
+                EventSystem eventSystem = EventSystem.current;
+                if (eventSystem != null)
+                {
+                    eventSystem.SetSelectedGameObject(activeCommandButtons[index].gameObject);
+                }
+            }
         }
 
         private void CheckForNearbyCompanions()
@@ -989,6 +1137,11 @@ namespace KowloonBreak.UI
         public void OpenCompanionCommandUI(KowloonBreak.Characters.CompanionAI companion)
         {
             selectedCompanion = companion;
+            
+            // 戦闘状態を初期化
+            lastCombatState = IsCompanionInCombat();
+            lastCommandUpdateTime = Time.time;
+            
             OpenPanel("CompanionCommand");
             
             if (IsPanelOpen("CompanionCommand"))
@@ -1014,7 +1167,9 @@ namespace KowloonBreak.UI
             if (companionStatusText != null)
             {
                 string status = GetCompanionStatusText(selectedCompanion.CurrentState);
-                companionStatusText.text = $"状態: {status}";
+                bool isInCombat = IsCompanionInCombat();
+                string combatIndicator = isInCombat ? " [戦闘中]" : " [通常時]";
+                companionStatusText.text = $"状態: {status}{combatIndicator}";
             }
 
             if (trustLevelText != null)
@@ -1055,16 +1210,71 @@ namespace KowloonBreak.UI
         private List<KowloonBreak.Characters.CompanionCommand> GetAvailableCommands()
         {
             var commands = new List<KowloonBreak.Characters.CompanionCommand>();
+            bool isInCombat = IsCompanionInCombat();
             
             foreach (KowloonBreak.Characters.CompanionCommand command in System.Enum.GetValues(typeof(KowloonBreak.Characters.CompanionCommand)))
             {
-                if (selectedCompanion.CanExecuteCommand(command))
+                // コンパニオンが実行可能かチェック
+                if (!selectedCompanion.CanExecuteCommand(command))
+                    continue;
+                
+                // 戦闘状態に応じてコマンドをフィルタリング
+                if (ShouldShowCommandInCurrentState(command, isInCombat))
                 {
                     commands.Add(command);
                 }
             }
             
             return commands;
+        }
+        
+        /// <summary>
+        /// コンパニオンが戦闘中かどうかを判定
+        /// </summary>
+        private bool IsCompanionInCombat()
+        {
+            if (selectedCompanion == null) return false;
+            
+            // Combat状態、またはSupport状態（戦闘支援）の場合は戦闘中とみなす
+            var state = selectedCompanion.CurrentState;
+            return state == KowloonBreak.Characters.AIState.Combat || 
+                   state == KowloonBreak.Characters.AIState.Support ||
+                   selectedCompanion.HasTarget; // ターゲットがいる場合も戦闘中とみなす
+        }
+        
+        /// <summary>
+        /// 現在の状態（戦闘中/通常時）でコマンドを表示すべきかを判定
+        /// </summary>
+        private bool ShouldShowCommandInCurrentState(KowloonBreak.Characters.CompanionCommand command, bool isInCombat)
+        {
+            // 戦闘関連コマンド
+            var combatCommands = new[]
+            {
+                KowloonBreak.Characters.CompanionCommand.Attack,
+                KowloonBreak.Characters.CompanionCommand.Defend,
+                KowloonBreak.Characters.CompanionCommand.Retreat,
+                KowloonBreak.Characters.CompanionCommand.Advanced
+            };
+            
+            // 通常時関連コマンド
+            var normalCommands = new[]
+            {
+                KowloonBreak.Characters.CompanionCommand.Follow,
+                KowloonBreak.Characters.CompanionCommand.Stay,
+                KowloonBreak.Characters.CompanionCommand.Support
+            };
+            
+            // 戦闘中の場合
+            if (isInCombat)
+            {
+                // 戦闘関連コマンドのみ表示
+                return System.Array.IndexOf(combatCommands, command) >= 0;
+            }
+            else
+            {
+                // 通常時は通常関連コマンドのみ表示
+                return System.Array.IndexOf(normalCommands, command) >= 0;
+            }
         }
 
         private void CreateCommandButton(KowloonBreak.Characters.CompanionCommand command)
@@ -1159,7 +1369,7 @@ namespace KowloonBreak.UI
                     else
                     {
                         ShowNotification(noTargetFoundText, NotificationType.Warning);
-                        // パネルを即座に閉じずに、短時間待ってから閉じる
+                        // ターゲットなしの場合は少し待ってパネルを閉じる
                         StartCoroutine(CloseCommandPanelAfterDelay(1.5f));
                         return;
                     }
@@ -1203,15 +1413,18 @@ namespace KowloonBreak.UI
                 
                 ShowNotification($"{commandExecutedPrefix}{commandName}", NotificationType.Success);
                 
-                // 成功時は短時間待ってからパネルを閉じる
-                StartCoroutine(CloseCommandPanelAfterDelay(0.8f));
+                if (debugPanelControls)
+                    Debug.Log($"[UIManager] Command '{commandName}' executed successfully - closing panel immediately");
+                
+                // 成功時は即座にパネルを閉じる
+                ClosePanel("CompanionCommand");
             }
             else
             {
                 ShowNotification(commandFailedText, NotificationType.Error);
                 
-                // 失敗時はより長く待ってからパネルを閉じる
-                StartCoroutine(CloseCommandPanelAfterDelay(2.0f));
+                // 失敗時は少し待ってからパネルを閉じる
+                StartCoroutine(CloseCommandPanelAfterDelay(1.5f));
             }
         }
 

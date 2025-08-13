@@ -68,6 +68,11 @@ MonoBehaviour:
   - type: 5
     dialogues:
     - "\u5927\u4E08\u592B\uFF1F"
+  - type: 6
+    dialogues:
+    - "\u3084\u2026\u3089\u308C\u305F\u2026"
+    - "\u3064\u3044\u3066\u306A\u3044\u308F\u306D\u2026"
+    - "\u3050\u306F\u3063\u2026"
   generalDialogues:
   - type: 0
     dialogues:
