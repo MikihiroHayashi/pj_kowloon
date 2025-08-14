@@ -51,6 +51,40 @@ namespace KowloonBreak.Editor
         {
             EditorGUILayout.LabelField("Block Configuration", EditorStyles.boldLabel);
             
+            var configurationProp = serializedObject.FindProperty("configuration");
+            
+            if (configurationProp != null)
+            {
+                EditorGUILayout.PropertyField(configurationProp, new GUIContent("Configuration"));
+                
+                if (configurationProp.objectReferenceValue != null)
+                {
+                    EditorGUILayout.HelpBox("Using new Configuration system. Legacy settings below are for fallback only.", MessageType.Info);
+                    
+                    EditorGUILayout.Space();
+                    
+                    if (GUILayout.Button("Create Configuration Asset"))
+                    {
+                        CreateConfigurationAsset();
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("No Configuration assigned. Using legacy settings below.", MessageType.Warning);
+                    
+                    EditorGUILayout.Space();
+                    
+                    if (GUILayout.Button("Create Configuration from Legacy Settings"))
+                    {
+                        CreateConfigurationFromLegacy();
+                    }
+                }
+                
+                EditorGUILayout.Space();
+            }
+            
+            // Legacy settings
+            EditorGUILayout.LabelField("Legacy Settings", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(serializedObject.FindProperty("blockSize"), new GUIContent("Block Size"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("blockType"), new GUIContent("Block Type"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("cellSize"), new GUIContent("Cell Size"));
@@ -287,23 +321,89 @@ namespace KowloonBreak.Editor
             serializedObject.ApplyModifiedProperties();
         }
         
+        private void CreateConfigurationFromLegacy()
+        {
+            Undo.RecordObject(target, "Create Configuration from Legacy Settings");
+            
+            // Configurationsフォルダを作成
+            string configDir = "Assets/Configurations";
+            if (!System.IO.Directory.Exists(configDir))
+            {
+                System.IO.Directory.CreateDirectory(configDir);
+                AssetDatabase.Refresh();
+            }
+            
+            // ScriptableObjectとしてConfigurationを作成
+            var config = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
+            config.blockType = block.BlockType;
+            config.size = block.BlockSize;
+            config.spawnWeight = 10f; // デフォルト値
+            config.maxInstances = -1; // デフォルト値
+            config.debugColor = DungeonBlockConfiguration.GetDefaultColor(block.BlockType);
+            
+            // アセットとして保存
+            string assetPath = $"{configDir}/BlockConfig_{block.BlockType}_{block.BlockSize.x}x{block.BlockSize.y}.asset";
+            AssetDatabase.CreateAsset(config, assetPath);
+            AssetDatabase.SaveAssets();
+            
+            // Configurationプロパティにアサイン
+            var configProp = serializedObject.FindProperty("configuration");
+            if (configProp != null)
+            {
+                configProp.objectReferenceValue = config;
+                serializedObject.ApplyModifiedProperties();
+            }
+            
+            Debug.Log($"Created configuration asset: {assetPath}");
+        }
+        
+        private void CreateConfigurationAsset()
+        {
+            var configProp = serializedObject.FindProperty("configuration");
+            if (configProp?.objectReferenceValue != null)
+            {
+                string assetPath = AssetDatabase.GetAssetPath(configProp.objectReferenceValue);
+                Selection.activeObject = configProp.objectReferenceValue;
+                EditorGUIUtility.PingObject(configProp.objectReferenceValue);
+                Debug.Log($"Configuration asset selected: {assetPath}");
+            }
+        }
+        
         private void OnSceneGUI()
         {
             if (block == null) return;
             
-            Handles.color = Color.yellow;
+            // ブロックのワイヤーフレーム表示
+            Handles.color = Color.cyan;
             Vector3 worldSize = block.WorldSize;
-            Vector3 center = block.transform.position + worldSize * 0.5f;
+            Vector3 center = block.transform.position + new Vector3(worldSize.x * 0.5f, 0, worldSize.z * 0.5f);
             
             Handles.DrawWireCube(center, worldSize);
             
+            // 選択時の詳細ラベル表示
             var style = new GUIStyle();
             style.normal.textColor = Color.white;
-            style.fontSize = 12;
+            style.fontSize = 14;
+            style.fontStyle = FontStyle.Bold;
             style.alignment = TextAnchor.MiddleCenter;
             
-            Handles.Label(center + Vector3.up * 2f, 
-                $"{block.BlockType}\n{block.BlockSize.x}x{block.BlockSize.y}", style);
+            // 背景付きラベル
+            var labelContent = $"{block.BlockType}\n{block.BlockSize.x}x{block.BlockSize.y}\nPos: {block.GridPosition}";
+            Vector3 labelPos = center + Vector3.up * 2.5f;
+            
+            // 背景描画
+            Handles.color = new Color(0, 0, 0, 0.7f);
+            Vector2 labelSize = style.CalcSize(new GUIContent(labelContent));
+            Vector3 screenPos = HandleUtility.WorldToGUIPoint(labelPos);
+            
+            Handles.BeginGUI();
+            GUI.Box(new Rect(screenPos.x - labelSize.x * 0.5f - 5, screenPos.y - labelSize.y * 0.5f - 5, 
+                           labelSize.x + 10, labelSize.y + 10), "");
+            Handles.EndGUI();
+            
+            // ラベル表示
+            Handles.color = Color.white;
+            Handles.Label(labelPos, labelContent, style);
             
             DrawConnectionGizmos();
             DrawSpawnPointGizmos();

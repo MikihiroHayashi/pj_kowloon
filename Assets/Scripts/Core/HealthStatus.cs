@@ -13,6 +13,7 @@ namespace KowloonBreak.Core
         public HealthCondition Condition => condition;
         public float Severity => severity;
         public float Duration => duration;
+        public bool IsCritical => condition == HealthCondition.Critical;
 
         public event Action<HealthCondition> OnConditionChanged;
         public event Action<float> OnSeverityChanged;

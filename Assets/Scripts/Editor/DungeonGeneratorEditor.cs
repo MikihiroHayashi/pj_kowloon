@@ -10,7 +10,7 @@ namespace KowloonBreak.Editor
     {
         private DungeonGenerator generator;
         private bool showGenerationSettings = true;
-        private bool showBlockPrefabs = true;
+        private bool showBlockConfigurations = true;
         private bool showDebugSettings = true;
         private bool showGeneratedInfo = true;
         
@@ -33,7 +33,7 @@ namespace KowloonBreak.Editor
             DrawGenerationSettings();
             EditorGUILayout.Space();
             
-            DrawBlockPrefabsSettings();
+            DrawBlockConfigurationsSettings();
             EditorGUILayout.Space();
             
             DrawDebugSettings();
@@ -134,33 +134,187 @@ namespace KowloonBreak.Editor
             }
         }
         
-        private void DrawBlockPrefabsSettings()
+        private void DrawBlockConfigurationsSettings()
         {
-            showBlockPrefabs = EditorGUILayout.Foldout(showBlockPrefabs, "Block Prefabs", true);
+            showBlockConfigurations = EditorGUILayout.Foldout(showBlockConfigurations, "Block Configurations", true);
             
-            if (showBlockPrefabs)
+            if (showBlockConfigurations)
             {
                 EditorGUI.indentLevel++;
                 
-                SerializedProperty blockPrefabs = serializedObject.FindProperty("blockPrefabs");
+                SerializedProperty blockConfigurations = serializedObject.FindProperty("blockConfigurations");
                 
-                EditorGUILayout.PropertyField(blockPrefabs, new GUIContent("Block Prefabs"), true);
-                
-                if (blockPrefabs.arraySize == 0)
+                if (blockConfigurations == null)
                 {
-                    EditorGUILayout.HelpBox("No block prefabs assigned. Default blocks will be generated automatically.", 
-                        MessageType.Info);
+                    // Fallback to legacy blockPrefabs
+                    blockConfigurations = serializedObject.FindProperty("blockPrefabs");
+                }
+                
+                if (blockConfigurations != null)
+                {
+                    EditorGUILayout.PropertyField(blockConfigurations, new GUIContent("Block Configurations"), true);
+                    
+                    if (blockConfigurations.arraySize == 0)
+                    {
+                        EditorGUILayout.HelpBox("No block configurations assigned. Default configurations will be created automatically during generation.", 
+                            MessageType.Info);
+                    }
+                    else
+                    {
+                        // Configuration summary
+                        EditorGUILayout.Space();
+                        EditorGUILayout.LabelField($"Total Configurations: {blockConfigurations.arraySize}", EditorStyles.miniLabel);
+                        
+                        // Validate configurations
+                        int validCount = 0;
+                        for (int i = 0; i < blockConfigurations.arraySize; i++)
+                        {
+                            var element = blockConfigurations.GetArrayElementAtIndex(i);
+                            var size = GetSizeFromElement(element);
+                            var weight = GetWeightFromElement(element);
+                            
+                            if (size.x > 0 && size.y > 0 && weight > 0)
+                                validCount++;
+                        }
+                        
+                        if (validCount < blockConfigurations.arraySize)
+                        {
+                            EditorGUILayout.HelpBox($"Warning: {blockConfigurations.arraySize - validCount} invalid configurations found!", 
+                                MessageType.Warning);
+                        }
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("Block configurations property not found. Please check DungeonGenerator script.", 
+                        MessageType.Error);
                 }
                 
                 EditorGUILayout.Space();
                 
-                if (GUILayout.Button("Add Common Block Sizes"))
+                EditorGUILayout.BeginHorizontal();
+                
+                if (GUILayout.Button("Create Default Configurations"))
                 {
-                    AddCommonBlockSizes(blockPrefabs);
+                    CreateDefaultConfigurations();
                 }
+                
+                if (GUILayout.Button("Validate & Fix All"))
+                {
+                    ValidateAndFixConfigurations();
+                }
+                
+                EditorGUILayout.EndHorizontal();
                 
                 EditorGUI.indentLevel--;
             }
+        }
+        
+        private Vector2Int GetSizeFromElement(SerializedProperty element)
+        {
+            var sizeProperty = element.FindPropertyRelative("size");
+            return sizeProperty != null ? sizeProperty.vector2IntValue : Vector2Int.zero;
+        }
+        
+        private float GetWeightFromElement(SerializedProperty element)
+        {
+            var weightProperty = element.FindPropertyRelative("spawnWeight");
+            return weightProperty != null ? weightProperty.floatValue : 0f;
+        }
+        
+        private void CreateDefaultConfigurations()
+        {
+            Undo.RecordObject(target, "Create Default Block Configurations");
+            
+            // DungeonGeneratorのメソッドを直接呼び出し
+            var method = typeof(DungeonGenerator).GetMethod("CreateDefaultBlockConfigurations", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            if (method != null)
+            {
+                method.Invoke(generator, null);
+                serializedObject.Update();
+                EditorUtility.SetDirty(generator);
+                Debug.Log("Default block configurations created successfully!");
+            }
+            else
+            {
+                Debug.LogError("Could not find CreateDefaultBlockConfigurations method");
+                FallbackCreateDefaultConfigurations();
+            }
+        }
+        
+        private void FallbackCreateDefaultConfigurations()
+        {
+            var configurations = DungeonBlockFactory.GetDefaultConfigurations();
+            
+            // 全てのconfigurationがnullでないことを確認
+            for (int i = 0; i < configurations.Length; i++)
+            {
+                if (configurations[i] == null)
+                {
+                    Debug.LogError($"Default configuration at index {i} is null!");
+                    configurations[i] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
+                    configurations[i].blockType = DungeonBlockType.Room;
+                    configurations[i].size = new Vector2Int(5, 5);
+                    configurations[i].spawnWeight = 10f;
+                    configurations[i].maxInstances = -1;
+                    configurations[i].ValidateAndFix();
+                }
+            }
+            
+            // Reflectionを使用してblockConfigurationsフィールドを設定
+            var field = typeof(DungeonGenerator).GetField("blockConfigurations",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            if (field != null)
+            {
+                field.SetValue(generator, configurations);
+                serializedObject.Update();
+                EditorUtility.SetDirty(generator);
+                Debug.Log("Fallback: Default block configurations created!");
+            }
+            else
+            {
+                Debug.LogError("Could not access blockConfigurations field");
+            }
+        }
+        
+        private void ValidateAndFixConfigurations()
+        {
+            var blockConfigurations = serializedObject.FindProperty("blockConfigurations");
+            if (blockConfigurations == null) return;
+            
+            Undo.RecordObject(target, "Validate & Fix Block Configurations");
+            
+            int fixedCount = 0;
+            for (int i = 0; i < blockConfigurations.arraySize; i++)
+            {
+                var element = blockConfigurations.GetArrayElementAtIndex(i);
+                var sizeProperty = element.FindPropertyRelative("size");
+                var weightProperty = element.FindPropertyRelative("spawnWeight");
+                
+                if (sizeProperty != null)
+                {
+                    var size = sizeProperty.vector2IntValue;
+                    if (size.x <= 0 || size.y <= 0)
+                    {
+                        sizeProperty.vector2IntValue = new Vector2Int(5, 5);
+                        fixedCount++;
+                    }
+                }
+                
+                if (weightProperty != null && weightProperty.floatValue <= 0)
+                {
+                    weightProperty.floatValue = 1f;
+                    fixedCount++;
+                }
+            }
+            
+            serializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(generator);
+            
+            Debug.Log($"Validation complete. Fixed {fixedCount} configuration issues.");
         }
         
         private void AddCommonBlockSizes(SerializedProperty blockPrefabs)
@@ -359,8 +513,34 @@ namespace KowloonBreak.Editor
             
             Undo.RecordObject(generator, "Generate Dungeon");
             
-            ClearDungeonInEditor();
+            // 新しいシステムではランタイムの生成メソッドを直接呼び出す
+            try
+            {
+                // Editorモード特有の初期化を確認
+                if (generator.GetType().GetField("blockConfigurations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(generator) == null)
+                {
+                    Debug.LogWarning("Block configurations not initialized in editor, creating defaults...");
+                    CreateDefaultConfigurations();
+                }
+                
+                ClearDungeonInEditor();
+                generator.GenerateDungeon();
+                Debug.Log("Dungeon generated successfully using new architecture!");
+                return;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"New system generation failed, falling back to legacy editor generation: {ex.Message}");
+                Debug.LogWarning($"Stack trace: {ex.StackTrace}");
+            }
             
+            // Legacy fallback
+            ClearDungeonInEditor();
+            GenerateDungeonLegacy();
+        }
+        
+        private void GenerateDungeonLegacy()
+        {
             var dungeonSize = generator.DungeonSize;
             var cellSize = generator.CellSize;
             
@@ -463,7 +643,7 @@ namespace KowloonBreak.Editor
             
             foreach (var child in children)
             {
-                if (child != null && child.name.Contains("DungeonBlock"))
+                if (child != null && (child.name.Contains("DungeonBlock") || child.name.Contains("PrefabBlock")))
                 {
                     Undo.DestroyObjectImmediate(child.gameObject);
                 }

@@ -14,7 +14,11 @@ namespace KowloonBreak.Environment
         [SerializeField] private int generationSeed = 12345;
         [SerializeField] private bool useRandomSeed = true;
         
-        [Header("Block Prefabs")]
+        [Header("Block Configurations")]
+        [SerializeField] private DungeonBlockConfiguration[] blockConfigurations;
+        
+        // Legacy support
+        [Header("Legacy Block Prefabs (Deprecated)")]
         [SerializeField] private DungeonBlockData[] blockPrefabs;
         
         [Header("Generation Rules")]
@@ -56,71 +60,60 @@ namespace KowloonBreak.Environment
             activeDungeonBlocks = new List<DungeonBlock>();
             placedBlocks = new Dictionary<Vector2Int, DungeonBlock>();
             
-            if (blockPrefabs == null || blockPrefabs.Length == 0)
+            if (blockConfigurations == null || blockConfigurations.Length == 0)
             {
-                CreateDefaultBlockPrefabs();
+                CreateDefaultBlockConfigurations();
             }
             
             Debug.Log("Dungeon Generator Initialized");
         }
         
-        private void CreateDefaultBlockPrefabs()
+        private void CreateDefaultBlockConfigurations()
         {
-            blockPrefabs = new DungeonBlockData[]
+            blockConfigurations = DungeonBlockFactory.GetDefaultConfigurations();
+            
+            // 作成したデフォルトブロックの妥当性を検証
+            Debug.Log("=== Created Default Block Configurations ===");
+            for (int i = 0; i < blockConfigurations.Length; i++)
             {
-                new DungeonBlockData
-                {
-                    prefab = null,
-                    blockType = DungeonBlockType.Room,
-                    size = new Vector2Int(5, 5),
-                    spawnWeight = 30f,
-                    maxInstances = -1
-                },
-                new DungeonBlockData
-                {
-                    prefab = null,
-                    blockType = DungeonBlockType.Room,
-                    size = new Vector2Int(5, 10),
-                    spawnWeight = 20f,
-                    maxInstances = -1
-                },
-                new DungeonBlockData
-                {
-                    prefab = null,
-                    blockType = DungeonBlockType.Room,
-                    size = new Vector2Int(10, 10),
-                    spawnWeight = 15f,
-                    maxInstances = -1
-                },
-                new DungeonBlockData
-                {
-                    prefab = null,
-                    blockType = DungeonBlockType.Corridor,
-                    size = new Vector2Int(5, 5),
-                    spawnWeight = 25f,
-                    maxInstances = -1
-                },
-                new DungeonBlockData
-                {
-                    prefab = null,
-                    blockType = DungeonBlockType.Junction,
-                    size = new Vector2Int(5, 5),
-                    spawnWeight = 8f,
-                    maxInstances = -1
-                },
-                new DungeonBlockData
-                {
-                    prefab = null,
-                    blockType = DungeonBlockType.Special,
-                    size = new Vector2Int(10, 10),
-                    spawnWeight = 2f,
-                    maxInstances = 5
-                }
-            };
+                var config = blockConfigurations[i];
+                config.ValidateAndFix();
+                Debug.Log($"Block {i}: {config.GetDisplayName()} weight:{config.spawnWeight} max:{config.maxInstances}");
+            }
         }
         
         public void GenerateDungeon()
         {
+            // 初期化確認
+            if (activeDungeonBlocks == null || placedBlocks == null)
+            {
+                InitializeGenerator();
+            }
+            
+            // blockConfigurations の状態確認・修正
+            if (blockConfigurations == null || blockConfigurations.Length == 0)
+            {
+                Debug.LogWarning("Block Configurations is null or empty, creating default configurations...");
+                CreateDefaultBlockConfigurations();
+                
+                if (blockConfigurations == null || blockConfigurations.Length == 0)
+                {
+                    throw new System.InvalidOperationException("Failed to create default block configurations");
+                }
+            }
+            
+            // 各Configurationの妥当性確認
+            for (int i = 0; i < blockConfigurations.Length; i++)
+            {
+                if (blockConfigurations[i] == null)
+                {
+                    Debug.LogError($"Block Configuration at index {i} is null!");
+                    throw new System.NullReferenceException($"Block Configuration at index {i} is null");
+                }
+                
+                blockConfigurations[i].ValidateAndFix();
+            }
+            
             if (useRandomSeed)
             {
                 generationSeed = System.DateTime.Now.Millisecond;
@@ -172,40 +165,69 @@ namespace KowloonBreak.Environment
             {
                 attemptCount++;
                 
-                var blockData = GetRandomWeightedBlock(availableBlocks);
-                if (blockData == null) continue;
+                var blockConfig = GetRandomWeightedBlock(availableBlocks);
+                if (blockConfig == null) continue;
                 
-                Vector2Int position = GetRandomValidPosition(blockData.size);
+                Vector2Int position = GetRandomValidPosition(blockConfig.size);
                 if (position.x == -1) continue;
                 
-                if (CanPlaceBlock(position, blockData.size))
+                if (CanPlaceBlock(position, blockConfig.size))
                 {
-                    PlaceBlock(blockData, position);
+                    PlaceBlock(blockConfig, position);
                     placedCount++;
                 }
             }
         }
         
-        private List<DungeonBlockData> GetWeightedBlockList()
+        private List<DungeonBlockConfiguration> GetWeightedBlockList()
         {
-            var weightedList = new List<DungeonBlockData>();
+            var weightedList = new List<DungeonBlockConfiguration>();
             
-            foreach (var blockData in blockPrefabs)
+            if (blockConfigurations == null)
             {
-                if (blockData.prefab != null)
+                Debug.LogError("blockConfigurations is null!");
+                return weightedList;
+            }
+            
+            foreach (var config in blockConfigurations)
+            {
+                if (config == null)
                 {
-                    int weight = Mathf.RoundToInt(blockData.spawnWeight);
-                    for (int i = 0; i < weight; i++)
-                    {
-                        weightedList.Add(blockData);
-                    }
+                    Debug.LogWarning("Null configuration found in blockConfigurations array, skipping...");
+                    continue;
+                }
+                
+                if (!config.IsValid())
+                {
+                    Debug.LogWarning($"Skipping invalid block configuration: {config.GetDisplayName()}");
+                    continue;
+                }
+                
+                // 重み付きリストに追加
+                int weight = Mathf.RoundToInt(config.spawnWeight);
+                for (int i = 0; i < weight; i++)
+                {
+                    weightedList.Add(config);
                 }
             }
             
+            if (weightedList.Count == 0)
+            {
+                Debug.LogError("No valid block configurations available for generation! Recreating default configurations...");
+                CreateDefaultBlockConfigurations();
+                
+                // 再帰的に再試行（1回のみ）
+                if (blockConfigurations != null && blockConfigurations.Length > 0)
+                {
+                    return GetWeightedBlockList();
+                }
+            }
+            
+            Debug.Log($"Generated weighted block list with {weightedList.Count} entries from {blockConfigurations?.Length ?? 0} configurations");
             return weightedList;
         }
         
-        private DungeonBlockData GetRandomWeightedBlock(List<DungeonBlockData> weightedList)
+        private DungeonBlockConfiguration GetRandomWeightedBlock(List<DungeonBlockConfiguration> weightedList)
         {
             if (weightedList.Count == 0) return null;
             
@@ -216,12 +238,24 @@ namespace KowloonBreak.Environment
         private Vector2Int GetRandomValidPosition(Vector2Int blockSize)
         {
             int maxAttempts = 100;
+            float gridSize = 2.5f; // 2.5x2.5グリッドサイズ
             
             for (int i = 0; i < maxAttempts; i++)
             {
-                int x = UnityEngine.Random.Range(0, dungeonSize.x - blockSize.x + 1);
-                int y = UnityEngine.Random.Range(0, dungeonSize.y - blockSize.y + 1);
-                Vector2Int position = new Vector2Int(x, y);
+                // 2.5の倍数の位置を生成（整数座標系では5の倍数を2で割った位置）
+                int maxGridX = Mathf.FloorToInt((dungeonSize.x - blockSize.x) / gridSize);
+                int maxGridY = Mathf.FloorToInt((dungeonSize.y - blockSize.y) / gridSize);
+                
+                if (maxGridX < 0 || maxGridY < 0) break;
+                
+                int gridX = UnityEngine.Random.Range(0, maxGridX + 1);
+                int gridY = UnityEngine.Random.Range(0, maxGridY + 1);
+                
+                // 2.5グリッドに対応する座標計算（整数座標では5/2の倍数）
+                Vector2Int position = new Vector2Int(
+                    Mathf.RoundToInt(gridX * gridSize), 
+                    Mathf.RoundToInt(gridY * gridSize)
+                );
                 
                 if (CanPlaceBlock(position, blockSize))
                 {
@@ -255,37 +289,92 @@ namespace KowloonBreak.Environment
             return true;
         }
         
-        private void PlaceBlock(DungeonBlockData blockData, Vector2Int position)
+        
+        private void PlaceBlock(DungeonBlockConfiguration config, Vector2Int position)
         {
-            GameObject blockObject;
-            
-            if (blockData.prefab != null)
-            {
-                blockObject = Instantiate(blockData.prefab, transform);
-            }
-            else
-            {
-                blockObject = CreateDefaultBlock(blockData);
-            }
+            GameObject blockObject = DungeonBlockFactory.CreateBlockFromPrefab(config, transform, position, cellSize);
             
             var dungeonBlock = blockObject.GetComponent<DungeonBlock>();
             if (dungeonBlock == null)
             {
                 dungeonBlock = blockObject.AddComponent<DungeonBlock>();
+                dungeonBlock.InitializeFromConfiguration(config, cellSize);
             }
             
-            dungeonBlock.SetPosition(position, cellSize);
-            dungeonBlock.GridPosition = position;
+            dungeonBlock.SetGridPosition(position);
             
-            dungeonGrid.OccupyArea(position, blockData.size, dungeonBlock);
+            dungeonGrid.OccupyArea(position, config.size, dungeonBlock);
             
             activeDungeonBlocks.Add(dungeonBlock);
             placedBlocks[position] = dungeonBlock;
             
             if (logGenerationProcess)
             {
-                Debug.Log($"Placed {blockData.blockType} block at {position} with size {blockData.size}");
+                Debug.Log($"Placed {config.GetDisplayName()} block at {position}");
             }
+        }
+        
+        private void EstablishConnections(DungeonBlock newBlock, Vector2Int position)
+        {
+            if (newBlock == null) return;
+            
+            // 4方向の隣接ブロックをチェック
+            Vector2Int[] directions = {
+                new Vector2Int(0, 1),   // North
+                new Vector2Int(0, -1),  // South  
+                new Vector2Int(1, 0),   // East
+                new Vector2Int(-1, 0)   // West
+            };
+            
+            Direction[] blockDirections = { Direction.North, Direction.South, Direction.East, Direction.West };
+            
+            for (int i = 0; i < directions.Length; i++)
+            {
+                Vector2Int neighborPos = position + directions[i] * Mathf.RoundToInt(2.5f);
+                
+                if (placedBlocks.ContainsKey(neighborPos))
+                {
+                    var neighborBlock = placedBlocks[neighborPos];
+                    if (neighborBlock != null)
+                    {
+                        // 2つのブロック間でConnector連結を検証
+                        ValidateConnection(newBlock, neighborBlock, blockDirections[i]);
+                    }
+                }
+            }
+        }
+        
+        private void ValidateConnection(DungeonBlock block1, DungeonBlock block2, Direction directionFrom1To2)
+        {
+            if (block1 == null || block2 == null) return;
+            
+            // block1から見た方向のConnectorを取得
+            var connectors1 = block1.GetConnectors(directionFrom1To2);
+            
+            // block2から見た逆方向のConnectorを取得
+            Direction oppositeDirection = GetOppositeDirection(directionFrom1To2);
+            var connectors2 = block2.GetConnectors(oppositeDirection);
+            
+            bool canConnect = connectors1 != null && connectors1.Length > 0 && 
+                             connectors2 != null && connectors2.Length > 0;
+            
+            if (logGenerationProcess)
+            {
+                string connectionStatus = canConnect ? "Connected" : "No connection possible";
+                Debug.Log($"Connection check: {block1.BlockType} -> {block2.BlockType} ({directionFrom1To2}): {connectionStatus}");
+            }
+        }
+        
+        private Direction GetOppositeDirection(Direction direction)
+        {
+            return direction switch
+            {
+                Direction.North => Direction.South,
+                Direction.South => Direction.North,
+                Direction.East => Direction.West,
+                Direction.West => Direction.East,
+                _ => Direction.North
+            };
         }
         
         private GameObject CreateDefaultBlock(DungeonBlockData blockData)

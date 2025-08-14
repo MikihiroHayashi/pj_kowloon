@@ -123,6 +123,12 @@ namespace KowloonBreak.Characters
         
         public System.Action<AIState> OnStateChanged;
         
+        // 意思決定システム
+        private Dictionary<string, float> decisionFactors = new Dictionary<string, float>();
+        private Queue<CompanionDecision> decisionQueue = new Queue<CompanionDecision>();
+        private float nextDecisionTime = 0f;
+        private float decisionInterval = 2f;
+        
         // Health Properties
         public float Health => currentHealth;
         public float MaxHealth => maxHealth;
@@ -254,6 +260,9 @@ namespace KowloonBreak.Characters
                 FindPlayer();
                 return;
             }
+
+            // 意思決定システムの実行
+            UpdateDecisionSystem();
 
             // High-level AI: Monitor player danger and provide proactive support
             if (GetIntelligenceLevelFromTrust() >= 4)
@@ -1277,6 +1286,147 @@ namespace KowloonBreak.Characters
             
             return intelligenceLevel;
         }
+        
+        // 意思決定システム
+        private void UpdateDecisionSystem()
+        {
+            if (Time.time < nextDecisionTime) return;
+            
+            nextDecisionTime = Time.time + decisionInterval;
+            
+            // 決定要因の更新
+            UpdateDecisionFactors();
+            
+            // 決定の評価と実行
+            EvaluateAndExecuteDecisions();
+        }
+        
+        private void UpdateDecisionFactors()
+        {
+            if (companionCharacter == null || player == null) return;
+            
+            float playerDistance = Vector3.Distance(transform.position, player.position);
+            float healthPercentage = currentHealth / maxHealth;
+            int trustLevel = companionCharacter.TrustLevel;
+            
+            decisionFactors["playerDistance"] = playerDistance;
+            decisionFactors["healthPercentage"] = healthPercentage;
+            decisionFactors["trustLevel"] = trustLevel / 100f;
+            decisionFactors["intelligenceLevel"] = GetIntelligenceLevelFromTrust() / 5f;
+            
+            // 周囲の脅威を評価
+            var nearbyEnemies = Physics.OverlapSphere(transform.position, detectionRange, enemyLayerMask);
+            decisionFactors["threatLevel"] = nearbyEnemies.Length / 5f; // 最大5体の敵で正規化
+        }
+        
+        private void EvaluateAndExecuteDecisions()
+        {
+            var decisions = new List<CompanionDecision>();
+            
+            // 各種決定オプションを評価
+            EvaluateHealthDecisions(decisions);
+            EvaluateCombatDecisions(decisions);
+            EvaluateSupportDecisions(decisions);
+            
+            if (decisions.Count == 0) return;
+            
+            // 優先度とコンフィデンスに基づいてソート
+            decisions.Sort((a, b) => (b.priority * b.confidence).CompareTo(a.priority * a.confidence));
+            
+            // 最も適切な決定を実行
+            var bestDecision = decisions[0];
+            if (bestDecision.confidence > 0.5f) // 50%以上の信頼度
+            {
+                if (debugStateChanges)
+                    Debug.Log($"[CompanionAI] {companionCharacter.Name} - Executing decision: {bestDecision.decisionType} (Priority: {bestDecision.priority:F2}, Confidence: {bestDecision.confidence:F2}) - {bestDecision.reasoning}");
+                
+                bestDecision.action?.Invoke();
+            }
+        }
+        
+        private void EvaluateHealthDecisions(List<CompanionDecision> decisions)
+        {
+            float healthPercentage = decisionFactors["healthPercentage"];
+            
+            // 緊急回復の決定
+            if (healthPercentage < 0.3f && companionCharacter.HasSkill(SkillType.Medical))
+            {
+                decisions.Add(new CompanionDecision(
+                    "EmergencyHealing",
+                    1.0f,
+                    0.9f,
+                    $"Health critically low ({healthPercentage:P0})",
+                    () => {
+                        // 回復行動の実装
+                        if (debugStateChanges)
+                            Debug.Log($"{companionCharacter.Name} attempting emergency self-healing");
+                        // 実際の回復ロジックをここに実装
+                    }
+                ));
+            }
+        }
+        
+        private void EvaluateCombatDecisions(List<CompanionDecision> decisions)
+        {
+            float threatLevel = decisionFactors.GetValueOrDefault("threatLevel", 0f);
+            float trustLevel = decisionFactors["trustLevel"];
+            
+            // 積極的戦闘の決定
+            if (threatLevel > 0.3f && trustLevel > 0.6f && currentState != AIState.Combat)
+            {
+                decisions.Add(new CompanionDecision(
+                    "EngageCombat",
+                    0.8f,
+                    trustLevel,
+                    $"Threat detected ({threatLevel:P0}) and trust is high ({trustLevel:P0})",
+                    () => {
+                        if (currentTarget != null)
+                            SetState(AIState.Combat);
+                    }
+                ));
+            }
+            
+            // 退避の決定
+            if (threatLevel > 0.7f && decisionFactors["healthPercentage"] < 0.5f)
+            {
+                decisions.Add(new CompanionDecision(
+                    "TacticalRetreat",
+                    0.9f,
+                    0.8f,
+                    $"High threat ({threatLevel:P0}) with low health ({decisionFactors["healthPercentage"]:P0})",
+                    () => {
+                        SetState(AIState.Follow);
+                        // プレイヤーの後ろに移動
+                        Vector3 retreatPosition = player.position - player.forward * followDistance;
+                        navAgent.SetDestination(retreatPosition);
+                    }
+                ));
+            }
+        }
+        
+        private void EvaluateSupportDecisions(List<CompanionDecision> decisions)
+        {
+            float intelligenceLevel = decisionFactors["intelligenceLevel"];
+            float trustLevel = decisionFactors["trustLevel"];
+            
+            // 積極的サポートの決定
+            if (intelligenceLevel >= 0.8f && trustLevel >= 0.7f) // レベル4以上、信頼度70%以上
+            {
+                decisions.Add(new CompanionDecision(
+                    "ProactiveSupport",
+                    0.6f,
+                    intelligenceLevel * trustLevel,
+                    $"High intelligence ({intelligenceLevel:P0}) and trust ({trustLevel:P0})",
+                    () => {
+                        // 積極的なサポート行動
+                        if (debugStateChanges)
+                            Debug.Log($"{companionCharacter.Name} providing proactive support");
+                        // プレイヤーの近くで警戒態勢
+                        SetState(AIState.Support);
+                    }
+                ));
+            }
+        }
 
         public void SetState(AIState newState)
         {
@@ -2028,5 +2178,25 @@ namespace KowloonBreak.Characters
         Support,    // Level 4+
         Retreat,    // Level 5+
         Advanced    // Level 5+
+    }
+    
+    // 意思決定システム関連の構造体
+    [System.Serializable]
+    public struct CompanionDecision
+    {
+        public string decisionType;
+        public float priority;
+        public float confidence;
+        public string reasoning;
+        public System.Action action;
+        
+        public CompanionDecision(string type, float priority, float confidence, string reasoning, System.Action action)
+        {
+            this.decisionType = type;
+            this.priority = priority;
+            this.confidence = confidence;
+            this.reasoning = reasoning;
+            this.action = action;
+        }
     }
 }

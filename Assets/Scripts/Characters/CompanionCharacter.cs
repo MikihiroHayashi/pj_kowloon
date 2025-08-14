@@ -151,6 +151,81 @@ namespace KowloonBreak.Characters
             if (previousTrust != trustLevel)
             {
                 OnTrustLevelChanged?.Invoke(trustLevel);
+                HandleTrustLevelChange(previousTrust, trustLevel);
+            }
+        }
+        
+        private void HandleTrustLevelChange(int previous, int current)
+        {
+            // 信頼度レベルに基づく行動変化
+            if (current >= 80 && previous < 80)
+            {
+                // 高信頼度: より積極的な行動
+                Debug.Log($"{characterName} now has high trust - becoming more proactive");
+            }
+            else if (current <= 20 && previous > 20)
+            {
+                // 低信頼度: 消極的な行動
+                Debug.Log($"{characterName} trust is low - becoming more cautious");
+            }
+        }
+        
+        public bool AttemptNegotiation(string requestType, int difficulty)
+        {
+            var negotiationSkill = GetSkill(SkillType.Negotiation);
+            if (negotiationSkill == null)
+            {
+                Debug.LogWarning($"{characterName} has no negotiation skill");
+                return false;
+            }
+            
+            // 交渉成功率の計算
+            float baseSuccessRate = negotiationSkill.Level * 0.1f; // スキルレベル * 10%
+            float trustModifier = (trustLevel - 50) * 0.01f; // 信頼度による修正
+            float difficultyModifier = -difficulty * 0.1f; // 難易度による修正
+            
+            float successRate = Mathf.Clamp01(baseSuccessRate + trustModifier + difficultyModifier);
+            
+            bool success = UnityEngine.Random.value < successRate;
+            
+            if (success)
+            {
+                Debug.Log($"{characterName} negotiation successful! ({successRate:P0} chance)");
+                // 成功時の信頼度上昇
+                ChangeTrustLevel(UnityEngine.Random.Range(1, 4));
+                
+                // スキル経験値獲得
+                negotiationSkill.GainExperience(difficulty * 10);
+            }
+            else
+            {
+                Debug.Log($"{characterName} negotiation failed. ({successRate:P0} chance)");
+                // 失敗時の軽微な信頼度低下
+                ChangeTrustLevel(-1);
+            }
+            
+            return success;
+        }
+        
+        public bool CanPerformAction(string actionType)
+        {
+            // 基本的な行動可能性チェック
+            if (!IsAvailable || health.IsCritical || infection.IsTurned)
+                return false;
+            
+            // 信頼度による行動制限
+            switch (actionType.ToLower())
+            {
+                case "combat":
+                    return trustLevel >= 30;
+                case "explore":
+                    return trustLevel >= 40;
+                case "negotiate":
+                    return trustLevel >= 50;
+                case "leadership":
+                    return trustLevel >= 70;
+                default:
+                    return trustLevel >= 20;
             }
         }
 

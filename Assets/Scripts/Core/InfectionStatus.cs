@@ -15,6 +15,7 @@ namespace KowloonBreak.Core
         public float InfectionRate => infectionRate;
         public float Immunity => immunity;
         public float TimeToProgress => timeToProgress;
+        public bool IsTurned => level == InfectionLevel.Zombie;
 
         public event Action<InfectionLevel> OnInfectionLevelChanged;
         public event Action<float> OnInfectionRateChanged;

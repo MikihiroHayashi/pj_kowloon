@@ -8,6 +8,10 @@ namespace KowloonBreak.Environment
     public class DungeonBlock : MonoBehaviour
     {
         [Header("Block Configuration")]
+        [SerializeField] private DungeonBlockConfiguration configuration;
+        
+        // 後方互換性のために保持
+        [Header("Legacy Settings (Use Configuration instead)")]
         [SerializeField] private Vector2Int blockSize = new Vector2Int(5, 5);
         [SerializeField] private DungeonBlockType blockType;
         [SerializeField] private float cellSize = 1f;
@@ -31,9 +35,11 @@ namespace KowloonBreak.Environment
         private Vector2Int gridPosition;
         private bool isOccupied = false;
         
-        public Vector2Int BlockSize => blockSize;
-        public DungeonBlockType BlockType => blockType;
+        // 新しいConfiguration経由でのアクセス
+        public Vector2Int BlockSize => configuration?.size ?? blockSize;
+        public DungeonBlockType BlockType => configuration?.blockType ?? blockType;  
         public float CellSize => cellSize;
+        public DungeonBlockConfiguration Configuration => configuration;
         public Vector2Int GridPosition 
         { 
             get => gridPosition; 
@@ -45,7 +51,36 @@ namespace KowloonBreak.Environment
             set => isOccupied = value; 
         }
         
-        public Vector3 WorldSize => new Vector3(blockSize.x * cellSize, 0, blockSize.y * cellSize);
+        public Vector3 WorldSize => configuration?.GetWorldSize(cellSize) ?? new Vector3(blockSize.x * cellSize, 0, blockSize.y * cellSize);
+        
+        public void InitializeFromConfiguration(DungeonBlockConfiguration config, float cellSize)
+        {
+            this.configuration = config;
+            this.cellSize = cellSize;
+            
+            // 後方互換性のためにlegacy設定も更新
+            if (config != null)
+            {
+                this.blockSize = config.size;
+                this.blockType = config.blockType;
+                
+                // Configurationが有効か確認
+                config.ValidateAndFix();
+            }
+        }
+        
+        public void SetGridPosition(Vector2Int gridPos)
+        {
+            this.gridPosition = gridPos;
+            if (configuration != null)
+            {
+                transform.position = configuration.GetWorldPosition(gridPos, cellSize);
+            }
+            else
+            {
+                transform.position = GetWorldPosition(gridPos, cellSize);
+            }
+        }
         
         public bool CanConnectTo(DungeonBlock otherBlock, Direction direction)
         {
@@ -151,26 +186,33 @@ namespace KowloonBreak.Environment
         
         private void OnDrawGizmos()
         {
+            // エディターが選択されている場合はカスタムエディターに任せる
+            if (UnityEditor.Selection.activeGameObject == gameObject)
+                return;
+                
             Gizmos.color = GetGizmoColor();
-            Gizmos.DrawWireCube(transform.position, WorldSize);
+            Vector3 size = WorldSize;
+            Vector3 center = transform.position + new Vector3(size.x * 0.5f, 0, size.z * 0.5f);
             
+            Gizmos.DrawWireCube(center, size);
+            
+            // ラベル表示（エディター非選択時のみ）
+            #if UNITY_EDITOR
             Gizmos.color = Color.white;
-            Vector3 labelPos = transform.position + Vector3.up * 2f;
-            UnityEditor.Handles.Label(labelPos, $"{blockType}\n{blockSize.x}x{blockSize.y}");
+            Vector3 labelPos = center + Vector3.up * 2f;
+            UnityEditor.Handles.Label(labelPos, $"{BlockType}\n{BlockSize.x}x{BlockSize.y}");
+            #endif
         }
         
         private Color GetGizmoColor()
         {
-            return blockType switch
+            if (configuration != null)
             {
-                DungeonBlockType.Room => Color.green,
-                DungeonBlockType.Corridor => Color.blue,
-                DungeonBlockType.Junction => Color.yellow,
-                DungeonBlockType.Special => Color.magenta,
-                DungeonBlockType.Entrance => Color.cyan,
-                DungeonBlockType.Exit => Color.red,
-                _ => Color.gray
-            };
+                return configuration.debugColor;
+            }
+            
+            // レガシー表示
+            return DungeonBlockConfiguration.GetDefaultColor(BlockType);
         }
     }
     
