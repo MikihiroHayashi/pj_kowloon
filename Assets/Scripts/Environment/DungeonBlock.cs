@@ -224,7 +224,8 @@ namespace KowloonBreak.Environment
         Junction,
         Special,
         Entrance,
-        Exit
+        Exit,
+        Road
     }
     
     [Serializable]

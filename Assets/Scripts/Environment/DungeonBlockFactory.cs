@@ -102,7 +102,7 @@ namespace KowloonBreak.Environment
         
         public static DungeonBlockConfiguration[] GetDefaultConfigurations()
         {
-            var configurations = new DungeonBlockConfiguration[6];
+            var configurations = new DungeonBlockConfiguration[7];
             
             // Room 5x5
             configurations[0] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
@@ -157,6 +157,15 @@ namespace KowloonBreak.Environment
             configurations[5].spawnWeight = 5f;
             configurations[5].maxInstances = 5;
             configurations[5].debugColor = DungeonBlockConfiguration.GetDefaultColor(DungeonBlockType.Special);
+            
+            // Road
+            configurations[6] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
+            configurations[6].prefab = null;
+            configurations[6].blockType = DungeonBlockType.Road;
+            configurations[6].size = new Vector2Int(1, 1);
+            configurations[6].spawnWeight = 15f;
+            configurations[6].maxInstances = -1;
+            configurations[6].debugColor = DungeonBlockConfiguration.GetDefaultColor(DungeonBlockType.Road);
             
             return configurations;
         }

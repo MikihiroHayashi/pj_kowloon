@@ -82,6 +82,21 @@ namespace KowloonBreak.Editor
             
             GUI.backgroundColor = Color.white;
             EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayout.Space();
+            
+            // 2D Grid Editor Controls
+            EditorGUILayout.LabelField("2D Grid Editor", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            
+            GUI.backgroundColor = Color.cyan;
+            if (GUILayout.Button("Open Grid Editor", GUILayout.Height(30)))
+            {
+                DungeonGridEditorWindow.ShowWindow();
+            }
+            
+            GUI.backgroundColor = Color.white;
+            EditorGUILayout.EndHorizontal();
         }
         
         private void DrawGenerationSettings()
@@ -942,6 +957,7 @@ namespace KowloonBreak.Editor
                 DungeonBlockType.Special => Color.magenta,
                 DungeonBlockType.Entrance => Color.cyan,
                 DungeonBlockType.Exit => Color.red,
+                DungeonBlockType.Road => new Color(0.8f, 0.6f, 0.4f),
                 _ => Color.gray
             };
         }

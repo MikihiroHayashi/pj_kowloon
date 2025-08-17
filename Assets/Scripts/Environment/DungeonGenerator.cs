@@ -430,6 +430,7 @@ namespace KowloonBreak.Environment
                 DungeonBlockType.Special => Color.magenta,
                 DungeonBlockType.Entrance => Color.cyan,
                 DungeonBlockType.Exit => Color.red,
+                DungeonBlockType.Road => new Color(0.8f, 0.6f, 0.4f),
                 _ => Color.gray
             };
         }
