@@ -2312,114 +2312,6 @@ MonoBehaviour:
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
@@ -2511,46 +2403,6 @@ MonoBehaviour:
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -2712,46 +2564,6 @@ MonoBehaviour:
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
@@ -2914,43 +2726,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -3114,43 +2926,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -3314,43 +3126,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -3514,43 +3326,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -3714,2186 +3526,74 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
+    configurationIndex: 3
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 1
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 1
-    isOccupied: 1
-    configurationSize: {x: 10, y: 5}
-    configurationIndex: 1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
   - blockType: 0
     isOccupied: 0
@@ -6024,276 +3724,76 @@ MonoBehaviour:
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
   - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
   - blockType: 0
     isOccupied: 0
@@ -6359,98 +3859,46 @@ MonoBehaviour:
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -6477,223 +3925,75 @@ MonoBehaviour:
     configurationIndex: -1
   - blockType: 0
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
-  - blockType: 0
+  - blockType: 6
     isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
-    configurationIndex: 0
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 5, y: 5}
+    configurationSize: {x: 2, y: 2}
     configurationIndex: 0
   - blockType: 0
     isOccupied: 0
@@ -6759,6 +4059,2710 @@ MonoBehaviour:
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 1
+    isOccupied: 1
+    configurationSize: {x: 10, y: 5}
+    configurationIndex: 1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 1
+    configurationSize: {x: 10, y: 10}
+    configurationIndex: 3
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
+  - blockType: 0
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -6774,43 +6778,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -6974,43 +6978,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -7174,43 +7178,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -7374,43 +7378,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -7574,43 +7578,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -7774,43 +7778,43 @@ MonoBehaviour:
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 1
     configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    configurationIndex: 3
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -7971,46 +7975,42 @@ MonoBehaviour:
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
-  - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -8172,45 +8172,45 @@ MonoBehaviour:
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -8372,45 +8372,45 @@ MonoBehaviour:
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -8572,45 +8572,45 @@ MonoBehaviour:
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
-    isOccupied: 1
-    configurationSize: {x: 10, y: 10}
-    configurationIndex: 2
+    isOccupied: 0
+    configurationSize: {x: 1, y: 1}
+    configurationIndex: -1
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}

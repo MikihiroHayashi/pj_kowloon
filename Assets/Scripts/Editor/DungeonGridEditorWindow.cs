@@ -611,80 +611,21 @@ namespace KowloonBreak.Editor
                 return;
                 
             var config = availableConfigurations[cell.configurationIndex];
-            GameObject blockObject;
             
-            // 道の場合は特別処理
-            if (config.blockType == DungeonBlockType.Road)
-            {
-                blockObject = CreateRoadBlock(gridPos, cell, config);
-            }
-            else
-            {
-                blockObject = DungeonBlockFactory.CreateBlockFromPrefab(
-                    config, 
-                    targetGenerator.transform, 
-                    gridPos, 
-                    gridMapData.cellSize
-                );
-            }
-            
-            var dungeonBlock = blockObject.GetComponent<DungeonBlock>();
-            if (dungeonBlock == null)
-            {
-                dungeonBlock = blockObject.AddComponent<DungeonBlock>();
-                dungeonBlock.InitializeFromConfiguration(config, gridMapData.cellSize);
-            }
-            
-            dungeonBlock.SetGridPosition(gridPos);
+            // 統一されたFactoryを使用（道路対応を含む）
+            GameObject blockObject = DungeonBlockFactory.CreateBlockFromPrefab(
+                config, 
+                targetGenerator.transform, 
+                gridPos, 
+                gridMapData.cellSize,
+                gridMapData,    // 道路生成用
+                roadConfiguration  // 道路生成用
+            );
             
             Undo.RegisterCreatedObjectUndo(blockObject, "Create Dungeon Block from Grid");
         }
         
-        private GameObject CreateRoadBlock(Vector2Int gridPos, GridMapData.GridCell cell, DungeonBlockConfiguration config)
-        {
-            GameObject blockObject;
-            
-            if (roadConfiguration != null)
-            {
-                var roadSystem = new RoadSystem(gridMapData, roadConfiguration);
-                var roadDirection = roadSystem.DetectRoadType(gridPos.x, gridPos.y);
-                var roadPrefab = roadSystem.GetRoadPrefab(roadDirection);
-                
-                if (roadPrefab != null)
-                {
-                    blockObject = PrefabUtility.InstantiatePrefab(roadPrefab) as GameObject;
-                    blockObject.transform.SetParent(targetGenerator.transform);
-                    blockObject.name = $"Road_{roadDirection}_{gridPos.x}_{gridPos.y}";
-                    
-                    Debug.Log($"Created road at ({gridPos.x}, {gridPos.y}): {roadDirection}");
-                }
-                else
-                {
-                    // フォールバック：デフォルト道モデル
-                    blockObject = DungeonBlockFactory.CreateBlockFromPrefab(
-                        config, targetGenerator.transform, gridPos, gridMapData.cellSize);
-                    blockObject.name = $"Road_Default_{gridPos.x}_{gridPos.y}";
-                    
-                    Debug.LogWarning($"No prefab found for road direction {roadDirection}, using default block");
-                }
-            }
-            else
-            {
-                // RoadConfigurationが設定されていない場合のフォールバック
-                blockObject = DungeonBlockFactory.CreateBlockFromPrefab(
-                    config, targetGenerator.transform, gridPos, gridMapData.cellSize);
-                blockObject.name = $"Road_NoConfig_{gridPos.x}_{gridPos.y}";
-                
-                Debug.LogWarning("RoadConfiguration not set, using default block for road");
-            }
-            
-            // ワールド位置設定
-            Vector3 worldPos = new Vector3(
-                gridPos.x * gridMapData.cellSize, 0, gridPos.y * gridMapData.cellSize);
-            blockObject.transform.position = worldPos;
-            
-            return blockObject;
-        }
+        // CreateRoadBlock method removed - road generation unified in DungeonBlockFactory
         
         private void ClearExistingDungeon()
         {
@@ -696,7 +637,7 @@ namespace KowloonBreak.Editor
             
             foreach (var child in children)
             {
-                if (child != null && (child.name.Contains("DungeonBlock") || child.name.Contains("PrefabBlock")))
+                if (child != null && (child.name.Contains("DungeonBlock") || child.name.Contains("PrefabBlock") || child.name.Contains("Block_")))
                 {
                     Undo.DestroyObjectImmediate(child.gameObject);
                 }

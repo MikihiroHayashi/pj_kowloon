@@ -50,15 +50,27 @@ namespace KowloonBreak.Environment
             return blockObject;
         }
         
-        public static GameObject CreateBlockFromPrefab(DungeonBlockConfiguration config, Transform parent, Vector2Int gridPosition, float cellSize)
+        public static GameObject CreateBlockFromPrefab(DungeonBlockConfiguration config, Transform parent, Vector2Int gridPosition, float cellSize, GridMapData gridMapData = null, RoadConfiguration roadConfig = null)
         {
-            if (config?.prefab == null)
+            GameObject blockObject;
+            
+            // 道路の場合は特別処理
+            if (config.blockType == DungeonBlockType.Road && roadConfig != null && gridMapData != null)
             {
-                return CreateDefaultBlock(config, cellSize);
+                blockObject = CreateRoadBlock(config, parent, gridPosition, cellSize, gridMapData, roadConfig);
+            }
+            else if (config?.prefab == null)
+            {
+                blockObject = CreateDefaultBlock(config, cellSize);
+                blockObject.transform.SetParent(parent);
+            }
+            else
+            {
+                blockObject = Object.Instantiate(config.prefab, parent);
             }
             
-            var blockObject = Object.Instantiate(config.prefab, parent);
-            blockObject.name = $"PrefabBlock_{config.blockType}_{config.size.x}x{config.size.y}_{gridPosition.x}_{gridPosition.y}";
+            // 共通の名前設定
+            blockObject.name = $"Block_{config.blockType}_{config.size.x}x{config.size.y}_{gridPosition.x}_{gridPosition.y}";
             
             // DungeonBlockコンポーネント確認・設定
             var dungeonBlock = blockObject.GetComponent<DungeonBlock>();
@@ -75,6 +87,34 @@ namespace KowloonBreak.Environment
             blockObject.transform.position = worldPos;
             
             return blockObject;
+        }
+        
+        private static GameObject CreateRoadBlock(DungeonBlockConfiguration config, Transform parent, Vector2Int gridPosition, float cellSize, GridMapData gridMapData, RoadConfiguration roadConfig)
+        {
+            try
+            {
+                var roadSystem = new RoadSystem(gridMapData, roadConfig);
+                var roadDirection = roadSystem.DetectRoadType(gridPosition.x, gridPosition.y);
+                var roadPrefab = roadSystem.GetRoadPrefab(roadDirection);
+                
+                if (roadPrefab != null)
+                {
+                    var blockObject = Object.Instantiate(roadPrefab, parent);
+                    UnityEngine.Debug.Log($"Created road at ({gridPosition.x}, {gridPosition.y}): {roadDirection}");
+                    return blockObject;
+                }
+                else
+                {
+                    UnityEngine.Debug.LogWarning($"No prefab found for road direction {roadDirection} at ({gridPosition.x}, {gridPosition.y})");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogError($"Error creating road at ({gridPosition.x}, {gridPosition.y}): {ex.Message}");
+            }
+            
+            // フォールバック：デフォルトブロック
+            return CreateDefaultBlock(config, cellSize);
         }
         
         private static Mesh CreateBlockMesh(Vector2Int size, float cellSize)

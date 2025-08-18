@@ -20,51 +20,7 @@ namespace KowloonBreak.Environment
         Single          // 単体
     }
 
-    [CreateAssetMenu(fileName = "RoadConfiguration", menuName = "Kowloon Break/Road Configuration")]
-    public class RoadConfiguration : ScriptableObject
-    {
-        [Header("Road Models")]
-        public GameObject horizontalRoadPrefab;
-        public GameObject verticalRoadPrefab;
-        
-        [Header("Corner Models")]
-        public GameObject cornerNEPrefab;
-        public GameObject cornerNWPrefab;
-        public GameObject cornerSEPrefab;
-        public GameObject cornerSWPrefab;
-        
-        [Header("Junction Models")]
-        public GameObject crossPrefab;
-        public GameObject tJunctionNPrefab;
-        public GameObject tJunctionSPrefab;
-        public GameObject tJunctionEPrefab;
-        public GameObject tJunctionWPrefab;
-        
-        [Header("End Models")]
-        public GameObject endCapPrefab;
-        public GameObject singleRoadPrefab;
-        
-        public GameObject GetRoadPrefab(RoadDirection direction)
-        {
-            return direction switch
-            {
-                RoadDirection.Horizontal => horizontalRoadPrefab,
-                RoadDirection.Vertical => verticalRoadPrefab,
-                RoadDirection.CornerNE => cornerNEPrefab,
-                RoadDirection.CornerNW => cornerNWPrefab,
-                RoadDirection.CornerSE => cornerSEPrefab,
-                RoadDirection.CornerSW => cornerSWPrefab,
-                RoadDirection.Cross => crossPrefab,
-                RoadDirection.TJunctionN => tJunctionNPrefab,
-                RoadDirection.TJunctionS => tJunctionSPrefab,
-                RoadDirection.TJunctionE => tJunctionEPrefab,
-                RoadDirection.TJunctionW => tJunctionWPrefab,
-                RoadDirection.EndCap => endCapPrefab,
-                RoadDirection.Single => singleRoadPrefab,
-                _ => horizontalRoadPrefab
-            };
-        }
-    }
+    // RoadConfiguration moved to separate file: RoadConfiguration.cs
 
     public class RoadSystem
     {
@@ -79,6 +35,12 @@ namespace KowloonBreak.Environment
         
         public RoadDirection DetectRoadType(int x, int y)
         {
+            if (gridData == null)
+            {
+                Debug.LogWarning("GridData is null in RoadSystem.DetectRoadType");
+                return RoadDirection.Single;
+            }
+            
             bool north = IsRoadAt(x, y + 1);
             bool south = IsRoadAt(x, y - 1);
             bool east = IsRoadAt(x + 1, y);
@@ -137,7 +99,11 @@ namespace KowloonBreak.Environment
         
         public GameObject GetRoadPrefab(RoadDirection direction)
         {
-            if (roadConfig == null) return null;
+            if (roadConfig == null) 
+            {
+                Debug.LogWarning("RoadConfig is null in RoadSystem.GetRoadPrefab");
+                return null;
+            }
             return roadConfig.GetRoadPrefab(direction);
         }
     }
