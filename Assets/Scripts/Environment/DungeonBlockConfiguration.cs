@@ -19,6 +19,21 @@ namespace KowloonBreak.Environment
         public Color debugColor = Color.white;
         public Material defaultMaterial;
         
+        [Header("Road Settings (Road Type Only)")]
+        [SerializeField] private GameObject horizontalRoadPrefab;
+        [SerializeField] private GameObject verticalRoadPrefab;
+        [SerializeField] private GameObject cornerNEPrefab;
+        [SerializeField] private GameObject cornerNWPrefab;
+        [SerializeField] private GameObject cornerSEPrefab;
+        [SerializeField] private GameObject cornerSWPrefab;
+        [SerializeField] private GameObject crossPrefab;
+        [SerializeField] private GameObject tJunctionNPrefab;
+        [SerializeField] private GameObject tJunctionSPrefab;
+        [SerializeField] private GameObject tJunctionEPrefab;
+        [SerializeField] private GameObject tJunctionWPrefab;
+        [SerializeField] private GameObject endCapPrefab;
+        [SerializeField] private GameObject singleRoadPrefab;
+        
         public DungeonBlockConfiguration()
         {
             blockType = DungeonBlockType.Room;
@@ -78,9 +93,60 @@ namespace KowloonBreak.Environment
             };
         }
         
+        /// <summary>
+        /// 道路サイズに応じた色を取得
+        /// </summary>
+        public static Color GetRoadColorBySize(Vector2Int size)
+        {
+            // サイズで色の明度を変える
+            float intensity = Mathf.Clamp01(0.5f + (size.x * size.y) * 0.02f);
+            return new Color(0.8f * intensity, 0.6f * intensity, 0.4f * intensity);
+        }
+        
         public string GetDisplayName()
         {
             return $"{blockType} ({size.x}x{size.y})";
+        }
+        
+        /// <summary>
+        /// 道路タイプの場合のみ、指定方向のPrefabを取得
+        /// </summary>
+        public GameObject GetRoadPrefab(RoadDirection direction)
+        {
+            if (blockType != DungeonBlockType.Road)
+            {
+                Debug.LogWarning($"GetRoadPrefab called on non-road block type: {blockType}");
+                return prefab; // 通常のprefabを返す
+            }
+            
+            return direction switch
+            {
+                RoadDirection.Horizontal => horizontalRoadPrefab,
+                RoadDirection.Vertical => verticalRoadPrefab,
+                RoadDirection.CornerNE => cornerNEPrefab,
+                RoadDirection.CornerNW => cornerNWPrefab,
+                RoadDirection.CornerSE => cornerSEPrefab,
+                RoadDirection.CornerSW => cornerSWPrefab,
+                RoadDirection.Cross => crossPrefab,
+                RoadDirection.TJunctionN => tJunctionNPrefab,
+                RoadDirection.TJunctionS => tJunctionSPrefab,
+                RoadDirection.TJunctionE => tJunctionEPrefab,
+                RoadDirection.TJunctionW => tJunctionWPrefab,
+                RoadDirection.EndCap => endCapPrefab,
+                RoadDirection.Single => singleRoadPrefab,
+                _ => horizontalRoadPrefab ?? prefab
+            };
+        }
+        
+        /// <summary>
+        /// 道路設定が有効かチェック
+        /// </summary>
+        public bool HasValidRoadConfiguration()
+        {
+            if (blockType != DungeonBlockType.Road) return true; // 道路以外は常に有効
+            
+            return horizontalRoadPrefab != null || verticalRoadPrefab != null || 
+                   crossPrefab != null || singleRoadPrefab != null;
         }
     }
 }

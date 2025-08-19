@@ -2,6 +2,32 @@ using UnityEngine;
 
 namespace KowloonBreak.Environment
 {
+    /// <summary>
+    /// 道路の方向タイプ（旧RoadSystemから移動）
+    /// </summary>
+    [System.Serializable]
+    public enum RoadDirection
+    {
+        Horizontal,     // 水平
+        Vertical,       // 垂直
+        CornerNE,       // 北東コーナー
+        CornerNW,       // 北西コーナー
+        CornerSE,       // 南東コーナー
+        CornerSW,       // 南西コーナー
+        Cross,          // 十字路
+        TJunctionN,     // T字路（北向き）
+        TJunctionS,     // T字路（南向き）
+        TJunctionE,     // T字路（東向き）
+        TJunctionW,     // T字路（西向き）
+        EndCap,         // 終端
+        Single          // 単体
+    }
+
+    /// <summary>
+    /// ダンジョンブロック生成用のファクトリークラス
+    /// 通常ブロックと道路ブロックの両方を生成
+    /// RoadSystemの機能も統合済み
+    /// </summary>
     public static class DungeonBlockFactory
     {
         public static GameObject CreateDefaultBlock(DungeonBlockConfiguration config, float cellSize, string namePrefix = "DungeonBlock")
@@ -50,14 +76,14 @@ namespace KowloonBreak.Environment
             return blockObject;
         }
         
-        public static GameObject CreateBlockFromPrefab(DungeonBlockConfiguration config, Transform parent, Vector2Int gridPosition, float cellSize, GridMapData gridMapData = null, RoadConfiguration roadConfig = null)
+        public static GameObject CreateBlockFromPrefab(DungeonBlockConfiguration config, Transform parent, Vector2Int gridPosition, float cellSize, GridMapData gridMapData = null)
         {
             GameObject blockObject;
             
             // 道路の場合は特別処理
-            if (config.blockType == DungeonBlockType.Road && roadConfig != null && gridMapData != null)
+            if (config.blockType == DungeonBlockType.Road && gridMapData != null)
             {
-                blockObject = CreateRoadBlock(config, parent, gridPosition, cellSize, gridMapData, roadConfig);
+                blockObject = CreateRoadBlock(config, parent, gridPosition, cellSize, gridMapData);
             }
             else if (config?.prefab == null)
             {
@@ -89,13 +115,15 @@ namespace KowloonBreak.Environment
             return blockObject;
         }
         
-        private static GameObject CreateRoadBlock(DungeonBlockConfiguration config, Transform parent, Vector2Int gridPosition, float cellSize, GridMapData gridMapData, RoadConfiguration roadConfig)
+        /// <summary>
+        /// 道路ブロックを生成（統合版）
+        /// </summary>
+        private static GameObject CreateRoadBlock(DungeonBlockConfiguration config, Transform parent, Vector2Int gridPosition, float cellSize, GridMapData gridMapData)
         {
             try
             {
-                var roadSystem = new RoadSystem(gridMapData, roadConfig);
-                var roadDirection = roadSystem.DetectRoadType(gridPosition.x, gridPosition.y);
-                var roadPrefab = roadSystem.GetRoadPrefab(roadDirection);
+                var roadDirection = DetectRoadType(gridMapData, gridPosition.x, gridPosition.y);
+                var roadPrefab = config.GetRoadPrefab(roadDirection);
                 
                 if (roadPrefab != null)
                 {
@@ -140,9 +168,81 @@ namespace KowloonBreak.Environment
             return mesh;
         }
         
+        #region Road System Integration
+        
+        /// <summary>
+        /// 指定位置の道路タイプを検出（RoadSystem.DetectRoadTypeを統合）
+        /// </summary>
+        private static RoadDirection DetectRoadType(GridMapData gridData, int x, int y)
+        {
+            if (gridData == null)
+            {
+                UnityEngine.Debug.LogWarning("GridData is null in DetectRoadType");
+                return RoadDirection.Single;
+            }
+            
+            bool north = IsRoadAt(gridData, x, y + 1);
+            bool south = IsRoadAt(gridData, x, y - 1);
+            bool east = IsRoadAt(gridData, x + 1, y);
+            bool west = IsRoadAt(gridData, x - 1, y);
+            
+            int connections = (north ? 1 : 0) + (south ? 1 : 0) + 
+                             (east ? 1 : 0) + (west ? 1 : 0);
+            
+            return connections switch
+            {
+                0 => RoadDirection.Single,
+                1 => GetEndCapDirection(north, south, east, west),
+                2 => GetTwoConnectionType(north, south, east, west),
+                3 => GetTJunctionType(north, south, east, west),
+                4 => RoadDirection.Cross,
+                _ => RoadDirection.Horizontal
+            };
+        }
+        
+        private static RoadDirection GetEndCapDirection(bool n, bool s, bool e, bool w)
+        {
+            if (n) return RoadDirection.Vertical;  // 北に接続 → 縦道
+            if (s) return RoadDirection.Vertical;  // 南に接続 → 縦道
+            if (e) return RoadDirection.Horizontal; // 東に接続 → 横道
+            if (w) return RoadDirection.Horizontal; // 西に接続 → 横道
+            return RoadDirection.EndCap;
+        }
+        
+        private static RoadDirection GetTwoConnectionType(bool n, bool s, bool e, bool w)
+        {
+            if (n && s) return RoadDirection.Vertical;
+            if (e && w) return RoadDirection.Horizontal;
+            if (n && e) return RoadDirection.CornerNE;
+            if (n && w) return RoadDirection.CornerNW;
+            if (s && e) return RoadDirection.CornerSE;
+            if (s && w) return RoadDirection.CornerSW;
+            return RoadDirection.Horizontal;
+        }
+        
+        private static RoadDirection GetTJunctionType(bool n, bool s, bool e, bool w)
+        {
+            if (!n) return RoadDirection.TJunctionS; // 北がない = 南向きT字路
+            if (!s) return RoadDirection.TJunctionN; // 南がない = 北向きT字路
+            if (!e) return RoadDirection.TJunctionW; // 東がない = 西向きT字路
+            if (!w) return RoadDirection.TJunctionE; // 西がない = 東向きT字路
+            return RoadDirection.Cross;
+        }
+        
+        private static bool IsRoadAt(GridMapData gridData, int x, int y)
+        {
+            if (!gridData.IsValidPosition(x, y)) return false;
+            var cell = gridData.GetCell(x, y);
+            return cell.isOccupied && cell.blockType == DungeonBlockType.Road;
+        }
+        
+        // GetRoadPrefab method removed - now integrated into DungeonBlockConfiguration.GetRoadPrefab()
+        
+        #endregion
+        
         public static DungeonBlockConfiguration[] GetDefaultConfigurations()
         {
-            var configurations = new DungeonBlockConfiguration[7];
+            var configurations = new DungeonBlockConfiguration[12]; // 道路用に5つ追加
             
             // Room 5x5
             configurations[0] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
@@ -198,14 +298,59 @@ namespace KowloonBreak.Environment
             configurations[5].maxInstances = 5;
             configurations[5].debugColor = DungeonBlockConfiguration.GetDefaultColor(DungeonBlockType.Special);
             
-            // Road
+            // Road 1x1 (単体道路)
             configurations[6] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
             configurations[6].prefab = null;
             configurations[6].blockType = DungeonBlockType.Road;
             configurations[6].size = new Vector2Int(1, 1);
-            configurations[6].spawnWeight = 15f;
+            configurations[6].spawnWeight = 5f;
             configurations[6].maxInstances = -1;
-            configurations[6].debugColor = DungeonBlockConfiguration.GetDefaultColor(DungeonBlockType.Road);
+            configurations[6].debugColor = DungeonBlockConfiguration.GetRoadColorBySize(new Vector2Int(1, 1));
+            
+            // Road 2x2 (現在使用中)
+            configurations[7] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
+            configurations[7].prefab = null;
+            configurations[7].blockType = DungeonBlockType.Road;
+            configurations[7].size = new Vector2Int(2, 2);
+            configurations[7].spawnWeight = 10f;
+            configurations[7].maxInstances = -1;
+            configurations[7].debugColor = DungeonBlockConfiguration.GetRoadColorBySize(new Vector2Int(2, 2));
+            
+            // Road 1x5 (短い横道)
+            configurations[8] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
+            configurations[8].prefab = null;
+            configurations[8].blockType = DungeonBlockType.Road;
+            configurations[8].size = new Vector2Int(1, 5);
+            configurations[8].spawnWeight = 8f;
+            configurations[8].maxInstances = -1;
+            configurations[8].debugColor = DungeonBlockConfiguration.GetRoadColorBySize(new Vector2Int(1, 5));
+            
+            // Road 5x1 (短い縦道)
+            configurations[9] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
+            configurations[9].prefab = null;
+            configurations[9].blockType = DungeonBlockType.Road;
+            configurations[9].size = new Vector2Int(5, 1);
+            configurations[9].spawnWeight = 8f;
+            configurations[9].maxInstances = -1;
+            configurations[9].debugColor = DungeonBlockConfiguration.GetRoadColorBySize(new Vector2Int(5, 1));
+            
+            // Road 2x10 (長い横道)
+            configurations[10] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
+            configurations[10].prefab = null;
+            configurations[10].blockType = DungeonBlockType.Road;
+            configurations[10].size = new Vector2Int(2, 10);
+            configurations[10].spawnWeight = 6f;
+            configurations[10].maxInstances = -1;
+            configurations[10].debugColor = DungeonBlockConfiguration.GetRoadColorBySize(new Vector2Int(2, 10));
+            
+            // Road 10x2 (長い縦道)
+            configurations[11] = ScriptableObject.CreateInstance<DungeonBlockConfiguration>();
+            configurations[11].prefab = null;
+            configurations[11].blockType = DungeonBlockType.Road;
+            configurations[11].size = new Vector2Int(10, 2);
+            configurations[11].spawnWeight = 6f;
+            configurations[11].maxInstances = -1;
+            configurations[11].debugColor = DungeonBlockConfiguration.GetRoadColorBySize(new Vector2Int(10, 2));
             
             return configurations;
         }
