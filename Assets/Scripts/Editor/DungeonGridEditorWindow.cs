@@ -40,40 +40,187 @@ namespace KowloonBreak.Editor
         
         private void OnEnable()
         {
-            Debug.Log("[DungeonGridEditor] OnEnable called");
-            
-            LoadAvailableConfigurations();
-            FindTargetGenerator();
-            
-            // GridMapDataが未設定の場合、デフォルトを作成
-            if (gridMapData == null)
+            try
             {
-                Debug.Log("[DungeonGridEditor] GridMapData is null, creating default");
-                CreateDefaultGridMapData();
+                Debug.Log("[DungeonGridEditor] OnEnable called");
+                
+                Debug.Log("[DungeonGridEditor] About to call LoadAvailableConfigurations()");
+                LoadAvailableConfigurations();
+                Debug.Log("[DungeonGridEditor] LoadAvailableConfigurations() completed");
+                
+                Debug.Log("[DungeonGridEditor] About to call FindTargetGenerator()");
+                FindTargetGenerator();
+                Debug.Log("[DungeonGridEditor] FindTargetGenerator() completed");
+                
+                Debug.Log($"[DungeonGridEditor] Current gridMapData state: {(gridMapData == null ? "NULL" : gridMapData.name)}");
+                
+                // 既存のGridMapDataアセットを探す
+                if (gridMapData == null)
+                {
+                    Debug.Log("[DungeonGridEditor] gridMapData is null, trying to load existing data");
+                    TryLoadExistingGridMapData();
+                    Debug.Log($"[DungeonGridEditor] After TryLoadExistingGridMapData: {(gridMapData == null ? "STILL NULL" : gridMapData.name)}");
+                }
+                else
+                {
+                    Debug.Log("[DungeonGridEditor] gridMapData already exists, skipping load");
+                }
+
+                // それでもnullの場合のみ、一時的なデータを作成（保存はしない）
+                if (gridMapData == null)
+                {
+                    Debug.Log("[DungeonGridEditor] No GridMapData found, creating temporary instance");
+                    CreateTemporaryGridMapData();
+                    Debug.Log($"[DungeonGridEditor] After CreateTemporaryGridMapData: {(gridMapData == null ? "FAILED TO CREATE" : gridMapData.name)}");
+                }
+                else
+                {
+                    Debug.Log($"[DungeonGridEditor] GridMapData loaded: {gridMapData.name} - Size: {gridMapData.gridSize}");
+                    // データの妥当性チェックのみ行い、初期化はしない
+                    ValidateGridMapData();
+                }
+
+                Debug.Log("[DungeonGridEditor] OnEnable completed successfully");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[DungeonGridEditor] EXCEPTION in OnEnable: {ex.Message}\n{ex.StackTrace}");
+                
+                // 最低限の処理を試行
+                try
+                {
+                    Debug.Log("[DungeonGridEditor] Attempting minimal fallback initialization");
+                    CreateTemporaryGridMapData();
+                    Debug.Log("[DungeonGridEditor] Fallback initialization completed");
+                }
+                catch (System.Exception fallbackEx)
+                {
+                    Debug.LogError($"[DungeonGridEditor] FALLBACK ALSO FAILED: {fallbackEx.Message}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 既存のGridMapDataアセットを探して読み込む
+        /// </summary>
+        private void TryLoadExistingGridMapData()
+        {
+            Debug.Log("[DungeonGridEditor] TryLoadExistingGridMapData started");
+            
+            // 最後に使用したGridMapDataを探す（EditorPrefsを使用）
+            string lastUsedPath = EditorPrefs.GetString("DungeonGridEditor_LastGridMapData", "");
+            Debug.Log($"[DungeonGridEditor] Last used path from EditorPrefs: '{lastUsedPath}'");
+            
+            if (!string.IsNullOrEmpty(lastUsedPath))
+            {
+                gridMapData = AssetDatabase.LoadAssetAtPath<GridMapData>(lastUsedPath);
+                if (gridMapData != null)
+                {
+                    Debug.Log($"[DungeonGridEditor] Loaded last used GridMapData: {gridMapData.name}");
+                    return;
+                }
+                else
+                {
+                    Debug.Log("[DungeonGridEditor] Failed to load from last used path");
+                }
+            }
+            
+            // プロジェクト内の最初のGridMapDataを探す
+            string[] guids = AssetDatabase.FindAssets("t:GridMapData");
+            Debug.Log($"[DungeonGridEditor] Found {guids.Length} GridMapData GUIDs in project");
+            
+            if (guids.Length > 0)
+            {
+                for (int i = 0; i < guids.Length; i++)
+                {
+                    string guid = guids[i];
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    Debug.Log($"[DungeonGridEditor] Attempting to load GridMapData {i}: {path}");
+                    
+                    gridMapData = AssetDatabase.LoadAssetAtPath<GridMapData>(path);
+                    if (gridMapData != null)
+                    {
+                        Debug.Log($"[DungeonGridEditor] Successfully loaded GridMapData: {gridMapData.name} from {path}");
+                        return;
+                    }
+                    else
+                    {
+                        Debug.LogError($"[DungeonGridEditor] Failed to load GridMapData from {path}");
+                    }
+                }
             }
             else
             {
-                Debug.Log($"[DungeonGridEditor] GridMapData exists: {gridMapData.name} - Size: {gridMapData.gridSize}");
+                Debug.Log("[DungeonGridEditor] No GridMapData assets found in project");
             }
             
-            // 既存のGridMapDataでもnullチェック
-            if (gridMapData != null && gridMapData.gridSize.x <= 0)
-            {
-                Debug.Log("[DungeonGridEditor] GridMapData has invalid size, reinitializing");
-                gridMapData.InitializeGrid();
-            }
-            
-            Debug.Log("[DungeonGridEditor] OnEnable completed");
+            Debug.Log("[DungeonGridEditor] TryLoadExistingGridMapData completed - no data loaded");
         }
-        
-        private void CreateDefaultGridMapData()
+
+        /// <summary>
+        /// 一時的なGridMapData作成（保存しない）
+        /// </summary>
+        private void CreateTemporaryGridMapData()
         {
-            gridMapData = CreateInstance<GridMapData>();
-            gridMapData.gridSize = new Vector2Int(50, 50); // デフォルトサイズ設定
-            gridMapData.InitializeGrid();
-            gridMapData.name = "TempGridMapData";
+            Debug.Log("[DungeonGridEditor] CreateTemporaryGridMapData started");
             
-            Debug.Log("Created temporary GridMapData with size 50x50");
+            try
+            {
+                gridMapData = ScriptableObject.CreateInstance<GridMapData>();
+                Debug.Log($"[DungeonGridEditor] ScriptableObject.CreateInstance successful: {gridMapData != null}");
+                
+                if (gridMapData != null)
+                {
+                    gridMapData.gridSize = new Vector2Int(50, 50);
+                    Debug.Log($"[DungeonGridEditor] Grid size set to: {gridMapData.gridSize}");
+                    
+                    gridMapData.InitializeGrid(); // 新規作成時のみ初期化
+                    Debug.Log($"[DungeonGridEditor] InitializeGrid completed");
+                    
+                    gridMapData.name = "TempGridMapData (Unsaved)";
+                    Debug.Log($"[DungeonGridEditor] Name set to: {gridMapData.name}");
+                    
+                    Debug.Log("Created temporary GridMapData (not saved to disk)");
+                }
+                else
+                {
+                    Debug.LogError("[DungeonGridEditor] ScriptableObject.CreateInstance returned null!");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[DungeonGridEditor] Exception in CreateTemporaryGridMapData: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// GridMapDataの妥当性チェック（初期化はしない）
+        /// </summary>
+        private void ValidateGridMapData()
+        {
+            if (gridMapData == null) return;
+            
+            // サイズが無効な場合のみ修正
+            if (gridMapData.gridSize.x <= 0 || gridMapData.gridSize.y <= 0)
+            {
+                Debug.LogWarning($"[DungeonGridEditor] Invalid grid size detected: {gridMapData.gridSize}");
+                gridMapData.gridSize = new Vector2Int(
+                    Mathf.Max(1, gridMapData.gridSize.x),
+                    Mathf.Max(1, gridMapData.gridSize.y)
+                );
+                EditorUtility.SetDirty(gridMapData);
+            }
+
+            // cellsがnullかどうかチェック（初期化はしない）
+            try
+            {
+                var testCell = gridMapData.GetCell(0, 0); // cellsの存在チェック
+                Debug.Log($"[DungeonGridEditor] GridMapData validation passed. Cells exist.");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[DungeonGridEditor] GridMapData cells validation failed: {ex.Message}");
+            }
         }
         
         private void OnGUI()
@@ -141,9 +288,21 @@ namespace KowloonBreak.Editor
             {
                 Debug.Log($"[DungeonGridEditor] GridMapData changed from {(gridMapData?.name ?? "null")} to {(newGridMapData?.name ?? "null")}");
                 gridMapData = newGridMapData;
+                
+                // 選択したGridMapDataを記憶
+                if (gridMapData != null)
+                {
+                    string path = AssetDatabase.GetAssetPath(gridMapData);
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        EditorPrefs.SetString("DungeonGridEditor_LastGridMapData", path);
+                    }
+                }
+                
+                // nullの場合は一時データを作成（既存データを探さない）
                 if (gridMapData == null)
                 {
-                    CreateDefaultGridMapData();
+                    CreateTemporaryGridMapData();
                 }
             }
             
@@ -152,21 +311,74 @@ namespace KowloonBreak.Editor
                 CreateNewGridMapData();
             }
             
+            // Resetボタンに確認ダイアログを追加
             if (GUILayout.Button("Reset", GUILayout.Width(50)))
             {
                 if (gridMapData != null)
                 {
-                    Debug.Log("[DungeonGridEditor] Resetting grid data");
-                    Undo.RecordObject(gridMapData, "Reset Grid");
-                    gridMapData.ClearGrid();
-                    EditorUtility.SetDirty(gridMapData);
+                    if (EditorUtility.DisplayDialog("Reset Grid", 
+                        "Are you sure you want to clear all grid data? This cannot be undone.", 
+                        "Yes", "No"))
+                    {
+                        Debug.Log("[DungeonGridEditor] Resetting grid data");
+                        Undo.RecordObject(gridMapData, "Reset Grid");
+                        gridMapData.ClearGrid();
+                        EditorUtility.SetDirty(gridMapData);
+                    }
                 }
             }
             
-            // デバッグボタンを追加
+            // Reloadボタンを追加
+            if (GUILayout.Button("Reload", GUILayout.Width(50)))
+            {
+                if (gridMapData != null)
+                {
+                    Debug.Log("[DungeonGridEditor] Reloading grid data from disk");
+                    string path = AssetDatabase.GetAssetPath(gridMapData);
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        AssetDatabase.ImportAsset(path);
+                        gridMapData = AssetDatabase.LoadAssetAtPath<GridMapData>(path);
+                        Repaint();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[DungeonGridEditor] Cannot reload: GridMapData is not saved as an asset");
+                    }
+                }
+            }
+            
+            // デバッグボタン
             if (GUILayout.Button("Debug", GUILayout.Width(50)))
             {
                 LogDebugInfo();
+                if (gridMapData != null)
+                {
+                    LogGridMapDataDebugInfo();
+                }
+            }
+            
+            EditorGUILayout.EndHorizontal();
+            
+            // テスト用の追加ボタン行
+            EditorGUILayout.BeginHorizontal();
+            
+            // テスト用GridMapData作成
+            if (GUILayout.Button("Create Test Asset", GUILayout.Width(100)))
+            {
+                CreateTestGridMapDataAsset();
+            }
+            
+            // プロジェクト内のGridMapDataを検索
+            if (GUILayout.Button("Search Assets", GUILayout.Width(100)))
+            {
+                SearchForGridMapDataAssets();
+            }
+            
+            // 強制再初期化
+            if (GUILayout.Button("Force Init", GUILayout.Width(70)))
+            {
+                ForceReinitialize();
             }
             
             EditorGUILayout.EndHorizontal();
@@ -176,9 +388,21 @@ namespace KowloonBreak.Editor
             {
                 EditorGUILayout.HelpBox("No Grid Map Data selected. A temporary grid will be used for editing.", MessageType.Warning);
             }
-            else if (gridMapData.name == "TempGridMapData")
+            else if (gridMapData.name.Contains("Temp") || gridMapData.name.Contains("Unsaved"))
             {
                 EditorGUILayout.HelpBox("Using temporary grid data. Click 'New' to create a saved asset.", MessageType.Info);
+            }
+            else
+            {
+                string assetPath = AssetDatabase.GetAssetPath(gridMapData);
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    EditorGUILayout.HelpBox("Grid data is not saved as an asset. Click 'New' to save it.", MessageType.Warning);
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox($"Using: {assetPath}", MessageType.None);
+                }
             }
             
             if (gridMapData != null)
@@ -1161,13 +1385,40 @@ namespace KowloonBreak.Editor
             return -1;
         }
         
+        /// <summary>
+        /// SaveGridData()の修正版
+        /// </summary>
         private void SaveGridData()
         {
             if (gridMapData != null)
             {
-                EditorUtility.SetDirty(gridMapData);
-                AssetDatabase.SaveAssets();
-                Debug.Log("Grid data saved successfully");
+                string path = AssetDatabase.GetAssetPath(gridMapData);
+                // アセットとして保存されていない場合
+                if (string.IsNullOrEmpty(path))
+                {
+                    if (EditorUtility.DisplayDialog("Save Grid Data", 
+                        "This grid data is not saved as an asset. Would you like to save it now?", 
+                        "Save", "Cancel"))
+                    {
+                        CreateNewGridMapData();
+                    }
+                }
+                else
+                {
+                    // 既存アセットを保存
+                    EditorUtility.SetDirty(gridMapData);
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
+                    Debug.Log($"Grid data saved successfully: {path}");
+                    
+                    // 保存後に再読み込みして確認
+                    var reloadedData = AssetDatabase.LoadAssetAtPath<GridMapData>(path);
+                    if (reloadedData != null)
+                    {
+                        Debug.Log($"Grid data verified after save. Occupied cells: {reloadedData.GetOccupiedCellCount()}");
+                        gridMapData = reloadedData;
+                    }
+                }
             }
         }
         
@@ -1205,6 +1456,37 @@ namespace KowloonBreak.Editor
             return $"Road\n{size.x}x{size.y}";
         }
         
+        /// <summary>
+        /// GridMapData専用のデバッグ情報を出力
+        /// </summary>
+        private void LogGridMapDataDebugInfo()
+        {
+            if (gridMapData == null) return;
+            
+            Debug.Log("=== GridMapData Debug Info ===");
+            Debug.Log($"Name: {gridMapData.name}");
+            Debug.Log($"Asset Path: {AssetDatabase.GetAssetPath(gridMapData)}");
+            Debug.Log($"Grid Size: {gridMapData.gridSize}");
+            Debug.Log($"Cell Size: {gridMapData.cellSize}");
+            Debug.Log($"Total Cells: {gridMapData.gridSize.x * gridMapData.gridSize.y}");
+            Debug.Log($"Occupied Cells: {gridMapData.GetOccupiedCellCount()}");
+            Debug.Log($"Occupancy: {gridMapData.GetOccupancyPercentage():F2}%");
+            
+            // セル配列の状態
+            if (gridMapData.Cells != null)
+            {
+                Debug.Log($"Cells Array Length: {gridMapData.Cells.Length}");
+                Debug.Log($"Expected Length: {gridMapData.gridSize.x * gridMapData.gridSize.y}");
+                Debug.Log($"Array Match: {gridMapData.Cells.Length == gridMapData.gridSize.x * gridMapData.gridSize.y}");
+            }
+            else
+            {
+                Debug.LogError("Cells array is NULL!");
+            }
+            
+            Debug.Log("=== End GridMapData Debug Info ===");
+        }
+
         /// <summary>
         /// デバッグ情報を出力
         /// </summary>
@@ -1270,6 +1552,91 @@ namespace KowloonBreak.Editor
             }
             
             Debug.Log("=== End Debug Info ===");
+        }
+        
+        /// <summary>
+        /// テスト用のGridMapDataアセットを作成
+        /// </summary>
+        private void CreateTestGridMapDataAsset()
+        {
+            Debug.Log("[DungeonGridEditor] Creating test GridMapData asset");
+            
+            var testGridMapData = ScriptableObject.CreateInstance<GridMapData>();
+            testGridMapData.gridSize = new Vector2Int(10, 10);
+            testGridMapData.InitializeGrid();
+            testGridMapData.name = "TestGridMapData";
+            
+            string path = "Assets/TestGridMapData.asset";
+            AssetDatabase.CreateAsset(testGridMapData, path);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            
+            Debug.Log($"[DungeonGridEditor] Test GridMapData created at: {path}");
+            
+            // 作成したアセットを読み込んでテスト
+            var loadedAsset = AssetDatabase.LoadAssetAtPath<GridMapData>(path);
+            if (loadedAsset != null)
+            {
+                Debug.Log($"[DungeonGridEditor] Successfully loaded test asset: {loadedAsset.name}");
+                gridMapData = loadedAsset;
+                EditorPrefs.SetString("DungeonGridEditor_LastGridMapData", path);
+            }
+            else
+            {
+                Debug.LogError("[DungeonGridEditor] Failed to load created test asset");
+            }
+        }
+        
+        /// <summary>
+        /// プロジェクト内のGridMapDataアセットを検索
+        /// </summary>
+        private void SearchForGridMapDataAssets()
+        {
+            Debug.Log("[DungeonGridEditor] Searching for GridMapData assets");
+            
+            string[] guids = AssetDatabase.FindAssets("t:GridMapData");
+            Debug.Log($"[DungeonGridEditor] Found {guids.Length} GridMapData assets");
+            
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string guid = guids[i];
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var asset = AssetDatabase.LoadAssetAtPath<GridMapData>(path);
+                
+                Debug.Log($"[DungeonGridEditor] Asset {i}: Path='{path}', Name='{(asset?.name ?? "NULL")}', Loaded={(asset != null)}");
+                
+                if (asset != null)
+                {
+                    Debug.Log($"  - Grid Size: {asset.gridSize}");
+                    Debug.Log($"  - Cells: {(asset.Cells?.Length ?? 0)}");
+                    Debug.Log($"  - Occupied: {asset.GetOccupiedCellCount()}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 強制再初期化
+        /// </summary>
+        private void ForceReinitialize()
+        {
+            Debug.Log("[DungeonGridEditor] Force reinitialize started");
+            
+            gridMapData = null;
+            EditorPrefs.DeleteKey("DungeonGridEditor_LastGridMapData");
+            
+            Debug.Log("[DungeonGridEditor] Cleared gridMapData and EditorPrefs");
+            
+            // OnEnable()の処理を再実行
+            TryLoadExistingGridMapData();
+            
+            if (gridMapData == null)
+            {
+                CreateTemporaryGridMapData();
+            }
+            
+            Debug.Log($"[DungeonGridEditor] Force reinitialize completed. GridMapData: {(gridMapData?.name ?? "NULL")}");
+            
+            Repaint();
         }
     }
 }

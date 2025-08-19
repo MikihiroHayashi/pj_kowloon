@@ -3043,6 +3043,14 @@ MonoBehaviour:
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -3235,22 +3243,14 @@ MonoBehaviour:
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -7723,14 +7723,14 @@ MonoBehaviour:
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
@@ -7923,14 +7923,14 @@ MonoBehaviour:
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
     configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
-  - blockType: 0
-    isOccupied: 0
-    configurationSize: {x: 1, y: 1}
-    configurationIndex: -1
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
+  - blockType: 6
+    isOccupied: 1
+    configurationSize: {x: 2, y: 2}
+    configurationIndex: 0
   - blockType: 0
     isOccupied: 0
     configurationSize: {x: 1, y: 1}
