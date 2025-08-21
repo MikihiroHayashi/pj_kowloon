@@ -1,0 +1,148 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d324684c2bec1b4aa0d9a19ab92d792, type: 3}
+  m_Name: DefaultDungeonPieceLibrary
+  m_EditorClassIdentifier: 
+  libraryName: Default Piece Library
+  description: Collection of dungeon pieces for level design
+  targetLevelType: 0
+  categories:
+  - name: Buildings
+    color: {r: 0.3, g: 0.5, b: 0.9, a: 1}
+    isExpanded: 1
+    pieces:
+    - id: a8cc7f5f-f9bd-44f4-9824-203f18b4314e
+      name: Small Building 1x1
+      description: 
+      type: 0
+      size: {x: 1, y: 1}
+      canRotate: 1
+      allowedRotations:
+      - 0
+      - 90
+      - 180
+      - 270
+      prefab: {fileID: 0}
+      icon: {fileID: 0}
+      displayColor: {r: 0.7, g: 0.7, b: 0.9, a: 1}
+      isRoadStartPoint: 0
+      blocksPaths: 1
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 0000000001000000
+    - id: 292f888d-c97f-4f47-8ea8-a09a7d5ca7cf
+      name: Medium Building 2x2
+      description: 
+      type: 0
+      size: {x: 2, y: 2}
+      canRotate: 1
+      allowedRotations:
+      - 0
+      - 90
+      - 180
+      - 270
+      prefab: {fileID: 0}
+      icon: {fileID: 0}
+      displayColor: {r: 0.6, g: 0.6, b: 0.8, a: 1}
+      isRoadStartPoint: 0
+      blocksPaths: 1
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 0100000002000000
+    - id: 3aed65c8-700c-4b92-be94-961579e4533a
+      name: Long Building 1x2
+      description: 
+      type: 0
+      size: {x: 1, y: 2}
+      canRotate: 1
+      allowedRotations:
+      - 0
+      - 90
+      - 180
+      - 270
+      prefab: {fileID: 0}
+      icon: {fileID: 0}
+      displayColor: {r: 0.8, g: 0.6, b: 0.7, a: 1}
+      isRoadStartPoint: 0
+      blocksPaths: 1
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 000000000100000002000000
+  - name: Roads
+    color: {r: 0.9, g: 0.9, b: 0.3, a: 1}
+    isExpanded: 1
+    pieces:
+    - id: b0dc31aa-b9c1-44a5-bcff-1cb87ad286f8
+      name: Road Start Point
+      description: 
+      type: 1
+      size: {x: 1, y: 1}
+      canRotate: 1
+      allowedRotations:
+      - 0
+      - 90
+      - 180
+      - 270
+      prefab: {fileID: 0}
+      icon: {fileID: 0}
+      displayColor: {r: 0.9, g: 0.9, b: 0.3, a: 1}
+      isRoadStartPoint: 1
+      blocksPaths: 0
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 000000000100000002000000
+  - name: Special
+    color: {r: 0.3, g: 0.9, b: 0.5, a: 1}
+    isExpanded: 1
+    pieces:
+    - id: 62951454-aa8a-4eb5-b3ac-df2a88ab7fdb
+      name: Player Spawn
+      description: 
+      type: 4
+      size: {x: 1, y: 1}
+      canRotate: 1
+      allowedRotations:
+      - 0
+      - 90
+      - 180
+      - 270
+      prefab: {fileID: 0}
+      icon: {fileID: 0}
+      displayColor: {r: 0.3, g: 0.9, b: 0.3, a: 1}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 000000000100000002000000
+    - id: dad5c59e-1b78-4c5e-879d-e6df4dca2fd4
+      name: Exit Point
+      description: 
+      type: 5
+      size: {x: 1, y: 1}
+      canRotate: 1
+      allowedRotations:
+      - 0
+      - 90
+      - 180
+      - 270
+      prefab: {fileID: 0}
+      icon: {fileID: 0}
+      displayColor: {r: 0.9, g: 0.3, b: 0.3, a: 1}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 000000000100000002000000
+  - name: Decorations
+    color: {r: 0.9, g: 0.3, b: 0.9, a: 1}
+    isExpanded: 1
+    pieces: []

@@ -100,8 +100,6 @@ namespace KowloonBreak.Environment
                 Type = type,
                 Name = name,
                 DangerLevel = danger,
-                Rooms = GenerateDefaultRooms(type),
-                Connections = GenerateConnections(floor),
                 AvailableResources = GenerateResources(type),
                 IsExplored = false,
                 IsUnlocked = floor == 1
@@ -109,93 +107,6 @@ namespace KowloonBreak.Environment
             return level;
         }
 
-        private List<Room> GenerateDefaultRooms(LevelType type)
-        {
-            var rooms = new List<Room>();
-            
-            switch (type)
-            {
-                case LevelType.Residential:
-                    rooms.AddRange(new[]
-                    {
-                        new Room { Name = "アパート1", Type = RoomType.Living, IsAccessible = true },
-                        new Room { Name = "アパート2", Type = RoomType.Living, IsAccessible = true },
-                        new Room { Name = "共用廊下", Type = RoomType.Corridor, IsAccessible = true },
-                        new Room { Name = "階段", Type = RoomType.Stairway, IsAccessible = true }
-                    });
-                    break;
-                    
-                case LevelType.Commercial:
-                    rooms.AddRange(new[]
-                    {
-                        new Room { Name = "商店1", Type = RoomType.Shop, IsAccessible = true },
-                        new Room { Name = "商店2", Type = RoomType.Shop, IsAccessible = true },
-                        new Room { Name = "食堂", Type = RoomType.Restaurant, IsAccessible = true },
-                        new Room { Name = "メイン通路", Type = RoomType.Corridor, IsAccessible = true }
-                    });
-                    break;
-                    
-                case LevelType.Industrial:
-                    rooms.AddRange(new[]
-                    {
-                        new Room { Name = "工場エリア", Type = RoomType.Factory, IsAccessible = true },
-                        new Room { Name = "倉庫", Type = RoomType.Storage, IsAccessible = true },
-                        new Room { Name = "機械室", Type = RoomType.Utility, IsAccessible = false },
-                        new Room { Name = "作業通路", Type = RoomType.Corridor, IsAccessible = true }
-                    });
-                    break;
-                    
-                case LevelType.Underground:
-                    rooms.AddRange(new[]
-                    {
-                        new Room { Name = "下水道", Type = RoomType.Sewer, IsAccessible = true },
-                        new Room { Name = "地下室", Type = RoomType.Basement, IsAccessible = false },
-                        new Room { Name = "電気室", Type = RoomType.Utility, IsAccessible = false },
-                        new Room { Name = "メンテナンス通路", Type = RoomType.Corridor, IsAccessible = true }
-                    });
-                    break;
-                    
-                case LevelType.Rooftop:
-                    rooms.AddRange(new[]
-                    {
-                        new Room { Name = "屋上", Type = RoomType.Rooftop, IsAccessible = true },
-                        new Room { Name = "給水塔", Type = RoomType.Utility, IsAccessible = false },
-                        new Room { Name = "屋上小屋", Type = RoomType.Storage, IsAccessible = true }
-                    });
-                    break;
-            }
-            
-            return rooms;
-        }
-
-        private List<Connection> GenerateConnections(int floor)
-        {
-            var connections = new List<Connection>();
-            
-            if (floor > 1)
-            {
-                connections.Add(new Connection
-                {
-                    TargetFloor = floor - 1,
-                    ConnectionType = ConnectionType.Stairway,
-                    IsAccessible = true,
-                    RequiredKey = null
-                });
-            }
-            
-            if (floor < maxFloorsPerLevel)
-            {
-                connections.Add(new Connection
-                {
-                    TargetFloor = floor + 1,
-                    ConnectionType = ConnectionType.Stairway,
-                    IsAccessible = false,
-                    RequiredKey = $"Key_Floor_{floor + 1}"
-                });
-            }
-            
-            return connections;
-        }
 
         private List<Resource> GenerateResources(LevelType type)
         {
@@ -466,34 +377,10 @@ namespace KowloonBreak.Environment
         public int FloorNumber;
         public LevelType Type;
         public string Name;
-        public List<Room> Rooms;
-        public List<Connection> Connections;
         public List<Resource> AvailableResources;
         public float DangerLevel;
         public bool IsExplored;
         public bool IsUnlocked;
-    }
-
-    [Serializable]
-    public class Room
-    {
-        public string Name;
-        public RoomType Type;
-        public bool IsAccessible;
-        public bool IsExplored;
-        public string RequiredKey;
-        public Vector3 Position;
-        public Vector3 Size;
-    }
-
-    [Serializable]
-    public class Connection
-    {
-        public int TargetFloor;
-        public ConnectionType ConnectionType;
-        public bool IsAccessible;
-        public string RequiredKey;
-        public Vector3 Position;
     }
 
     [Serializable]
@@ -526,29 +413,6 @@ namespace KowloonBreak.Environment
         Abandoned
     }
 
-    public enum RoomType
-    {
-        Living,
-        Shop,
-        Restaurant,
-        Factory,
-        Storage,
-        Utility,
-        Corridor,
-        Stairway,
-        Sewer,
-        Basement,
-        Rooftop
-    }
-
-    public enum ConnectionType
-    {
-        Stairway,
-        Elevator,
-        Ladder,
-        Tunnel,
-        Bridge
-    }
 
     public enum TransitionType
     {

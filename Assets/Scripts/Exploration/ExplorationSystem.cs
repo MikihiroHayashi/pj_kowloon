@@ -153,67 +153,153 @@ namespace KowloonBreak.Exploration
             var levelManager = KowloonLevelManager.Instance;
             if (levelManager == null || levelManager.CurrentLevel == null) return;
 
-            foreach (var room in levelManager.CurrentLevel.Rooms)
+            var dungeonGenerator = DungeonGenerator.Instance;
+            if (dungeonGenerator != null && dungeonGenerator.GetCurrentLayout() != null)
             {
-                if (room.IsAccessible)
+                GenerateExplorationFromDungeonLayout(dungeonGenerator.GetCurrentLayout());
+            }
+            else
+            {
+                GenerateDefaultExplorationPoints();
+            }
+        }
+
+        private void GenerateExplorationFromDungeonLayout(DungeonLayout layout)
+        {
+            foreach (var piece in layout.pieces)
+            {
+                if (piece.type == PieceType.Building)
                 {
-                    CreateExplorationPoint(room);
+                    CreateExplorationPointFromPiece(piece, layout.cellSize);
+                }
+            }
+
+            foreach (var roadPath in layout.roadPaths)
+            {
+                if (roadPath.pathPoints.Count > 5)
+                {
+                    int midIndex = roadPath.pathPoints.Count / 2;
+                    var midPoint = roadPath.pathPoints[midIndex];
+                    CreateRoadExplorationPoint(midPoint, layout.cellSize);
                 }
             }
         }
 
-        private void CreateExplorationPoint(Room room)
+        private void GenerateDefaultExplorationPoints()
         {
-            string pointId = $"Room_{room.Name}_{UnityEngine.Random.Range(1000, 9999)}";
+            var levelManager = KowloonLevelManager.Instance;
+            if (levelManager == null) return;
+
+            for (int i = 0; i < 10; i++)
+            {
+                Vector3 randomPosition = playerTransform != null ? 
+                    playerTransform.position + UnityEngine.Random.insideUnitSphere * 20f :
+                    UnityEngine.Random.insideUnitSphere * 50f;
+                
+                CreateGenericExplorationPoint(randomPosition, $"調査地点_{i + 1}");
+            }
+        }
+
+        private void CreateExplorationPointFromPiece(DungeonPiece piece, float cellSize)
+        {
+            string pointId = $"Piece_{piece.id}_{UnityEngine.Random.Range(1000, 9999)}";
+            Vector3 worldPosition = GridUtility.GridToWorldPosition(piece.gridPosition, cellSize);
             
             var explorationPoint = new ExplorationPoint
             {
                 Id = pointId,
-                Name = $"{room.Name}の調査地点",
-                Position = room.Position + UnityEngine.Random.insideUnitSphere * 3f,
-                Type = GetExplorationTypeFromRoom(room.Type),
+                Name = $"{GetPieceTypeName(piece.type)}の調査地点",
+                Position = worldPosition + UnityEngine.Random.insideUnitSphere * (cellSize * 0.5f),
+                Type = GetExplorationTypeFromPiece(piece.type),
                 IsDiscovered = false,
                 SearchAttempts = 0,
-                DifficultyLevel = CalculateDifficulty(room),
-                LootTableName = SelectLootTable(room.Type)
+                DifficultyLevel = CalculateDifficultyFromPiece(piece),
+                LootTableName = SelectLootTableFromPiece(piece.type)
             };
 
             explorationPoints[pointId] = explorationPoint;
         }
 
-        private ExplorationType GetExplorationTypeFromRoom(RoomType roomType)
+        private void CreateRoadExplorationPoint(Vector2Int gridPos, float cellSize)
         {
-            return roomType switch
+            string pointId = $"Road_{gridPos.x}_{gridPos.y}_{UnityEngine.Random.Range(1000, 9999)}";
+            Vector3 worldPosition = GridUtility.GridToWorldPosition(gridPos, cellSize);
+            
+            var explorationPoint = new ExplorationPoint
             {
-                RoomType.Living => ExplorationType.Container,
-                RoomType.Shop => ExplorationType.Container,
-                RoomType.Storage => ExplorationType.HiddenCache,
-                RoomType.Utility => ExplorationType.Debris,
-                RoomType.Factory => ExplorationType.Debris,
-                RoomType.Sewer => ExplorationType.Debris,
+                Id = pointId,
+                Name = "道路沿いの調査地点",
+                Position = worldPosition + UnityEngine.Random.insideUnitSphere * 2f,
+                Type = ExplorationType.Debris,
+                IsDiscovered = false,
+                SearchAttempts = 0,
+                DifficultyLevel = 0.2f,
+                LootTableName = "Common Items"
+            };
+
+            explorationPoints[pointId] = explorationPoint;
+        }
+
+        private void CreateGenericExplorationPoint(Vector3 position, string name)
+        {
+            string pointId = $"Generic_{System.Guid.NewGuid()}";
+            
+            var explorationPoint = new ExplorationPoint
+            {
+                Id = pointId,
+                Name = name,
+                Position = position,
+                Type = ExplorationType.Container,
+                IsDiscovered = false,
+                SearchAttempts = 0,
+                DifficultyLevel = UnityEngine.Random.Range(0.1f, 0.6f),
+                LootTableName = "Common Items"
+            };
+
+            explorationPoints[pointId] = explorationPoint;
+        }
+
+        private string GetPieceTypeName(PieceType pieceType)
+        {
+            return pieceType switch
+            {
+                PieceType.Building => "建物",
+                PieceType.RoadStart => "道路起点",
+                PieceType.Obstacle => "障害物",
+                PieceType.Decoration => "装飾物",
+                PieceType.SpawnPoint => "出現地点",
+                PieceType.ExitPoint => "出口",
+                _ => "不明な場所"
+            };
+        }
+
+        private ExplorationType GetExplorationTypeFromPiece(PieceType pieceType)
+        {
+            return pieceType switch
+            {
+                PieceType.Building => ExplorationType.Container,
+                PieceType.Obstacle => ExplorationType.Debris,
+                PieceType.Decoration => ExplorationType.HiddenCache,
                 _ => ExplorationType.Container
             };
         }
 
-        private float CalculateDifficulty(Room room)
+        private float CalculateDifficultyFromPiece(DungeonPiece piece)
         {
             float baseDifficulty = 0.3f;
             
-            if (!room.IsExplored) baseDifficulty += 0.2f;
-            if (room.RequiredKey != null) baseDifficulty += 0.3f;
+            if (piece.size.x * piece.size.y > 1) baseDifficulty += 0.2f;
             
             return Mathf.Clamp01(baseDifficulty + UnityEngine.Random.Range(-0.1f, 0.2f));
         }
 
-        private string SelectLootTable(RoomType roomType)
+        private string SelectLootTableFromPiece(PieceType pieceType)
         {
-            return roomType switch
+            return pieceType switch
             {
-                RoomType.Living => "Common Items",
-                RoomType.Shop => "Common Items",
-                RoomType.Storage => "Common Items",
-                RoomType.Utility => "Electronics",
-                RoomType.Factory => "Electronics",
+                PieceType.Building => "Common Items",
+                PieceType.Obstacle => "Electronics",
+                PieceType.Decoration => "Information",
                 _ => "Common Items"
             };
         }

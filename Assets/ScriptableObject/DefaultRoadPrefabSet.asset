@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac784c205d666664195ae530bbf6c88c, type: 3}
+  m_Name: DefaultRoadPrefabSet
+  m_EditorClassIdentifier: 
+  setName: Default Road Set
+  description: Standard road prefabs for dungeon generation
+  roadStraightHorizontal: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+    type: 3}
+  roadStraightVertical: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+    type: 3}
+  roadCross: {fileID: 8847296823842949343, guid: 88aacd1b7a8c8b54e9c79c3b688d05c4,
+    type: 3}
+  roadCornerNE: {fileID: 8847296823842949343, guid: e70ad1cf9690abe4f927da45aacf3a5a,
+    type: 3}
+  roadCornerNW: {fileID: 8847296823842949343, guid: 7adce309a6314d547a72df59a1573f84,
+    type: 3}
+  roadCornerSE: {fileID: 8847296823842949343, guid: 07c6e52f97222d340bce0f89a3999a26,
+    type: 3}
+  roadCornerSW: {fileID: 8847296823842949343, guid: 3ce85d42ea9e71949a4dbb55bed8826a,
+    type: 3}
+  roadTJunctionN: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
+    type: 3}
+  roadTJunctionE: {fileID: 8847296823842949343, guid: 2abbe2ee88fdf7e4e9df4619acc8cd72,
+    type: 3}
+  roadTJunctionS: {fileID: 8847296823842949343, guid: a3155e07c0260ff439d4c681ed63c7cc,
+    type: 3}
+  roadTJunctionW: {fileID: 8847296823842949343, guid: ed2862844a419664a8679a7f69142d85,
+    type: 3}
+  roadEndCapN: {fileID: 8847296823842949343, guid: 2c0e834321a00e741afdeae284d8d059,
+    type: 3}
+  roadEndCapE: {fileID: 8847296823842949343, guid: 4d5e1828fd695e4429bd91dcf7aa9f5f,
+    type: 3}
+  roadEndCapS: {fileID: 8847296823842949343, guid: 0dea38a567834e94ca71039ce9c621fb,
+    type: 3}
+  roadEndCapW: {fileID: 8847296823842949343, guid: 5fb3e07fdcf42aa40928135703e72505,
+    type: 3}
