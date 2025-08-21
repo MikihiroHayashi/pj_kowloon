@@ -12,7 +12,7 @@ namespace KowloonBreak.Editor
         private DungeonRoadPrefabSet roadPrefabSet;
         private DungeonPieceLibrary pieceLibrary;
         private List<DungeonPieceTemplate> currentPieceTemplates;
-        
+
         private Vector2 scrollPosition;
         private Vector2 gridScrollPosition;
         private int selectedPieceIndex = 0;
@@ -20,7 +20,7 @@ namespace KowloonBreak.Editor
         private bool isDragging = false;
         private bool showGrid = true;
         private float gridCellSize = 30f;
-        
+
         private const float PALETTE_WIDTH = 200f;
         private const float PROPERTIES_WIDTH = 250f;
 
@@ -53,7 +53,7 @@ namespace KowloonBreak.Editor
         private void InitializeGrid()
         {
             grid = new DungeonPiece[currentLayout.gridSize.x, currentLayout.gridSize.y];
-            
+
             foreach (var piece in currentLayout.pieces)
             {
                 PlacePieceOnGrid(piece);
@@ -87,9 +87,9 @@ namespace KowloonBreak.Editor
             {
                 AssetDatabase.CreateFolder("Assets", "ScriptableObject");
             }
-            
+
             pieceLibrary = ScriptableObject.CreateInstance<DungeonPieceLibrary>();
-            
+
             pieceLibrary.AddCategory("Buildings", Color.blue);
             pieceLibrary.AddCategory("Roads", Color.yellow);
             pieceLibrary.AddCategory("Special", Color.green);
@@ -131,7 +131,7 @@ namespace KowloonBreak.Editor
         private void RefreshPieceTemplates()
         {
             currentPieceTemplates = new List<DungeonPieceTemplate>();
-            
+
             if (pieceLibrary != null)
             {
                 if (selectedCategoryIndex < pieceLibrary.Categories.Count)
@@ -149,177 +149,256 @@ namespace KowloonBreak.Editor
 
         private void OnGUI()
         {
-            DrawToolbar();
-            
-            EditorGUILayout.BeginHorizontal();
-            
-            DrawPiecesPalette();
-            DrawGridEditor();
-            DrawProperties();
-            
-            EditorGUILayout.EndHorizontal();
-            
-            HandleEvents();
+            // *** 修正1: try-catch でGUIエラーをキャッチ ***
+            try
+            {
+                DrawToolbar();
+
+                EditorGUILayout.BeginHorizontal();
+                try
+                {
+                    DrawPiecesPalette();
+                    DrawGridEditor();
+                    DrawProperties();
+                }
+                finally
+                {
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                HandleEvents();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"GUI Error in DungeonEditorWindow: {e.Message}");
+                // 強制的にGUIレイアウトをリセット
+                GUIUtility.ExitGUI();
+            }
         }
 
         private void DrawToolbar()
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-
-            if (GUILayout.Button("New", EditorStyles.toolbarButton))
+            try
             {
-                CreateNewLayout();
-            }
+                if (GUILayout.Button("New", EditorStyles.toolbarButton))
+                {
+                    CreateNewLayout();
+                }
 
-            if (GUILayout.Button("Save", EditorStyles.toolbarButton))
+                if (GUILayout.Button("Save", EditorStyles.toolbarButton))
+                {
+                    SaveLayout();
+                }
+
+                if (GUILayout.Button("Load", EditorStyles.toolbarButton))
+                {
+                    LoadLayout();
+                }
+
+                GUILayout.FlexibleSpace();
+
+                if (GUILayout.Button("Generate Roads", EditorStyles.toolbarButton))
+                {
+                    GenerateRoads();
+                }
+
+                if (GUILayout.Button("Generate 3D", EditorStyles.toolbarButton))
+                {
+                    Generate3DDungeon();
+                }
+            }
+            finally
             {
-                SaveLayout();
+                EditorGUILayout.EndHorizontal();
             }
-
-            if (GUILayout.Button("Load", EditorStyles.toolbarButton))
-            {
-                LoadLayout();
-            }
-
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("Generate Roads", EditorStyles.toolbarButton))
-            {
-                GenerateRoads();
-            }
-
-            if (GUILayout.Button("Generate 3D", EditorStyles.toolbarButton))
-            {
-                Generate3DDungeon();
-            }
-
-            EditorGUILayout.EndHorizontal();
         }
 
         private void DrawPiecesPalette()
         {
             EditorGUILayout.BeginVertical(GUILayout.Width(PALETTE_WIDTH));
-            
-            EditorGUILayout.LabelField("Pieces Palette", EditorStyles.boldLabel);
+            try
+            {
+                EditorGUILayout.LabelField("Pieces Palette", EditorStyles.boldLabel);
 
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Refresh", EditorStyles.miniButton))
-            {
-                LoadPieceTemplates();
-            }
-            if (GUILayout.Button("Edit Library", EditorStyles.miniButton))
-            {
+                // *** 修正2: ボタン配置をtry-finallyで保護 ***
+                EditorGUILayout.BeginHorizontal();
+                try
+                {
+                    if (GUILayout.Button("Refresh", EditorStyles.miniButton))
+                    {
+                        // *** 修正3: LoadPieceTemplates呼び出し時のエラーハンドリング ***
+                        try
+                        {
+                            LoadPieceTemplates();
+                        }
+                        catch (System.Exception e)
+                        {
+                            Debug.LogError($"Error loading piece templates: {e.Message}");
+                        }
+                    }
+                    if (GUILayout.Button("Edit Library", EditorStyles.miniButton))
+                    {
+                        if (pieceLibrary != null)
+                        {
+                            Selection.activeObject = pieceLibrary;
+                            EditorGUIUtility.PingObject(pieceLibrary);
+                        }
+                    }
+                }
+                finally
+                {
+                    EditorGUILayout.EndHorizontal();
+                }
+
                 if (pieceLibrary != null)
                 {
-                    Selection.activeObject = pieceLibrary;
-                    EditorGUIUtility.PingObject(pieceLibrary);
+                    EditorGUILayout.BeginHorizontal();
+                    try
+                    {
+                        EditorGUILayout.LabelField("Category:", GUILayout.Width(60));
+
+                        string[] categoryNames = new string[pieceLibrary.Categories.Count + 1];
+                        categoryNames[0] = "All";
+                        for (int i = 0; i < pieceLibrary.Categories.Count; i++)
+                        {
+                            categoryNames[i + 1] = pieceLibrary.Categories[i].name;
+                        }
+
+                        int newCategoryIndex = EditorGUILayout.Popup(selectedCategoryIndex, categoryNames);
+                        if (newCategoryIndex != selectedCategoryIndex)
+                        {
+                            selectedCategoryIndex = newCategoryIndex;
+                            // *** 修正4: RefreshPieceTemplates呼び出し時のエラーハンドリング ***
+                            try
+                            {
+                                RefreshPieceTemplates();
+                            }
+                            catch (System.Exception e)
+                            {
+                                Debug.LogError($"Error refreshing piece templates: {e.Message}");
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        EditorGUILayout.EndHorizontal();
+                    }
+                }
+
+                scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+                try
+                {
+                    if (currentPieceTemplates != null)
+                    {
+                        for (int i = 0; i < currentPieceTemplates.Count; i++)
+                        {
+                            var piece = currentPieceTemplates[i];
+                            bool isSelected = selectedPieceIndex == i;
+
+                            Color originalColor = GUI.backgroundColor;
+                            if (isSelected)
+                            {
+                                GUI.backgroundColor = Color.cyan;
+                            }
+                            else
+                            {
+                                GUI.backgroundColor = piece.displayColor * 0.8f + Color.white * 0.2f;
+                            }
+
+                            GUILayout.BeginHorizontal();
+                            try
+                            {
+                                if (piece.icon != null)
+                                {
+                                    GUILayout.Box(piece.icon.texture, GUILayout.Width(40), GUILayout.Height(40));
+                                }
+                                else
+                                {
+                                    GUILayout.Box("", GUILayout.Width(40), GUILayout.Height(40));
+                                }
+
+                                if (GUILayout.Button($"{piece.name}\n{piece.size.x}x{piece.size.y}\n{piece.type}",
+                                    GUILayout.Height(40), GUILayout.ExpandWidth(true)))
+                                {
+                                    selectedPieceIndex = i;
+                                }
+                            }
+                            finally
+                            {
+                                GUILayout.EndHorizontal();
+                                GUI.backgroundColor = originalColor;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    EditorGUILayout.EndScrollView();
                 }
             }
-            EditorGUILayout.EndHorizontal();
-
-            if (pieceLibrary != null)
+            finally
             {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Category:", GUILayout.Width(60));
-                
-                string[] categoryNames = new string[pieceLibrary.Categories.Count + 1];
-                categoryNames[0] = "All";
-                for (int i = 0; i < pieceLibrary.Categories.Count; i++)
-                {
-                    categoryNames[i + 1] = pieceLibrary.Categories[i].name;
-                }
-
-                int newCategoryIndex = EditorGUILayout.Popup(selectedCategoryIndex, categoryNames);
-                if (newCategoryIndex != selectedCategoryIndex)
-                {
-                    selectedCategoryIndex = newCategoryIndex;
-                    RefreshPieceTemplates();
-                }
-                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
             }
-            
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-
-            if (currentPieceTemplates != null)
-            {
-                for (int i = 0; i < currentPieceTemplates.Count; i++)
-                {
-                    var piece = currentPieceTemplates[i];
-                    bool isSelected = selectedPieceIndex == i;
-                    
-                    Color originalColor = GUI.backgroundColor;
-                    if (isSelected)
-                    {
-                        GUI.backgroundColor = Color.cyan;
-                    }
-                    else
-                    {
-                        GUI.backgroundColor = piece.displayColor * 0.8f + Color.white * 0.2f;
-                    }
-
-                    GUILayout.BeginHorizontal();
-                    
-                    if (piece.icon != null)
-                    {
-                        GUILayout.Box(piece.icon.texture, GUILayout.Width(40), GUILayout.Height(40));
-                    }
-                    else
-                    {
-                        GUILayout.Box("", GUILayout.Width(40), GUILayout.Height(40));
-                    }
-
-                    if (GUILayout.Button($"{piece.name}\n{piece.size.x}x{piece.size.y}\n{piece.type}", 
-                        GUILayout.Height(40), GUILayout.ExpandWidth(true)))
-                    {
-                        selectedPieceIndex = i;
-                    }
-
-                    GUILayout.EndHorizontal();
-                    GUI.backgroundColor = originalColor;
-                }
-            }
-
-            EditorGUILayout.EndScrollView();
-            EditorGUILayout.EndVertical();
         }
 
         private void DrawGridEditor()
         {
             EditorGUILayout.BeginVertical();
-            
-            EditorGUILayout.LabelField($"Grid Editor - {currentLayout.layoutName}", EditorStyles.boldLabel);
-            
-            EditorGUILayout.BeginHorizontal();
-            showGrid = EditorGUILayout.Toggle("Show Grid", showGrid);
-            gridCellSize = EditorGUILayout.Slider("Cell Size", gridCellSize, 10f, 50f);
-            EditorGUILayout.EndHorizontal();
+            try
+            {
+                EditorGUILayout.LabelField($"Grid Editor - {currentLayout.layoutName}", EditorStyles.boldLabel);
 
-            gridScrollPosition = EditorGUILayout.BeginScrollView(gridScrollPosition);
+                EditorGUILayout.BeginHorizontal();
+                try
+                {
+                    showGrid = EditorGUILayout.Toggle("Show Grid", showGrid);
+                    gridCellSize = EditorGUILayout.Slider("Cell Size", gridCellSize, 10f, 50f);
+                }
+                finally
+                {
+                    EditorGUILayout.EndHorizontal();
+                }
 
-            Rect gridRect = DrawGrid();
-            HandleGridInput(gridRect);
-
-            EditorGUILayout.EndScrollView();
-            EditorGUILayout.EndVertical();
+                gridScrollPosition = EditorGUILayout.BeginScrollView(gridScrollPosition);
+                try
+                {
+                    Rect gridRect = DrawGrid();
+                    // *** 修正5: HandleGridInput内でのEvent処理を安全にする ***
+                    if (Event.current != null)
+                    {
+                        HandleGridInput(gridRect);
+                    }
+                }
+                finally
+                {
+                    EditorGUILayout.EndScrollView();
+                }
+            }
+            finally
+            {
+                EditorGUILayout.EndVertical();
+            }
         }
 
         private Rect DrawGrid()
         {
             float gridWidth = currentLayout.gridSize.x * gridCellSize;
             float gridHeight = currentLayout.gridSize.y * gridCellSize;
-            
+
             Rect gridRect = GUILayoutUtility.GetRect(gridWidth, gridHeight);
 
             if (showGrid)
             {
                 Handles.color = Color.gray;
-                
+
                 for (int x = 0; x <= currentLayout.gridSize.x; x++)
                 {
                     float xPos = gridRect.x + x * gridCellSize;
                     Handles.DrawLine(new Vector3(xPos, gridRect.y), new Vector3(xPos, gridRect.y + gridHeight));
                 }
-                
+
                 for (int y = 0; y <= currentLayout.gridSize.y; y++)
                 {
                     float yPos = gridRect.y + y * gridCellSize;
@@ -336,7 +415,7 @@ namespace KowloonBreak.Editor
         {
             // 道路パスを描画
             DrawRoadPaths(gridRect);
-            
+
             // ピースを描画
             foreach (var piece in currentLayout.pieces)
             {
@@ -349,7 +428,7 @@ namespace KowloonBreak.Editor
 
                 Color pieceColor = GetPieceColor(piece.type);
                 EditorGUI.DrawRect(pieceRect, pieceColor);
-                
+
                 GUI.Label(pieceRect, piece.type.ToString(), EditorStyles.centeredGreyMiniLabel);
             }
         }
@@ -359,18 +438,17 @@ namespace KowloonBreak.Editor
             if (currentLayout.roadPaths == null || currentLayout.roadPaths.Count == 0)
                 return;
 
-            Color roadColor = new Color(0.8f, 0.6f, 0.2f, 0.7f); // オレンジ色
-            
+            Color roadColor = new Color(0.8f, 0.6f, 0.2f, 0.7f);
+
             foreach (var roadPath in currentLayout.roadPaths)
             {
                 if (roadPath.pathPoints == null || roadPath.pathPoints.Count == 0)
                     continue;
 
-                // 道路パスの各ポイントを描画
                 for (int i = 0; i < roadPath.pathPoints.Count; i++)
                 {
                     var point = roadPath.pathPoints[i];
-                    
+
                     Rect roadRect = new Rect(
                         gridRect.x + point.x * gridCellSize,
                         gridRect.y + point.y * gridCellSize,
@@ -379,8 +457,7 @@ namespace KowloonBreak.Editor
                     );
 
                     EditorGUI.DrawRect(roadRect, roadColor);
-                    
-                    // パスの線を描画
+
                     if (i < roadPath.pathPoints.Count - 1)
                     {
                         var nextPoint = roadPath.pathPoints[i + 1];
@@ -397,7 +474,7 @@ namespace KowloonBreak.Editor
                 gridRect.y + (from.y + 0.5f) * gridCellSize,
                 0
             );
-            
+
             Vector3 toPos = new Vector3(
                 gridRect.x + (to.x + 0.5f) * gridCellSize,
                 gridRect.y + (to.y + 0.5f) * gridCellSize,
@@ -424,23 +501,33 @@ namespace KowloonBreak.Editor
         {
             Event currentEvent = Event.current;
 
+            // *** 修正6: イベント処理の安全性を向上 ***
+            if (currentEvent == null) return;
+
             if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
             {
                 if (gridRect.Contains(currentEvent.mousePosition))
                 {
                     Vector2Int gridPos = ScreenToGridPosition(currentEvent.mousePosition, gridRect);
-                    
-                    if (currentEvent.control)
+
+                    try
                     {
-                        RemovePieceAt(gridPos);
+                        if (currentEvent.control)
+                        {
+                            RemovePieceAt(gridPos);
+                        }
+                        else
+                        {
+                            PlacePieceAt(gridPos);
+                        }
+
+                        currentEvent.Use();
+                        Repaint();
                     }
-                    else
+                    catch (System.Exception e)
                     {
-                        PlacePieceAt(gridPos);
+                        Debug.LogError($"Error handling grid input: {e.Message}");
                     }
-                    
-                    currentEvent.Use();
-                    Repaint();
                 }
             }
         }
@@ -459,7 +546,7 @@ namespace KowloonBreak.Editor
                 return;
 
             var template = currentPieceTemplates[selectedPieceIndex];
-            
+
             if (!currentLayout.CanPlacePiece(gridPos, template.size))
                 return;
 
@@ -529,51 +616,62 @@ namespace KowloonBreak.Editor
         private void DrawProperties()
         {
             EditorGUILayout.BeginVertical(GUILayout.Width(PROPERTIES_WIDTH));
-            
-            EditorGUILayout.LabelField("Properties", EditorStyles.boldLabel);
-            
-            currentLayout.layoutName = EditorGUILayout.TextField("Layout Name", currentLayout.layoutName);
-            currentLayout.levelType = (LevelType)EditorGUILayout.EnumPopup("Level Type", currentLayout.levelType);
-            
-            EditorGUILayout.Space();
-            
-            EditorGUILayout.LabelField("Grid Settings", EditorStyles.boldLabel);
-            currentLayout.gridSize = EditorGUILayout.Vector2IntField("Grid Size", currentLayout.gridSize);
-            currentLayout.cellSize = EditorGUILayout.FloatField("Cell Size (Unity Units)", currentLayout.cellSize);
-            
-            EditorGUILayout.Space();
-            
-            EditorGUILayout.LabelField("Asset References", EditorStyles.boldLabel);
-            
-            var newPieceLibrary = (DungeonPieceLibrary)EditorGUILayout.ObjectField("Piece Library", pieceLibrary, typeof(DungeonPieceLibrary), false);
-            if (newPieceLibrary != pieceLibrary)
+            try
             {
-                pieceLibrary = newPieceLibrary;
-                RefreshPieceTemplates();
+                EditorGUILayout.LabelField("Properties", EditorStyles.boldLabel);
+
+                currentLayout.layoutName = EditorGUILayout.TextField("Layout Name", currentLayout.layoutName);
+                currentLayout.levelType = (LevelType)EditorGUILayout.EnumPopup("Level Type", currentLayout.levelType);
+
+                EditorGUILayout.Space();
+
+                EditorGUILayout.LabelField("Grid Settings", EditorStyles.boldLabel);
+                currentLayout.gridSize = EditorGUILayout.Vector2IntField("Grid Size", currentLayout.gridSize);
+                currentLayout.cellSize = EditorGUILayout.FloatField("Cell Size (Unity Units)", currentLayout.cellSize);
+
+                EditorGUILayout.Space();
+
+                EditorGUILayout.LabelField("Asset References", EditorStyles.boldLabel);
+
+                var newPieceLibrary = (DungeonPieceLibrary)EditorGUILayout.ObjectField("Piece Library", pieceLibrary, typeof(DungeonPieceLibrary), false);
+                if (newPieceLibrary != pieceLibrary)
+                {
+                    pieceLibrary = newPieceLibrary;
+                    try
+                    {
+                        RefreshPieceTemplates();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"Error refreshing piece templates after library change: {e.Message}");
+                    }
+                }
+
+                roadPrefabSet = (DungeonRoadPrefabSet)EditorGUILayout.ObjectField("Road Prefab Set", roadPrefabSet, typeof(DungeonRoadPrefabSet), false);
+
+                EditorGUILayout.Space();
+
+                if (GUILayout.Button("Create New Piece Library"))
+                {
+                    CreateNewPieceLibrary();
+                }
+
+                if (GUILayout.Button("Create New Road Prefab Set"))
+                {
+                    CreateNewRoadPrefabSet();
+                }
+
+                EditorGUILayout.Space();
+
+                EditorGUILayout.LabelField("Statistics", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"Pieces Count: {currentLayout.pieces.Count}");
+                EditorGUILayout.LabelField($"Road Paths: {currentLayout.roadPaths.Count}");
+                EditorGUILayout.LabelField($"Available Templates: {(currentPieceTemplates?.Count ?? 0)}");
             }
-            
-            roadPrefabSet = (DungeonRoadPrefabSet)EditorGUILayout.ObjectField("Road Prefab Set", roadPrefabSet, typeof(DungeonRoadPrefabSet), false);
-            
-            EditorGUILayout.Space();
-            
-            if (GUILayout.Button("Create New Piece Library"))
+            finally
             {
-                CreateNewPieceLibrary();
+                EditorGUILayout.EndVertical();
             }
-            
-            if (GUILayout.Button("Create New Road Prefab Set"))
-            {
-                CreateNewRoadPrefabSet();
-            }
-            
-            EditorGUILayout.Space();
-            
-            EditorGUILayout.LabelField("Statistics", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"Pieces Count: {currentLayout.pieces.Count}");
-            EditorGUILayout.LabelField($"Road Paths: {currentLayout.roadPaths.Count}");
-            EditorGUILayout.LabelField($"Available Templates: {(currentPieceTemplates?.Count ?? 0)}");
-            
-            EditorGUILayout.EndVertical();
         }
 
         private void CreateNewPieceLibrary()
@@ -586,13 +684,13 @@ namespace KowloonBreak.Editor
                 newLibrary.AddCategory("Buildings", Color.blue);
                 newLibrary.AddCategory("Roads", Color.yellow);
                 newLibrary.AddCategory("Special", Color.green);
-                
+
                 AssetDatabase.CreateAsset(newLibrary, path);
                 AssetDatabase.SaveAssets();
-                
+
                 pieceLibrary = newLibrary;
                 RefreshPieceTemplates();
-                
+
                 Selection.activeObject = newLibrary;
                 EditorGUIUtility.PingObject(newLibrary);
             }
@@ -605,12 +703,12 @@ namespace KowloonBreak.Editor
             {
                 path = FileUtil.GetProjectRelativePath(path);
                 var newRoadSet = ScriptableObject.CreateInstance<DungeonRoadPrefabSet>();
-                
+
                 AssetDatabase.CreateAsset(newRoadSet, path);
                 AssetDatabase.SaveAssets();
-                
+
                 roadPrefabSet = newRoadSet;
-                
+
                 Selection.activeObject = newRoadSet;
                 EditorGUIUtility.PingObject(newRoadSet);
             }
@@ -619,8 +717,8 @@ namespace KowloonBreak.Editor
         private void HandleEvents()
         {
             Event currentEvent = Event.current;
-            
-            if (currentEvent.type == EventType.KeyDown)
+
+            if (currentEvent != null && currentEvent.type == EventType.KeyDown)
             {
                 switch (currentEvent.keyCode)
                 {
@@ -680,22 +778,21 @@ namespace KowloonBreak.Editor
 
             var pathfinder = new RoadPathfinder(currentLayout, roadPrefabSet);
             currentLayout.roadPaths = pathfinder.GenerateRoadPaths();
-            
+
             EditorUtility.DisplayDialog("Roads Generated", $"Generated {currentLayout.roadPaths.Count} road paths", "OK");
             Repaint();
         }
 
         private void Generate3DDungeon()
         {
-            // エディタ時はFindObjectOfTypeを使用
             DungeonGenerator generator = Object.FindObjectOfType<DungeonGenerator>();
-            
+
             if (generator == null)
             {
-                bool createGenerator = EditorUtility.DisplayDialog("DungeonGenerator Not Found", 
+                bool createGenerator = EditorUtility.DisplayDialog("DungeonGenerator Not Found",
                     "DungeonGenerator is not found in the scene!\n\n" +
                     "Would you like to create one automatically?", "Yes", "Cancel");
-                
+
                 if (createGenerator)
                 {
                     CreateDungeonGeneratorInScene();
@@ -723,10 +820,8 @@ namespace KowloonBreak.Editor
             GameObject generatorObject = new GameObject("Dungeon Generator");
             DungeonGenerator generator = generatorObject.AddComponent<DungeonGenerator>();
 
-            // 親オブジェクトを作成
             GameObject dungeonParent = new GameObject("Generated Dungeon");
-            
-            // Serializedプロパティを使って設定
+
             var serializedObject = new SerializedObject(generator);
             var dungeonParentProperty = serializedObject.FindProperty("dungeonParent");
             if (dungeonParentProperty != null)
@@ -735,13 +830,12 @@ namespace KowloonBreak.Editor
                 serializedObject.ApplyModifiedProperties();
             }
 
-            // RoadPrefabSetを自動設定
             string[] guids = AssetDatabase.FindAssets("t:DungeonRoadPrefabSet");
             if (guids.Length > 0)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[0]);
                 DungeonRoadPrefabSet roadSet = AssetDatabase.LoadAssetAtPath<DungeonRoadPrefabSet>(path);
-                
+
                 if (roadSet != null)
                 {
                     var roadPrefabsProperty = serializedObject.FindProperty("roadPrefabs");
@@ -755,7 +849,7 @@ namespace KowloonBreak.Editor
 
             Selection.activeGameObject = generatorObject;
             EditorGUIUtility.PingObject(generatorObject);
-            
+
             Debug.Log("DungeonGenerator created in scene automatically");
         }
     }
