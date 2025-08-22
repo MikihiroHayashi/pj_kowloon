@@ -220,7 +220,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9127461863313543534}
-  - component: {fileID: 3161000254423005008}
   - component: {fileID: 5366453184346510178}
   m_Layer: 0
   m_Name: Dungeon_Road_horizontal_2x2
@@ -246,36 +245,6 @@ Transform:
   - {fileID: 3440604380930594464}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3161000254423005008
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8847296823842949343}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2b1bb57a0929f142b0e402e73c4e8da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  configuration: {fileID: 11400000, guid: 7c4d8a9e1f2b3456789012345678abcd, type: 2}
-  blockSize: {x: 2, y: 2}
-  blockType: 6
-  cellSize: 1
-  northConnectors:
-  - {fileID: 8344201170549693562}
-  southConnectors:
-  - {fileID: 29248616888305036}
-  eastConnectors:
-  - {fileID: 6923479349687102114}
-  westConnectors:
-  - {fileID: 7838466130608290666}
-  enemySpawnPoints: []
-  itemSpawnPoints: []
-  playerSpawnPoint: {fileID: 0}
-  decorativeObjects: []
-  obstacles: []
-  interactableObjects: []
 --- !u!65 &5366453184346510178
 BoxCollider:
   m_ObjectHideFlags: 0

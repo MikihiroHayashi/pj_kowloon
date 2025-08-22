@@ -20,6 +20,7 @@ namespace KowloonBreak.Editor
         private bool isDragging = false;
         private bool showGrid = true;
         private float gridCellSize = 30f;
+        private bool needsRefreshPieceTemplates = false;
 
         private const float PALETTE_WIDTH = 200f;
         private const float PROPERTIES_WIDTH = 250f;
@@ -37,17 +38,30 @@ namespace KowloonBreak.Editor
 
         private void InitializeEditor()
         {
-            if (currentLayout == null)
+            try
             {
-                currentLayout = ScriptableObject.CreateInstance<DungeonLayout>();
-                currentLayout.gridSize = new Vector2Int(20, 20);
-                currentLayout.cellSize = 5f;
-                currentLayout.layoutName = "New Dungeon Layout";
-            }
+                Debug.Log("Initializing Dungeon Editor...");
+                
+                if (currentLayout == null)
+                {
+                    currentLayout = ScriptableObject.CreateInstance<DungeonLayout>();
+                    currentLayout.gridSize = new Vector2Int(20, 20);
+                    currentLayout.cellSize = 5f;
+                    currentLayout.layoutName = "New Dungeon Layout";
+                    Debug.Log("Created new DungeonLayout");
+                }
 
-            InitializeGrid();
-            LoadPieceTemplates();
-            LoadRoadPrefabs();
+                InitializeGrid();
+                LoadPieceTemplates();
+                LoadRoadPrefabs();
+                
+                Debug.Log("Dungeon Editor initialization completed");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to initialize Dungeon Editor: {e.Message}");
+                Debug.LogError($"Stack Trace: {e.StackTrace}");
+            }
         }
 
         private void InitializeGrid()
@@ -90,25 +104,90 @@ namespace KowloonBreak.Editor
 
             pieceLibrary = ScriptableObject.CreateInstance<DungeonPieceLibrary>();
 
-            pieceLibrary.AddCategory("Buildings", Color.blue);
-            pieceLibrary.AddCategory("Roads", Color.yellow);
-            pieceLibrary.AddCategory("Special", Color.green);
+            pieceLibrary.AddCategory("Buildings", new Color(0.3f, 0.5f, 0.9f));
+            pieceLibrary.AddCategory("Roads", new Color(0.9f, 0.9f, 0.3f));
+            pieceLibrary.AddCategory("Special", new Color(0.3f, 0.9f, 0.5f));
+            pieceLibrary.AddCategory("Decorations", new Color(0.9f, 0.3f, 0.9f));
+
+            // 既存のPrefabを検索して割り当て
+            GameObject buildingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefab/Dungeon/Dungeon_5x5.prefab");
+            GameObject largeBuildingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefab/Dungeon/Dungeon_10x10.prefab");
+            
+            Debug.Log($"=== DungeonEditorWindow Prefab Assignment ===");
+            Debug.Log($"buildingPrefab: {(buildingPrefab != null ? buildingPrefab.name : "NULL")}");
+            Debug.Log($"largeBuildingPrefab: {(largeBuildingPrefab != null ? largeBuildingPrefab.name : "NULL")}");
+            Debug.Log($"=== End DungeonEditorWindow Prefab Assignment ===");
 
             var defaultPieces = new[]
             {
-                new DungeonPieceTemplate { name = "Building 1x1", type = PieceType.Building, size = new Vector2Int(1, 1) },
-                new DungeonPieceTemplate { name = "Building 2x2", type = PieceType.Building, size = new Vector2Int(2, 2) },
-                new DungeonPieceTemplate { name = "Building 1x2", type = PieceType.Building, size = new Vector2Int(1, 2) },
-                new DungeonPieceTemplate { name = "Road Start", type = PieceType.RoadStart, size = new Vector2Int(1, 1), isRoadStartPoint = true },
-                new DungeonPieceTemplate { name = "Spawn Point", type = PieceType.SpawnPoint, size = new Vector2Int(1, 1) },
-                new DungeonPieceTemplate { name = "Exit Point", type = PieceType.ExitPoint, size = new Vector2Int(1, 1) }
+                new DungeonPieceTemplate 
+                { 
+                    id = System.Guid.NewGuid().ToString(),
+                    name = "Small Building 1x1", 
+                    type = PieceType.Building, 
+                    size = new Vector2Int(1, 1),
+                    prefab = buildingPrefab,
+                    displayColor = new Color(0.7f, 0.7f, 0.9f)
+                },
+                new DungeonPieceTemplate 
+                { 
+                    id = System.Guid.NewGuid().ToString(),
+                    name = "Medium Building 2x2", 
+                    type = PieceType.Building, 
+                    size = new Vector2Int(2, 2),
+                    prefab = largeBuildingPrefab,
+                    displayColor = new Color(0.6f, 0.6f, 0.8f)
+                },
+                new DungeonPieceTemplate 
+                { 
+                    id = System.Guid.NewGuid().ToString(),
+                    name = "Long Building 1x2", 
+                    type = PieceType.Building, 
+                    size = new Vector2Int(1, 2),
+                    prefab = buildingPrefab,
+                    displayColor = new Color(0.8f, 0.6f, 0.7f),
+                    canRotate = true
+                },
+                new DungeonPieceTemplate 
+                { 
+                    id = System.Guid.NewGuid().ToString(),
+                    name = "Road Start Point", 
+                    type = PieceType.RoadStart, 
+                    size = new Vector2Int(1, 1),
+                    isRoadStartPoint = true,
+                    blocksPaths = false,
+                    displayColor = new Color(0.9f, 0.9f, 0.3f)
+                },
+                new DungeonPieceTemplate 
+                { 
+                    id = System.Guid.NewGuid().ToString(),
+                    name = "Player Spawn", 
+                    type = PieceType.SpawnPoint, 
+                    size = new Vector2Int(1, 1),
+                    blocksPaths = false,
+                    displayColor = new Color(0.3f, 0.9f, 0.3f)
+                },
+                new DungeonPieceTemplate 
+                { 
+                    id = System.Guid.NewGuid().ToString(),
+                    name = "Exit Point", 
+                    type = PieceType.ExitPoint, 
+                    size = new Vector2Int(1, 1),
+                    blocksPaths = false,
+                    displayColor = new Color(0.9f, 0.3f, 0.3f)
+                }
             };
 
+            // Buildings カテゴリ (index 0)
             for (int i = 0; i < 3; i++)
             {
                 pieceLibrary.AddPieceToCategory(0, defaultPieces[i]);
             }
+            
+            // Roads カテゴリ (index 1)
             pieceLibrary.AddPieceToCategory(1, defaultPieces[3]);
+            
+            // Special カテゴリ (index 2)
             for (int i = 4; i < defaultPieces.Length; i++)
             {
                 pieceLibrary.AddPieceToCategory(2, defaultPieces[i]);
@@ -134,14 +213,30 @@ namespace KowloonBreak.Editor
 
             if (pieceLibrary != null)
             {
-                if (selectedCategoryIndex < pieceLibrary.Categories.Count)
-                {
-                    currentPieceTemplates.AddRange(pieceLibrary.Categories[selectedCategoryIndex].pieces);
-                }
-                else
+                Debug.Log($"=== RefreshPieceTemplates Debug ===");
+                Debug.Log($"Selected Category Index: {selectedCategoryIndex}");
+                Debug.Log($"Total Categories: {pieceLibrary.Categories.Count}");
+                
+                // selectedCategoryIndex が 0 の場合は "All" を表示
+                if (selectedCategoryIndex == 0)
                 {
                     currentPieceTemplates.AddRange(pieceLibrary.GetAllPieces());
+                    Debug.Log($"Showing ALL pieces: {currentPieceTemplates.Count}");
                 }
+                else if (selectedCategoryIndex > 0 && selectedCategoryIndex <= pieceLibrary.Categories.Count)
+                {
+                    // インデックスを1つずらす（0="All", 1=Categories[0], 2=Categories[1]...)
+                    int categoryIndex = selectedCategoryIndex - 1;
+                    currentPieceTemplates.AddRange(pieceLibrary.Categories[categoryIndex].pieces);
+                    Debug.Log($"Showing category '{pieceLibrary.Categories[categoryIndex].name}' pieces: {currentPieceTemplates.Count}");
+                }
+                
+                // デバッグ: 各ピースの情報を表示
+                foreach (var piece in currentPieceTemplates)
+                {
+                    Debug.Log($"  - {piece.name} ({piece.type})");
+                }
+                Debug.Log($"=== End RefreshPieceTemplates Debug ===");
             }
 
             selectedPieceIndex = Mathf.Clamp(selectedPieceIndex, 0, Mathf.Max(0, currentPieceTemplates.Count - 1));
@@ -149,28 +244,114 @@ namespace KowloonBreak.Editor
 
         private void OnGUI()
         {
-            // *** 修正1: try-catch でGUIエラーをキャッチ ***
+            // null参照チェックを追加
+            if (currentLayout == null)
+            {
+                EditorGUILayout.HelpBox("Initializing editor... Please wait.", MessageType.Info);
+                InitializeEditor();
+                return;
+            }
+
             try
             {
-                DrawToolbar();
+                try
+                {
+                    DrawToolbar();
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"Error in DrawToolbar: {e.Message}");
+                    throw;
+                }
 
                 EditorGUILayout.BeginHorizontal();
                 try
                 {
-                    DrawPiecesPalette();
-                    DrawGridEditor();
-                    DrawProperties();
+                    try
+                    {
+                        DrawPiecesPalette();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"Error in DrawPiecesPalette: {e.Message}");
+                        throw;
+                    }
+
+                    try
+                    {
+                        DrawGridEditor();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"Error in DrawGridEditor: {e.Message}");
+                        throw;
+                    }
+
+                    try
+                    {
+                        DrawProperties();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"Error in DrawProperties: {e.Message}");
+                        throw;
+                    }
                 }
                 finally
                 {
                     EditorGUILayout.EndHorizontal();
                 }
 
-                HandleEvents();
+                try
+                {
+                    HandleEvents();
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"Error in HandleEvents: {e.Message}");
+                    throw;
+                }
+
+                // 遅延実行: GUIの更新が完了してから実行
+                if (needsRefreshPieceTemplates)
+                {
+                    needsRefreshPieceTemplates = false;
+                    EditorApplication.delayCall += () =>
+                    {
+                        try
+                        {
+                            RefreshPieceTemplates();
+                            Repaint();
+                        }
+                        catch (System.Exception e)
+                        {
+                            Debug.LogError($"Error in delayed RefreshPieceTemplates: {e.Message}");
+                        }
+                    };
+                }
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"GUI Error in DungeonEditorWindow: {e.Message}");
+                Debug.LogError($"=== GUI Error in DungeonEditorWindow ===");
+                Debug.LogError($"Error Message: {e.Message}");
+                Debug.LogError($"Exception Type: {e.GetType().Name}");
+                Debug.LogError($"Stack Trace: {e.StackTrace}");
+                
+                // 重要な変数の状態をログ出力
+                Debug.LogError($"Debug Info - currentLayout: {(currentLayout != null ? "OK" : "NULL")}");
+                Debug.LogError($"Debug Info - pieceLibrary: {(pieceLibrary != null ? "OK" : "NULL")}");
+                Debug.LogError($"Debug Info - currentPieceTemplates: {(currentPieceTemplates != null ? $"OK (Count: {currentPieceTemplates.Count})" : "NULL")}");
+                Debug.LogError($"Debug Info - grid: {(grid != null ? $"OK (Size: {grid.GetLength(0)}x{grid.GetLength(1)})" : "NULL")}");
+                Debug.LogError($"Debug Info - roadPrefabSet: {(roadPrefabSet != null ? "OK" : "NULL")}");
+                
+                // 内部例外があるかチェック
+                if (e.InnerException != null)
+                {
+                    Debug.LogError($"Inner Exception: {e.InnerException.Message}");
+                }
+                
+                Debug.LogError($"=== End Error Report ===");
+                
                 // 強制的にGUIレイアウトをリセット
                 GUIUtility.ExitGUI();
             }
@@ -269,15 +450,8 @@ namespace KowloonBreak.Editor
                         if (newCategoryIndex != selectedCategoryIndex)
                         {
                             selectedCategoryIndex = newCategoryIndex;
-                            // *** 修正4: RefreshPieceTemplates呼び出し時のエラーハンドリング ***
-                            try
-                            {
-                                RefreshPieceTemplates();
-                            }
-                            catch (System.Exception e)
-                            {
-                                Debug.LogError($"Error refreshing piece templates: {e.Message}");
-                            }
+                            // GUI更新中のため、次のフレームで更新をスケジュール
+                            needsRefreshPieceTemplates = true;
                         }
                     }
                     finally
@@ -345,10 +519,16 @@ namespace KowloonBreak.Editor
 
         private void DrawGridEditor()
         {
+            if (currentLayout == null)
+            {
+                EditorGUILayout.HelpBox("Layout not initialized", MessageType.Warning);
+                return;
+            }
+
             EditorGUILayout.BeginVertical();
             try
             {
-                EditorGUILayout.LabelField($"Grid Editor - {currentLayout.layoutName}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"Grid Editor - {currentLayout.layoutName ?? "Unnamed"}", EditorStyles.boldLabel);
 
                 EditorGUILayout.BeginHorizontal();
                 try
@@ -365,7 +545,6 @@ namespace KowloonBreak.Editor
                 try
                 {
                     Rect gridRect = DrawGrid();
-                    // *** 修正5: HandleGridInput内でのEvent処理を安全にする ***
                     if (Event.current != null)
                     {
                         HandleGridInput(gridRect);
@@ -637,14 +816,8 @@ namespace KowloonBreak.Editor
                 if (newPieceLibrary != pieceLibrary)
                 {
                     pieceLibrary = newPieceLibrary;
-                    try
-                    {
-                        RefreshPieceTemplates();
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogError($"Error refreshing piece templates after library change: {e.Message}");
-                    }
+                    // GUI更新中のため、次のフレームで更新をスケジュール
+                    needsRefreshPieceTemplates = true;
                 }
 
                 roadPrefabSet = (DungeonRoadPrefabSet)EditorGUILayout.ObjectField("Road Prefab Set", roadPrefabSet, typeof(DungeonRoadPrefabSet), false);
@@ -778,7 +951,7 @@ namespace KowloonBreak.Editor
 
             var pathfinder = new RoadPathfinder(currentLayout, roadPrefabSet);
             currentLayout.roadPaths = pathfinder.GenerateRoadPaths();
-
+            
             EditorUtility.DisplayDialog("Roads Generated", $"Generated {currentLayout.roadPaths.Count} road paths", "OK");
             Repaint();
         }

@@ -58,6 +58,20 @@ namespace KowloonBreak.Environment
                 return;
             }
 
+            // 初期化確認
+            if (generatedObjects == null)
+            {
+                Debug.Log("Initializing generatedObjects dictionary");
+                generatedObjects = new Dictionary<string, GameObject>();
+            }
+
+            if (dungeonParent == null)
+            {
+                Debug.Log("Creating dungeonParent GameObject");
+                GameObject parentObject = new GameObject("Generated Dungeon");
+                dungeonParent = parentObject.transform;
+            }
+
             currentLayout = layout;
 
             if (clearPreviousDungeon)
@@ -88,7 +102,14 @@ namespace KowloonBreak.Environment
                 }
             }
 
-            generatedObjects.Clear();
+            if (generatedObjects != null)
+            {
+                generatedObjects.Clear();
+            }
+            else
+            {
+                generatedObjects = new Dictionary<string, GameObject>();
+            }
         }
 
         private void GenerateRoads(DungeonLayout layout)
@@ -132,30 +153,53 @@ namespace KowloonBreak.Environment
 
         private void GeneratePieces(DungeonLayout layout)
         {
+            Debug.Log($"=== GeneratePieces Debug Info ===");
+            Debug.Log($"Total pieces in layout: {layout.pieces.Count}");
+            
             GameObject piecesParent = new GameObject("Dungeon Pieces");
             piecesParent.transform.SetParent(dungeonParent);
 
+            int validPiecesCount = 0;
+            int generatedPiecesCount = 0;
+
             foreach (var piece in layout.pieces)
             {
+                Debug.Log($"Processing piece: {piece.type} at {piece.gridPosition} (Prefab: {(piece.prefab != null ? piece.prefab.name : "NULL")})");
+                
                 if (piece.prefab != null && piece.type != PieceType.RoadStart)
                 {
-                    GeneratePiece(piece, layout.cellSize, piecesParent.transform);
+                    validPiecesCount++;
+                    try
+                    {
+                        GeneratePiece(piece, layout.cellSize, piecesParent.transform);
+                        generatedPiecesCount++;
+                        Debug.Log($"Successfully generated piece: {piece.type}");
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"Failed to generate piece {piece.type}: {e.Message}");
+                    }
+                }
+                else
+                {
+                    if (piece.prefab == null)
+                        Debug.LogWarning($"Piece {piece.type} has no prefab assigned");
+                    if (piece.type == PieceType.RoadStart)
+                        Debug.Log($"Skipping RoadStart piece (handled separately)");
                 }
             }
+            
+            Debug.Log($"Valid pieces: {validPiecesCount}, Generated pieces: {generatedPiecesCount}");
+            Debug.Log($"=== End GeneratePieces Debug ===");
         }
 
         private void GeneratePiece(DungeonPiece piece, float cellSize, Transform parent)
         {
             Vector3 worldPosition = GridUtility.GridToWorldPosition(piece.gridPosition, cellSize);
-            
-            Vector3 centerOffset = new Vector3(
-                (piece.size.x - 1) * cellSize * 0.5f,
-                0,
-                (piece.size.y - 1) * cellSize * 0.5f
-            );
-            worldPosition += centerOffset;
 
             Quaternion rotation = Quaternion.Euler(0, piece.rotation, 0);
+
+            Debug.Log($"Piece {piece.type} at grid {piece.gridPosition} -> world {worldPosition} (cellSize: {cellSize})");
 
             GameObject pieceObject = Instantiate(piece.prefab, worldPosition, rotation, parent);
             pieceObject.name = $"Piece_{piece.type}_{piece.gridPosition.x}_{piece.gridPosition.y}";

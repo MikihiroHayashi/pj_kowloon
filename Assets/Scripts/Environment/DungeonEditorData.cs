@@ -182,14 +182,15 @@ namespace KowloonBreak.Environment
     {
         public static Vector3 GridToWorldPosition(Vector2Int gridPos, float cellSize)
         {
-            return new Vector3(gridPos.x * cellSize, 0, gridPos.y * cellSize);
+            // Y軸を反転してZ軸に変換（エディターとワールドの上下を合わせる）
+            return new Vector3(gridPos.x * cellSize, 0, -gridPos.y * cellSize);
         }
 
         public static Vector2Int WorldToGridPosition(Vector3 worldPos, float cellSize)
         {
             return new Vector2Int(
                 Mathf.RoundToInt(worldPos.x / cellSize),
-                Mathf.RoundToInt(worldPos.z / cellSize)
+                Mathf.RoundToInt(-worldPos.z / cellSize)  // Z軸を反転してY軸に変換
             );
         }
 

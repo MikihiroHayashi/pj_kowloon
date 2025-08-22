@@ -86,6 +86,15 @@ namespace KowloonBreak.Editor
             library.AddCategory("Special", new Color(0.3f, 0.9f, 0.5f));
             library.AddCategory("Decorations", new Color(0.9f, 0.3f, 0.9f));
 
+            // 既存のPrefabを検索して割り当て
+            GameObject buildingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefab/Dungeon/Dungeon_5x5.prefab");
+            GameObject largeBuildingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefab/Dungeon/Dungeon_10x10.prefab");
+            
+            Debug.Log($"=== Prefab Assignment Check ===");
+            Debug.Log($"buildingPrefab: {(buildingPrefab != null ? buildingPrefab.name : "NULL")}");
+            Debug.Log($"largeBuildingPrefab: {(largeBuildingPrefab != null ? largeBuildingPrefab.name : "NULL")}");
+            Debug.Log($"=== End Prefab Assignment Check ===");
+
             var buildingPieces = new[]
             {
                 new DungeonPieceTemplate 
@@ -94,6 +103,7 @@ namespace KowloonBreak.Editor
                     name = "Small Building 1x1", 
                     type = PieceType.Building, 
                     size = new Vector2Int(1, 1),
+                    prefab = buildingPrefab,
                     displayColor = new Color(0.7f, 0.7f, 0.9f),
                     compatibleLevels = new[] { LevelType.Residential, LevelType.Commercial }
                 },
@@ -103,6 +113,7 @@ namespace KowloonBreak.Editor
                     name = "Medium Building 2x2", 
                     type = PieceType.Building, 
                     size = new Vector2Int(2, 2),
+                    prefab = largeBuildingPrefab,
                     displayColor = new Color(0.6f, 0.6f, 0.8f),
                     compatibleLevels = new[] { LevelType.Commercial, LevelType.Industrial }
                 },
@@ -112,6 +123,7 @@ namespace KowloonBreak.Editor
                     name = "Long Building 1x2", 
                     type = PieceType.Building, 
                     size = new Vector2Int(1, 2),
+                    prefab = buildingPrefab,
                     displayColor = new Color(0.8f, 0.6f, 0.7f),
                     canRotate = true
                 }

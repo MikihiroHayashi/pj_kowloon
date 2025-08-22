@@ -49,7 +49,7 @@ namespace KowloonBreak.Environment
 
             if (roadStartPoints.Count < 2)
             {
-                Debug.LogWarning("少なくとも2つの道路起点が必要です");
+                Debug.LogWarning($"Road generation requires at least 2 road start points. Current: {roadStartPoints.Count}");
                 return roadPaths;
             }
 
@@ -69,9 +69,12 @@ namespace KowloonBreak.Environment
                 Vector2Int nextPoint = FindNearestUnconnectedPoint(currentPoint, roadStartPoints, connectedPoints);
                 
                 if (nextPoint == Vector2Int.zero)
+                {
                     break;
+                }
 
                 var pathSegment = FindPath(currentPoint, nextPoint);
+                
                 if (pathSegment != null && pathSegment.Count > 1)
                 {
                     for (int i = 1; i < pathSegment.Count; i++)
@@ -92,6 +95,11 @@ namespace KowloonBreak.Environment
                 roadPath.segments = GenerateRoadSegments(roadPath.pathPoints);
                 roadPath.isComplete = connectedPoints.Count == roadStartPoints.Count;
                 roadPaths.Add(roadPath);
+                Debug.Log($"Road path generated with {roadPath.pathPoints.Count} points");
+            }
+            else
+            {
+                Debug.LogWarning("Failed to generate road path - insufficient points");
             }
 
             return roadPaths;
@@ -103,10 +111,17 @@ namespace KowloonBreak.Environment
             
             foreach (var piece in layout.pieces)
             {
-                if (piece.isRoadStartPoint)
+                // PieceType.RoadStart または isRoadStartPoint が true のピースを検索
+                if (piece.type == PieceType.RoadStart || piece.isRoadStartPoint)
                 {
                     startPoints.Add(piece.gridPosition);
                 }
+            }
+            
+            Debug.Log($"Road start points found: {startPoints.Count}");
+            if (startPoints.Count == 0)
+            {
+                Debug.LogWarning("No road start points found. Place Road Start pieces to generate roads.");
             }
 
             return startPoints;
@@ -135,14 +150,36 @@ namespace KowloonBreak.Environment
 
         private List<Vector2Int> FindPath(Vector2Int start, Vector2Int end)
         {
+            // パス検索開始前にチェック
+            if (!IsPassable(start))
+            {
+                Debug.LogError($"Start position {start} is not passable!");
+                return null;
+            }
+            if (!IsPassable(end))
+            {
+                Debug.LogError($"End position {end} is not passable!");  
+                return null;
+            }
+
             var openSet = new List<Vector2Int> { start };
             var cameFrom = new Dictionary<Vector2Int, Vector2Int>();
             var gScore = new Dictionary<Vector2Int, float> { [start] = 0 };
             var fScore = new Dictionary<Vector2Int, float> { [start] = Heuristic(start, end) };
 
+            int iterations = 0;
+            int maxIterations = layout.gridSize.x * layout.gridSize.y; // グリッドサイズに応じた上限
+            
             while (openSet.Count > 0)
             {
                 var current = GetLowestFScore(openSet, fScore);
+                
+                iterations++;
+                if (iterations > maxIterations) // 無限ループ防止
+                {
+                    Debug.LogError($"FindPath: Path search timed out after {iterations} iterations ({start} -> {end})");
+                    break;
+                }
                 
                 if (current == end)
                 {
@@ -172,6 +209,35 @@ namespace KowloonBreak.Environment
                 }
             }
 
+            // パス検索失敗の詳細分析
+            Debug.LogWarning($"No path found: {start} -> {end} (searched {iterations} nodes)");
+            
+            // 直線距離をチェック
+            float directDistance = Vector2Int.Distance(start, end);
+            Debug.Log($"Direct distance: {directDistance:F1} units");
+            
+            // 周辺の障害物をチェック
+            int blockedCells = 0;
+            int totalCells = 0;
+            Vector2Int min = new Vector2Int(Mathf.Min(start.x, end.x), Mathf.Min(start.y, end.y));
+            Vector2Int max = new Vector2Int(Mathf.Max(start.x, end.x), Mathf.Max(start.y, end.y));
+            
+            for (int x = min.x; x <= max.x; x++)
+            {
+                for (int y = min.y; y <= max.y; y++)
+                {
+                    Vector2Int pos = new Vector2Int(x, y);
+                    totalCells++;
+                    if (!IsPassable(pos))
+                    {
+                        blockedCells++;
+                    }
+                }
+            }
+            
+            float blockageRatio = (float)blockedCells / totalCells;
+            Debug.Log($"Area blockage: {blockedCells}/{totalCells} ({blockageRatio:P1}) - Consider moving Road Start points or removing blocking buildings");
+            
             return null;
         }
 
@@ -221,7 +287,17 @@ namespace KowloonBreak.Environment
                 return false;
 
             var piece = grid[position.x, position.y];
-            return piece == null || piece.isRoadStartPoint;
+            
+            // 空のセルは通行可能
+            if (piece == null)
+                return true;
+                
+            // Road Start ポイントは通行可能
+            if (piece.type == PieceType.RoadStart || piece.isRoadStartPoint)
+                return true;
+                
+            // その他のピース（建物など）は通行不可
+            return false;
         }
 
         private List<Vector2Int> ReconstructPath(Dictionary<Vector2Int, Vector2Int> cameFrom, Vector2Int current)

@@ -1,0 +1,358 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70cbbbb421a802d4aa91354066352d06, type: 3}
+  m_Name: DungeonLayout_Test
+  m_EditorClassIdentifier: 
+  gridSize: {x: 20, y: 20}
+  cellSize: 5
+  pieces:
+  - id: 8d1cdf4c-9e9f-4f0c-9683-f5357ad2cc0e
+    type: 0
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 4}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 0
+  - id: a6a57336-c046-4ae1-8eb3-046d5c9b294e
+    type: 0
+    size: {x: 2, y: 2}
+    gridPosition: {x: 7, y: 7}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 0
+  - id: b2af1cb8-744e-4c31-9946-50b28fc02b20
+    type: 0
+    size: {x: 1, y: 2}
+    gridPosition: {x: 3, y: 11}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 0
+  - id: cb1e8b74-4849-4e60-8c43-000ca4d32152
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 3, y: 10}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 1
+  - id: 948aa1e9-f092-4f72-b4ee-39ee9d9bb3dd
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 1, y: 7}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 1
+  - id: d474a6bf-b212-4985-8b54-3e108e1f7798
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 1, y: 1}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 1
+  - id: 7b14667e-ad77-46af-91ca-b16266d2170d
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 1}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 1
+  - id: 2cc9b0c8-9f1d-4e87-a490-0e747ec235f5
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 6, y: 2}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 1
+  - id: 50a2459e-eb17-4f07-95a9-f36da54e3a37
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 8, y: 2}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 1
+  - id: 7101d9f7-ff14-4b8a-959e-0e6d928b4a75
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 8, y: 6}
+    rotation: 0
+    prefab: {fileID: 0}
+    isRoadStartPoint: 1
+  roadPaths:
+  - id: 28b80991-b768-40b1-8aab-c0f377ff7efb
+    pathPoints:
+    - {x: 3, y: 10}
+    - {x: 3, y: 9}
+    - {x: 3, y: 8}
+    - {x: 3, y: 7}
+    - {x: 2, y: 7}
+    - {x: 1, y: 7}
+    - {x: 1, y: 6}
+    - {x: 1, y: 5}
+    - {x: 1, y: 4}
+    - {x: 1, y: 3}
+    - {x: 1, y: 2}
+    - {x: 1, y: 1}
+    - {x: 2, y: 1}
+    - {x: 3, y: 1}
+    - {x: 4, y: 1}
+    - {x: 4, y: 2}
+    - {x: 5, y: 2}
+    - {x: 6, y: 2}
+    - {x: 7, y: 2}
+    - {x: 8, y: 2}
+    - {x: 8, y: 3}
+    - {x: 8, y: 4}
+    - {x: 8, y: 5}
+    - {x: 8, y: 6}
+    segments:
+    - position: {x: 3, y: 10}
+      roadType: 4
+      rotation: 360
+      prefab: {fileID: 8847296823842949343, guid: 2c0e834321a00e741afdeae284d8d059,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 3, y: 9}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 3, y: 8}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 3, y: 7}
+      roadType: 1
+      rotation: 270
+      prefab: {fileID: 8847296823842949343, guid: 7adce309a6314d547a72df59a1573f84,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 2, y: 7}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 1, y: 7}
+      roadType: 1
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07c6e52f97222d340bce0f89a3999a26,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 1, y: 6}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 1, y: 5}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 1, y: 4}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 1, y: 3}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 1, y: 2}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 1, y: 1}
+      roadType: 1
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: e70ad1cf9690abe4f927da45aacf3a5a,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 2, y: 1}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 3, y: 1}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 4, y: 1}
+      roadType: 1
+      rotation: 270
+      prefab: {fileID: 8847296823842949343, guid: 7adce309a6314d547a72df59a1573f84,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 4, y: 2}
+      roadType: 1
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07c6e52f97222d340bce0f89a3999a26,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 5, y: 2}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 6, y: 2}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 7, y: 2}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 8, y: 2}
+      roadType: 1
+      rotation: 270
+      prefab: {fileID: 8847296823842949343, guid: 7adce309a6314d547a72df59a1573f84,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 8, y: 3}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 8, y: 4}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 8, y: 5}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    - position: {x: 8, y: 6}
+      roadType: 4
+      rotation: 360
+      prefab: {fileID: 8847296823842949343, guid: 2c0e834321a00e741afdeae284d8d059,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+    isComplete: 1
+  layoutName: New Dungeon Layout
+  levelType: 0

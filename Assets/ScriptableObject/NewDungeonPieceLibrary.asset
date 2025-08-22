@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d324684c2bec1b4aa0d9a19ab92d792, type: 3}
+  m_Name: NewDungeonPieceLibrary
+  m_EditorClassIdentifier: 
+  libraryName: Default Piece Library
+  description: Collection of dungeon pieces for level design
+  targetLevelType: 0
+  categories:
+  - name: Buildings
+    color: {r: 0, g: 0, b: 1, a: 1}
+    isExpanded: 1
+    pieces:
+    - id: aefb0740-ccf0-4358-81e0-77840a83f083
+      name: 5x5
+      description: 
+      type: 0
+      size: {x: 1, y: 1}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: c979ec95a7e81534792f0fc36d83a9da,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0, g: 0, b: 0, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 
+    - id: aefb0740-ccf0-4358-81e0-77840a83f083
+      name: 10x10
+      description: 
+      type: 0
+      size: {x: 2, y: 2}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: 61d8c1128a93a914ab78545861c35ae4,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0, g: 0, b: 0, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 
+    - id: aefb0740-ccf0-4358-81e0-77840a83f083
+      name: 10x5
+      description: 
+      type: 0
+      size: {x: 2, y: 1}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: 16c61544e9ff79a479c3c5f46b7df576,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0, g: 0, b: 0, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 
+  - name: Roads
+    color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+    isExpanded: 1
+    pieces:
+    - id: 4b010b61-68d0-429e-b66b-b7da0da8239e
+      name: "\u9053\u8DEF"
+      description: 
+      type: 1
+      size: {x: 1, y: 1}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0, g: 0, b: 0, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      requiredTags: []
+      compatibleLevels: 
+  - name: Special
+    color: {r: 0, g: 1, b: 0, a: 1}
+    isExpanded: 1
+    pieces: []
