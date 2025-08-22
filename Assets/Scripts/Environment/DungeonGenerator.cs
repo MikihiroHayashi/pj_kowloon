@@ -120,15 +120,24 @@ namespace KowloonBreak.Environment
                 return;
             }
 
-            var roadPathfinder = new RoadPathfinder(layout, roadPrefabs);
-            var generatedPaths = roadPathfinder.GenerateRoadPaths();
+            // 既存の道路パスがある場合はそれを使用、ない場合は新しく生成
+            var roadPaths = layout.roadPaths;
+            if (roadPaths == null || roadPaths.Count == 0)
+            {
+                Debug.Log("Generating new road paths...");
+                var roadPathfinder = new RoadPathfinder(layout, roadPrefabs);
+                roadPaths = roadPathfinder.GenerateRoadPaths();
+                layout.roadPaths = roadPaths;
+            }
+            else
+            {
+                Debug.Log($"Using existing road paths: {roadPaths.Count} paths found");
+            }
 
-            foreach (var roadPath in generatedPaths)
+            foreach (var roadPath in roadPaths)
             {
                 GenerateRoadPath(roadPath, layout.cellSize);
             }
-
-            layout.roadPaths = generatedPaths;
         }
 
         private void GenerateRoadPath(RoadPath roadPath, float cellSize)
@@ -141,12 +150,20 @@ namespace KowloonBreak.Environment
                 if (segment.prefab != null)
                 {
                     Vector3 worldPosition = GridUtility.GridToWorldPosition(segment.position, cellSize);
-                    Quaternion rotation = Quaternion.Euler(0, segment.rotation, 0);
+                    // プレファブ自体の向きを考慮して回転は適用しない（プレファブ選択で対応）
+                    Quaternion rotation = Quaternion.identity;
 
                     GameObject roadObject = Instantiate(segment.prefab, worldPosition, rotation, roadParent.transform);
                     roadObject.name = $"Road_{segment.roadType}_{segment.position.x}_{segment.position.y}";
+                    
+                    // デバッグ情報を追加
+                    Debug.Log($"Placed road {segment.roadType} at grid {segment.position} -> world {worldPosition}");
 
                     generatedObjects[$"road_{segment.position.x}_{segment.position.y}"] = roadObject;
+                }
+                else
+                {
+                    Debug.LogWarning($"Missing prefab for road {segment.roadType} at {segment.position}");
                 }
             }
         }
@@ -183,7 +200,9 @@ namespace KowloonBreak.Environment
                 else
                 {
                     if (piece.prefab == null)
-                        Debug.LogWarning($"Piece {piece.type} has no prefab assigned");
+                    {
+                        Debug.LogWarning($"Piece {piece.type} at {piece.gridPosition} has no prefab assigned - consider running OnValidate to auto-repair");
+                    }
                     if (piece.type == PieceType.RoadStart)
                         Debug.Log($"Skipping RoadStart piece (handled separately)");
                 }
@@ -206,6 +225,7 @@ namespace KowloonBreak.Environment
 
             generatedObjects[piece.id] = pieceObject;
         }
+
 
         private void GenerateNavMesh()
         {

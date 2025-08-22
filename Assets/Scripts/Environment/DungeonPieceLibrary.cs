@@ -129,6 +129,34 @@ namespace KowloonBreak.Environment
         {
             ValidatePieces();
         }
+        
+        public DungeonPieceTemplate FindPieceTemplate(PieceType type, Vector2Int size)
+        {
+            foreach (var category in categories)
+            {
+                foreach (var piece in category.pieces)
+                {
+                    if (piece.type == type && piece.size == size)
+                    {
+                        return piece;
+                    }
+                }
+            }
+            
+            // サイズが一致しない場合は、同じタイプの最初のピースを返す
+            foreach (var category in categories)
+            {
+                foreach (var piece in category.pieces)
+                {
+                    if (piece.type == type)
+                    {
+                        return piece;
+                    }
+                }
+            }
+            
+            return null;
+        }
     }
 
     [System.Serializable]

@@ -44,6 +44,9 @@ namespace KowloonBreak.Environment
                 }
             }
             
+            // プレファブが失われているピースの自動修復
+            RepairMissingPrefabs();
+            
             // 道路パスのIDが空の場合は生成
             foreach (var roadPath in roadPaths)
             {
@@ -106,6 +109,62 @@ namespace KowloonBreak.Environment
             
             return grid;
         }
+        
+        private void RepairMissingPrefabs()
+        {
+            #if UNITY_EDITOR
+            var library = FindDungeonPieceLibrary();
+            if (library == null) return;
+            
+            int repairedCount = 0;
+            foreach (var piece in pieces)
+            {
+                if (piece.prefab == null)
+                {
+                    var matchingTemplate = library.FindPieceTemplate(piece.type, piece.size);
+                    if (matchingTemplate != null && matchingTemplate.prefab != null)
+                    {
+                        piece.prefab = matchingTemplate.prefab;
+                        repairedCount++;
+                        UnityEngine.Debug.Log($"Repaired missing prefab for piece {piece.type} at {piece.gridPosition}");
+                    }
+                }
+            }
+            
+            if (repairedCount > 0)
+            {
+                UnityEngine.Debug.Log($"Repaired {repairedCount} missing prefab references");
+                #if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(this);
+                #endif
+            }
+            #endif
+        }
+        
+        #if UNITY_EDITOR
+        private DungeonPieceLibrary FindDungeonPieceLibrary()
+        {
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:DungeonPieceLibrary");
+            foreach (string guid in guids)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var library = UnityEditor.AssetDatabase.LoadAssetAtPath<DungeonPieceLibrary>(path);
+                if (library != null && library.TargetLevelType == levelType)
+                {
+                    return library;
+                }
+            }
+            
+            // レベルタイプが一致しない場合は最初に見つかったライブラリを返す
+            if (guids.Length > 0)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<DungeonPieceLibrary>(path);
+            }
+            
+            return null;
+        }
+        #endif
     }
 
     [Serializable]
@@ -182,15 +241,19 @@ namespace KowloonBreak.Environment
     {
         public static Vector3 GridToWorldPosition(Vector2Int gridPos, float cellSize)
         {
-            // Y軸を反転してZ軸に変換（エディターとワールドの上下を合わせる）
-            return new Vector3(gridPos.x * cellSize, 0, -gridPos.y * cellSize);
+            // グリッド座標からワールド座標への変換（センター配置）
+            return new Vector3(
+                gridPos.x * cellSize + cellSize * 0.5f, 
+                0, 
+                gridPos.y * cellSize + cellSize * 0.5f
+            );
         }
 
         public static Vector2Int WorldToGridPosition(Vector3 worldPos, float cellSize)
         {
             return new Vector2Int(
-                Mathf.RoundToInt(worldPos.x / cellSize),
-                Mathf.RoundToInt(-worldPos.z / cellSize)  // Z軸を反転してY軸に変換
+                Mathf.FloorToInt(worldPos.x / cellSize),
+                Mathf.FloorToInt(worldPos.z / cellSize)
             );
         }
 

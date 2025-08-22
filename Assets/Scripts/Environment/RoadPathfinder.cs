@@ -327,6 +327,24 @@ namespace KowloonBreak.Environment
                 segment.roadType = DetermineRoadType(pathPoints, i);
                 segment.rotation = DetermineRotation(pathPoints, i, segment.roadType);
                 segment.prefab = GetRoadPrefab(segment.roadType, segment.rotation);
+                
+                // デバッグ情報
+                if (IsRoadStartPoint(pathPoints[i]))
+                {
+                    var connections = GetConnections(pathPoints, i);
+                    int connectionCount = 0;
+                    string connectionInfo = "";
+                    for (int j = 0; j < connections.Length; j++)
+                    {
+                        if (connections[j] != Vector2Int.zero)
+                        {
+                            connectionCount++;
+                            string[] dirNames = {"North", "East", "South", "West"};
+                            connectionInfo += $"{dirNames[j]} ";
+                        }
+                    }
+                    Debug.Log($"RoadStart segment at {pathPoints[i]}: Connections={connectionCount} ({connectionInfo}), Type={segment.roadType}, Rotation={segment.rotation}, Prefab={segment.prefab?.name}");
+                }
 
                 segments.Add(segment);
             }
@@ -336,6 +354,7 @@ namespace KowloonBreak.Environment
 
         private RoadType DetermineRoadType(List<Vector2Int> pathPoints, int index)
         {
+            Vector2Int currentPos = pathPoints[index];
             Vector2Int[] connections = GetConnections(pathPoints, index);
             int connectionCount = 0;
             
@@ -368,6 +387,16 @@ namespace KowloonBreak.Environment
                 if (pathPoints.Contains(neighbor))
                 {
                     connections[i] = directions[i];
+                }
+                // RoadStartピースの場合、隣接Buildingも道路接続として扱う
+                else if (IsRoadStartPoint(current))
+                {
+                    var piece = GetPieceAtPosition(neighbor);
+                    if (piece != null && piece.type == PieceType.Building)
+                    {
+                        connections[i] = directions[i];
+                        Debug.Log($"RoadStart at {current} treating Building at {neighbor} as road connection in direction {i}");
+                    }
                 }
             }
 
@@ -430,11 +459,12 @@ namespace KowloonBreak.Environment
 
         private float GetEndCapRotation(Vector2Int[] connections)
         {
+            // 接続方向の逆方向を向くように設定
             for (int i = 0; i < connections.Length; i++)
             {
                 if (connections[i] != Vector2Int.zero)
                 {
-                    return i * 90f + 180f;
+                    return i * 90f;
                 }
             }
             return 0f;
@@ -442,11 +472,12 @@ namespace KowloonBreak.Environment
 
         private float GetTJunctionRotation(Vector2Int[] connections)
         {
+            // 接続されていない方向（開いている方向）を特定
             for (int i = 0; i < connections.Length; i++)
             {
                 if (connections[i] == Vector2Int.zero)
                 {
-                    return i * 90f + 180f;
+                    return i * 90f;
                 }
             }
             return 0f;
@@ -457,8 +488,49 @@ namespace KowloonBreak.Environment
             if (roadPrefabs == null)
                 return null;
 
-            Direction direction = (Direction)(Mathf.RoundToInt(rotation / 90f) % 4);
+            // 回転角度から方向を正しく計算
+            int directionIndex = Mathf.RoundToInt(rotation / 90f) % 4;
+            if (directionIndex < 0) directionIndex += 4;
+            
+            Direction direction = (Direction)directionIndex;
             return roadPrefabs.GetRoadPrefab(roadType, direction);
+        }
+        
+        // RoadStartポイントかどうか判定
+        private bool IsRoadStartPoint(Vector2Int position)
+        {
+            foreach (var piece in layout.pieces)
+            {
+                if (piece.gridPosition == position && 
+                    (piece.type == PieceType.RoadStart || piece.isRoadStartPoint))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        
+        // 指定位置のピースを取得
+        private DungeonPiece GetPieceAtPosition(Vector2Int position)
+        {
+            foreach (var piece in layout.pieces)
+            {
+                if (IsPositionInPiece(position, piece))
+                {
+                    return piece;
+                }
+            }
+            return null;
+        }
+        
+        // 位置がピース内にあるかチェック
+        private bool IsPositionInPiece(Vector2Int position, DungeonPiece piece)
+        {
+            return position.x >= piece.gridPosition.x &&
+                   position.x < piece.gridPosition.x + piece.size.x &&
+                   position.y >= piece.gridPosition.y &&
+                   position.y < piece.gridPosition.y + piece.size.y;
         }
     }
 }

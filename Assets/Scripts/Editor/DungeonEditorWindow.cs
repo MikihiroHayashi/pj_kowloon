@@ -576,12 +576,25 @@ namespace KowloonBreak.Editor
                 {
                     float xPos = gridRect.x + x * gridCellSize;
                     Handles.DrawLine(new Vector3(xPos, gridRect.y), new Vector3(xPos, gridRect.y + gridHeight));
+                    
+                    // X軸のラベル表示（下部）
+                    if (x < currentLayout.gridSize.x && x % 5 == 0)
+                    {
+                        GUI.Label(new Rect(xPos + 2, gridRect.y + gridHeight + 2, 20, 16), x.ToString(), EditorStyles.miniLabel);
+                    }
                 }
 
                 for (int y = 0; y <= currentLayout.gridSize.y; y++)
                 {
                     float yPos = gridRect.y + y * gridCellSize;
                     Handles.DrawLine(new Vector3(gridRect.x, yPos), new Vector3(gridRect.x + gridWidth, yPos));
+                    
+                    // Y軸のラベル表示（左部）- ワールド座標系に対応
+                    if (y < currentLayout.gridSize.y && y % 5 == 0)
+                    {
+                        int worldY = currentLayout.gridSize.y - 1 - y;
+                        GUI.Label(new Rect(gridRect.x - 25, yPos + 2, 20, 16), worldY.ToString(), EditorStyles.miniLabel);
+                    }
                 }
             }
 
@@ -595,12 +608,12 @@ namespace KowloonBreak.Editor
             // 道路パスを描画
             DrawRoadPaths(gridRect);
 
-            // ピースを描画
+            // ピースを描画（Y軸を反転してワールド座標系と合わせる）
             foreach (var piece in currentLayout.pieces)
             {
                 Rect pieceRect = new Rect(
                     gridRect.x + piece.gridPosition.x * gridCellSize,
-                    gridRect.y + piece.gridPosition.y * gridCellSize,
+                    gridRect.y + (currentLayout.gridSize.y - piece.gridPosition.y - piece.size.y) * gridCellSize,
                     piece.size.x * gridCellSize,
                     piece.size.y * gridCellSize
                 );
@@ -630,7 +643,7 @@ namespace KowloonBreak.Editor
 
                     Rect roadRect = new Rect(
                         gridRect.x + point.x * gridCellSize,
-                        gridRect.y + point.y * gridCellSize,
+                        gridRect.y + (currentLayout.gridSize.y - point.y - 1) * gridCellSize,
                         gridCellSize,
                         gridCellSize
                     );
@@ -648,15 +661,16 @@ namespace KowloonBreak.Editor
 
         private void DrawRoadConnection(Rect gridRect, Vector2Int from, Vector2Int to)
         {
+            // Y軸を反転してワールド座標系と合わせる
             Vector3 fromPos = new Vector3(
                 gridRect.x + (from.x + 0.5f) * gridCellSize,
-                gridRect.y + (from.y + 0.5f) * gridCellSize,
+                gridRect.y + (currentLayout.gridSize.y - from.y - 0.5f) * gridCellSize,
                 0
             );
 
             Vector3 toPos = new Vector3(
                 gridRect.x + (to.x + 0.5f) * gridCellSize,
-                gridRect.y + (to.y + 0.5f) * gridCellSize,
+                gridRect.y + (currentLayout.gridSize.y - to.y - 0.5f) * gridCellSize,
                 0
             );
 
@@ -713,10 +727,23 @@ namespace KowloonBreak.Editor
 
         private Vector2Int ScreenToGridPosition(Vector2 screenPos, Rect gridRect)
         {
-            return new Vector2Int(
-                Mathf.FloorToInt((screenPos.x - gridRect.x) / gridCellSize),
-                Mathf.FloorToInt((screenPos.y - gridRect.y) / gridCellSize)
-            );
+            // Y軸を反転してワールド座標系と合わせる
+            int gridX = Mathf.FloorToInt((screenPos.x - gridRect.x) / gridCellSize);
+            int gridY = currentLayout.gridSize.y - 1 - Mathf.FloorToInt((screenPos.y - gridRect.y) / gridCellSize);
+            
+            return new Vector2Int(gridX, gridY);
+        }
+        
+        // エディター座標系からワールド座標系への変換ヘルパー
+        private Vector2Int WorldToEditorGrid(Vector2Int worldGridPos)
+        {
+            return new Vector2Int(worldGridPos.x, currentLayout.gridSize.y - 1 - worldGridPos.y);
+        }
+        
+        // ワールド座標系からエディター座標系への変換ヘルパー  
+        private Vector2Int EditorToWorldGrid(Vector2Int editorGridPos)
+        {
+            return new Vector2Int(editorGridPos.x, currentLayout.gridSize.y - 1 - editorGridPos.y);
         }
 
         private void PlacePieceAt(Vector2Int gridPos)
