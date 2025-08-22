@@ -177,6 +177,7 @@ namespace KowloonBreak.Environment
         public float rotation;
         public GameObject prefab;
         public bool isRoadStartPoint;
+        public int roadGroupId = 0; // 道路グループID（0=グループなし、1以上=グループA,B,C...）
     }
 
     [Serializable]
@@ -186,6 +187,7 @@ namespace KowloonBreak.Environment
         public List<Vector2Int> pathPoints = new List<Vector2Int>();
         public List<RoadSegment> segments = new List<RoadSegment>();
         public bool isComplete;
+        public int roadGroupId = 0; // 道路グループID
     }
 
     [Serializable]
@@ -196,6 +198,8 @@ namespace KowloonBreak.Environment
         public float rotation;
         public GameObject prefab;
         public Vector2Int[] connections = new Vector2Int[4];
+        public int roadGroupId = 0; // 道路グループID
+        public List<int> intersectionGroups = new List<int>(); // 交差する道路グループのリスト
     }
 
     [Serializable]

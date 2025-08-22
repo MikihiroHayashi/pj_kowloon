@@ -25,6 +25,16 @@ namespace KowloonBreak.Editor
         private const float PALETTE_WIDTH = 200f;
         private const float PROPERTIES_WIDTH = 250f;
 
+        // グループIDから色を生成
+        private Color GetGroupColor(int groupId)
+        {
+            if (groupId == 0) return Color.white; // グループなしは白
+            
+            // HSVを使って色相を変化させる
+            float hue = (groupId * 0.3f) % 1.0f; // 0.3ずつ色相をずらす
+            return Color.HSVToRGB(hue, 0.7f, 0.9f); // 彩度70%, 明度90%
+        }
+
         [MenuItem("Kowloon Break/Dungeon Editor")]
         public static void ShowWindow()
         {
@@ -460,6 +470,37 @@ namespace KowloonBreak.Editor
                     }
                 }
 
+                // 選択されたピースのロードグループID設定
+                if (currentPieceTemplates != null && selectedPieceIndex >= 0 && selectedPieceIndex < currentPieceTemplates.Count)
+                {
+                    var selectedTemplate = currentPieceTemplates[selectedPieceIndex];
+                    EditorGUILayout.BeginVertical("box");
+                    try
+                    {
+                        EditorGUILayout.LabelField($"Selected: {selectedTemplate.name}", EditorStyles.boldLabel);
+                        
+                        // ロードグループIDの設定
+                        int newRoadGroupId = EditorGUILayout.IntField("Road Group ID", selectedTemplate.roadGroupId);
+                        if (newRoadGroupId != selectedTemplate.roadGroupId)
+                        {
+                            selectedTemplate.roadGroupId = newRoadGroupId;
+                            EditorUtility.SetDirty(pieceLibrary);
+                            
+                            // 既存の同じテンプレートを使用しているピースのグループIDとプレファブを更新
+                            UpdateExistingPiecesForTemplate(selectedTemplate);
+                            
+                            // 道路パスをクリアして再生成を促す
+                            ClearRoadPaths();
+                        }
+                        
+                        EditorGUILayout.HelpBox("Road Group ID: 0=No Group, 1=Group A, 2=Group B, etc.", MessageType.Info);
+                    }
+                    finally
+                    {
+                        EditorGUILayout.EndVertical();
+                    }
+                }
+
                 scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
                 try
                 {
@@ -477,7 +518,18 @@ namespace KowloonBreak.Editor
                             }
                             else
                             {
-                                GUI.backgroundColor = piece.displayColor * 0.8f + Color.white * 0.2f;
+                                Color baseColor = piece.displayColor * 0.8f + Color.white * 0.2f;
+                                Color groupColor = GetGroupColor(piece.roadGroupId);
+                                
+                                // グループIDがある場合はグループカラーを適用
+                                if (piece.roadGroupId > 0)
+                                {
+                                    GUI.backgroundColor = Color.Lerp(baseColor, groupColor, 0.5f);
+                                }
+                                else
+                                {
+                                    GUI.backgroundColor = baseColor;
+                                }
                             }
 
                             GUILayout.BeginHorizontal();
@@ -492,7 +544,8 @@ namespace KowloonBreak.Editor
                                     GUILayout.Box("", GUILayout.Width(40), GUILayout.Height(40));
                                 }
 
-                                if (GUILayout.Button($"{piece.name}\n{piece.size.x}x{piece.size.y}\n{piece.type}",
+                                string groupText = piece.roadGroupId > 0 ? $"\nGroup {piece.roadGroupId}" : "";
+                                if (GUILayout.Button($"{piece.name}\n{piece.size.x}x{piece.size.y}\n{piece.type}{groupText}",
                                     GUILayout.Height(40), GUILayout.ExpandWidth(true)))
                                 {
                                     selectedPieceIndex = i;
@@ -618,7 +671,7 @@ namespace KowloonBreak.Editor
                     piece.size.y * gridCellSize
                 );
 
-                Color pieceColor = GetPieceColor(piece.type);
+                Color pieceColor = GetPieceColor(piece);
                 EditorGUI.DrawRect(pieceRect, pieceColor);
 
                 GUI.Label(pieceRect, piece.type.ToString(), EditorStyles.centeredGreyMiniLabel);
@@ -688,6 +741,21 @@ namespace KowloonBreak.Editor
                 case PieceType.ExitPoint: return new Color(0.9f, 0.3f, 0.3f, 0.8f);
                 default: return new Color(0.8f, 0.8f, 0.8f, 0.8f);
             }
+        }
+
+        private Color GetPieceColor(DungeonPiece piece)
+        {
+            Color baseColor = GetPieceColor(piece.type);
+            Color groupColor = GetGroupColor(piece.roadGroupId);
+            
+            // グループIDが0の場合はベースカラーを使用
+            if (piece.roadGroupId == 0)
+            {
+                return baseColor;
+            }
+            
+            // グループカラーとベースカラーをブレンド（グループカラーを優先）
+            return Color.Lerp(baseColor, groupColor * baseColor, 0.6f);
         }
 
         private void HandleGridInput(Rect gridRect)
@@ -764,7 +832,8 @@ namespace KowloonBreak.Editor
                 gridPosition = gridPos,
                 rotation = 0f,
                 prefab = template.prefab,
-                isRoadStartPoint = template.isRoadStartPoint
+                isRoadStartPoint = template.isRoadStartPoint,
+                roadGroupId = template.roadGroupId // テンプレートからグループIDを使用
             };
 
             currentLayout.pieces.Add(newPiece);
@@ -1051,6 +1120,39 @@ namespace KowloonBreak.Editor
             EditorGUIUtility.PingObject(generatorObject);
 
             Debug.Log("DungeonGenerator created in scene automatically");
+        }
+
+        private void UpdateExistingPiecesForTemplate(DungeonPieceTemplate template)
+        {
+            if (currentLayout == null || currentLayout.pieces == null) return;
+
+            // 同じタイプとサイズのピースを見つけてグループIDのみを更新
+            foreach (var piece in currentLayout.pieces)
+            {
+                if (piece.type == template.type && piece.size == template.size && piece.prefab == template.prefab)
+                {
+                    // グループIDを更新（プレファブはRoadPathfinderが適切に選択する）
+                    piece.roadGroupId = template.roadGroupId;
+                    Debug.Log($"Updated piece {piece.type} at {piece.gridPosition} to group {template.roadGroupId}");
+                }
+            }
+
+            // レイアウトが変更されたことをマーク
+            EditorUtility.SetDirty(currentLayout);
+            
+            // グリッドを再描画
+            Repaint();
+        }
+
+
+        private void ClearRoadPaths()
+        {
+            if (currentLayout != null && currentLayout.roadPaths != null)
+            {
+                Debug.Log($"Clearing {currentLayout.roadPaths.Count} existing road paths to force regeneration");
+                currentLayout.roadPaths.Clear();
+                EditorUtility.SetDirty(currentLayout);
+            }
         }
     }
 }

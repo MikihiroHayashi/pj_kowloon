@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace KowloonBreak.Environment
@@ -45,28 +46,105 @@ namespace KowloonBreak.Environment
         public List<RoadPath> GenerateRoadPaths()
         {
             var roadPaths = new List<RoadPath>();
-            var roadStartPoints = GetRoadStartPoints();
+            var roadGroups = GetRoadStartPointsByGroup();
 
-            if (roadStartPoints.Count < 2)
+            if (roadGroups.Count == 0)
             {
-                Debug.LogWarning($"Road generation requires at least 2 road start points. Current: {roadStartPoints.Count}");
+                Debug.LogWarning("No road start points found");
                 return roadPaths;
             }
 
+            Debug.Log($"Found {roadGroups.Count} road groups");
+
+            // 各グループ内で道路を生成
+            foreach (var group in roadGroups)
+            {
+                int groupId = group.Key;
+                var startPoints = group.Value;
+
+                // 単独のRoadStartピースも処理する（隣接建物がある場合）
+                if (startPoints.Count < 1)
+                {
+                    Debug.LogWarning($"Road group {groupId} has no start points");
+                    continue;
+                }
+
+                if (startPoints.Count == 1)
+                {
+                    // 単独ピースの場合は隣接建物チェック
+                    var singlePoint = startPoints[0];
+                    if (HasAdjacentBuilding(singlePoint))
+                    {
+                        Debug.Log($"Creating road for single RoadStart at {singlePoint} in group {groupId} with adjacent building");
+                        var singlePath = CreateSinglePointPath(groupId, singlePoint);
+                        if (singlePath != null)
+                        {
+                            roadPaths.Add(singlePath);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Road group {groupId} has only 1 start point and no adjacent buildings");
+                    }
+                    continue;
+                }
+
+                Debug.Log($"Generating roads for group {groupId} with {startPoints.Count} start points");
+
+                var groupPath = GeneratePathForGroup(groupId, startPoints);
+                if (groupPath != null)
+                {
+                    roadPaths.Add(groupPath);
+                }
+            }
+
+            // 交差点を検知して統合
+            ProcessIntersections(roadPaths);
+
+            return roadPaths;
+        }
+
+        private Dictionary<int, List<Vector2Int>> GetRoadStartPointsByGroup()
+        {
+            var roadGroups = new Dictionary<int, List<Vector2Int>>();
+
+            foreach (var piece in layout.pieces)
+            {
+                if (piece.type == PieceType.RoadStart || piece.isRoadStartPoint)
+                {
+                    int groupId = piece.roadGroupId;
+                    if (groupId <= 0) groupId = 1; // デフォルトグループ
+
+                    if (!roadGroups.ContainsKey(groupId))
+                    {
+                        roadGroups[groupId] = new List<Vector2Int>();
+                    }
+                    
+                    roadGroups[groupId].Add(piece.gridPosition);
+                    Debug.Log($"Added road start point {piece.gridPosition} to group {groupId}");
+                }
+            }
+
+            return roadGroups;
+        }
+
+        private RoadPath GeneratePathForGroup(int groupId, List<Vector2Int> startPoints)
+        {
             var connectedPoints = new HashSet<Vector2Int>();
             var roadPath = new RoadPath
             {
                 id = System.Guid.NewGuid().ToString(),
-                pathPoints = new List<Vector2Int>()
+                pathPoints = new List<Vector2Int>(),
+                roadGroupId = groupId
             };
 
-            var currentPoint = roadStartPoints[0];
+            var currentPoint = startPoints[0];
             roadPath.pathPoints.Add(currentPoint);
             connectedPoints.Add(currentPoint);
 
-            while (connectedPoints.Count < roadStartPoints.Count)
+            while (connectedPoints.Count < startPoints.Count)
             {
-                Vector2Int nextPoint = FindNearestUnconnectedPoint(currentPoint, roadStartPoints, connectedPoints);
+                Vector2Int nextPoint = FindNearestUnconnectedPoint(currentPoint, startPoints, connectedPoints);
                 
                 if (nextPoint == Vector2Int.zero)
                 {
@@ -92,17 +170,16 @@ namespace KowloonBreak.Environment
 
             if (roadPath.pathPoints.Count > 1)
             {
-                roadPath.segments = GenerateRoadSegments(roadPath.pathPoints);
-                roadPath.isComplete = connectedPoints.Count == roadStartPoints.Count;
-                roadPaths.Add(roadPath);
-                Debug.Log($"Road path generated with {roadPath.pathPoints.Count} points");
+                roadPath.segments = GenerateRoadSegments(roadPath.pathPoints, groupId);
+                roadPath.isComplete = connectedPoints.Count == startPoints.Count;
+                Debug.Log($"Road path for group {groupId} generated with {roadPath.pathPoints.Count} points");
+                return roadPath;
             }
             else
             {
-                Debug.LogWarning("Failed to generate road path - insufficient points");
+                Debug.LogWarning($"Failed to generate road path for group {groupId} - insufficient points");
+                return null;
             }
-
-            return roadPaths;
         }
 
         private List<Vector2Int> GetRoadStartPoints()
@@ -313,7 +390,7 @@ namespace KowloonBreak.Environment
             return path;
         }
 
-        private List<RoadSegment> GenerateRoadSegments(List<Vector2Int> pathPoints)
+        private List<RoadSegment> GenerateRoadSegments(List<Vector2Int> pathPoints, int groupId = 1)
         {
             var segments = new List<RoadSegment>();
 
@@ -321,7 +398,8 @@ namespace KowloonBreak.Environment
             {
                 var segment = new RoadSegment
                 {
-                    position = pathPoints[i]
+                    position = pathPoints[i],
+                    roadGroupId = groupId
                 };
 
                 segment.roadType = DetermineRoadType(pathPoints, i);
@@ -343,7 +421,7 @@ namespace KowloonBreak.Environment
                             connectionInfo += $"{dirNames[j]} ";
                         }
                     }
-                    Debug.Log($"RoadStart segment at {pathPoints[i]}: Connections={connectionCount} ({connectionInfo}), Type={segment.roadType}, Rotation={segment.rotation}, Prefab={segment.prefab?.name}");
+                    Debug.Log($"RoadStart segment at {pathPoints[i]} (Group {groupId}): Connections={connectionCount} ({connectionInfo}), Type={segment.roadType}, Rotation={segment.rotation}, Prefab={segment.prefab?.name}");
                 }
 
                 segments.Add(segment);
@@ -380,27 +458,72 @@ namespace KowloonBreak.Environment
             Vector2Int current = pathPoints[index];
             Vector2Int[] connections = new Vector2Int[4];
             var directions = new Vector2Int[] { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
+            bool isRoadStart = IsRoadStartPoint(current);
 
             for (int i = 0; i < directions.Length; i++)
             {
                 Vector2Int neighbor = current + directions[i];
+                bool hasConnection = false;
+                
+                // 通常の道路パス内の接続をチェック
                 if (pathPoints.Contains(neighbor))
                 {
                     connections[i] = directions[i];
+                    hasConnection = true;
+                    Debug.Log($"Path connection: {current} -> {neighbor} in direction {GetDirectionName(i)}");
                 }
-                // RoadStartピースの場合、隣接Buildingも道路接続として扱う
-                else if (IsRoadStartPoint(current))
+                
+                // RoadStartピースの場合のみ、隣接Buildingも道路接続として扱う（重複チェック回避）
+                if (isRoadStart && !hasConnection)
                 {
                     var piece = GetPieceAtPosition(neighbor);
                     if (piece != null && piece.type == PieceType.Building)
                     {
                         connections[i] = directions[i];
-                        Debug.Log($"RoadStart at {current} treating Building at {neighbor} as road connection in direction {i}");
+                        Debug.Log($"RoadStart at {current} treating Building at {neighbor} as road connection in direction {GetDirectionName(i)}");
                     }
                 }
             }
 
             return connections;
+        }
+
+        private string GetDirectionName(int directionIndex)
+        {
+            string[] dirNames = {"North", "East", "South", "West"};
+            return directionIndex >= 0 && directionIndex < dirNames.Length ? dirNames[directionIndex] : "Unknown";
+        }
+
+        private bool HasAdjacentBuilding(Vector2Int position)
+        {
+            var directions = new Vector2Int[] { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
+            
+            foreach (var direction in directions)
+            {
+                var neighbor = position + direction;
+                var piece = GetPieceAtPosition(neighbor);
+                if (piece != null && piece.type == PieceType.Building)
+                {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        private RoadPath CreateSinglePointPath(int groupId, Vector2Int point)
+        {
+            var roadPath = new RoadPath
+            {
+                id = System.Guid.NewGuid().ToString(),
+                pathPoints = new List<Vector2Int> { point },
+                roadGroupId = groupId,
+                isComplete = true
+            };
+
+            roadPath.segments = GenerateRoadSegments(roadPath.pathPoints, groupId);
+            Debug.Log($"Created single point road path for group {groupId} at {point}");
+            return roadPath;
         }
 
         private bool IsCorner(Vector2Int[] connections)
@@ -531,6 +654,148 @@ namespace KowloonBreak.Environment
                    position.x < piece.gridPosition.x + piece.size.x &&
                    position.y >= piece.gridPosition.y &&
                    position.y < piece.gridPosition.y + piece.size.y;
+        }
+
+        // 交差点を検知して統合処理
+        private void ProcessIntersections(List<RoadPath> roadPaths)
+        {
+            if (roadPaths.Count < 2) return;
+
+            Debug.Log("Processing intersections between road groups");
+
+            // 全ての道路セグメントの位置を収集
+            var segmentsByPosition = new Dictionary<Vector2Int, List<RoadSegment>>();
+
+            foreach (var roadPath in roadPaths)
+            {
+                foreach (var segment in roadPath.segments)
+                {
+                    if (!segmentsByPosition.ContainsKey(segment.position))
+                    {
+                        segmentsByPosition[segment.position] = new List<RoadSegment>();
+                    }
+                    segmentsByPosition[segment.position].Add(segment);
+                }
+            }
+
+            // 交差点（複数のグループが重なる位置）を検知
+            var intersections = new Dictionary<Vector2Int, List<int>>();
+
+            foreach (var kvp in segmentsByPosition)
+            {
+                var position = kvp.Key;
+                var segments = kvp.Value;
+                var groups = segments.Select(s => s.roadGroupId).Distinct().ToList();
+
+                if (groups.Count > 1)
+                {
+                    intersections[position] = groups;
+                    Debug.Log($"Intersection found at {position} between groups: {string.Join(", ", groups)}");
+                }
+            }
+
+            // 交差点のセグメントを更新
+            foreach (var intersection in intersections)
+            {
+                var position = intersection.Key;
+                var intersectingGroups = intersection.Value;
+                var segments = segmentsByPosition[position];
+
+                // 最初のセグメントを交差点セグメントとして使用
+                var primarySegment = segments[0];
+                primarySegment.intersectionGroups = new List<int>(intersectingGroups);
+
+                // 交差点用の道路タイプとプレファブを決定
+                UpdateIntersectionSegment(primarySegment, intersectingGroups);
+
+                // 他のセグメントを削除（重複を避ける）
+                for (int i = 1; i < segments.Count; i++)
+                {
+                    var segmentToRemove = segments[i];
+                    foreach (var roadPath in roadPaths)
+                    {
+                        roadPath.segments.RemoveAll(s => s.position == position && s.roadGroupId == segmentToRemove.roadGroupId);
+                    }
+                }
+
+                Debug.Log($"Updated intersection at {position}: Type={primarySegment.roadType}, Groups=[{string.Join(", ", intersectingGroups)}]");
+            }
+        }
+
+        private void UpdateIntersectionSegment(RoadSegment segment, List<int> intersectingGroups)
+        {
+            // 交差点の接続方向を計算
+            var allConnections = new List<Vector2Int>();
+
+            // 全ての交差するグループからの接続を考慮
+            foreach (var roadPath in layout.roadPaths)
+            {
+                if (intersectingGroups.Contains(roadPath.roadGroupId))
+                {
+                    var segmentIndex = roadPath.pathPoints.FindIndex(p => p == segment.position);
+                    if (segmentIndex >= 0)
+                    {
+                        var connections = GetConnections(roadPath.pathPoints, segmentIndex);
+                        for (int i = 0; i < connections.Length; i++)
+                        {
+                            if (connections[i] != Vector2Int.zero)
+                            {
+                                allConnections.Add(connections[i]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 重複を除去
+            allConnections = allConnections.Distinct().ToList();
+            int connectionCount = allConnections.Count;
+
+            // 接続数に応じて道路タイプを決定
+            switch (connectionCount)
+            {
+                case 2:
+                    segment.roadType = AreConnectionsOpposite(allConnections) ? RoadType.Straight : RoadType.Corner;
+                    break;
+                case 3:
+                    segment.roadType = RoadType.TJunction;
+                    break;
+                case 4:
+                    segment.roadType = RoadType.Cross;
+                    break;
+                default:
+                    segment.roadType = RoadType.Cross; // デフォルトで十字路
+                    break;
+            }
+
+            // 回転を再計算
+            segment.rotation = DetermineIntersectionRotation(allConnections, segment.roadType);
+            segment.prefab = GetRoadPrefab(segment.roadType, segment.rotation);
+        }
+
+        private bool AreConnectionsOpposite(List<Vector2Int> connections)
+        {
+            if (connections.Count != 2) return false;
+            
+            var dir1 = connections[0];
+            var dir2 = connections[1];
+            
+            return (dir1.x == -dir2.x && dir1.y == -dir2.y);
+        }
+
+        private float DetermineIntersectionRotation(List<Vector2Int> connections, RoadType roadType)
+        {
+            if (connections.Count == 0) return 0f;
+
+            // 最初の接続方向を基準に回転を決定
+            var primaryConnection = connections[0];
+            
+            if (primaryConnection == Vector2Int.up) return 0f;
+            if (primaryConnection == Vector2Int.right) return 90f;
+            if (primaryConnection == Vector2Int.down) return 180f;
+            if (primaryConnection == Vector2Int.left) return 270f;
+            
+            return 0f;
         }
     }
 }

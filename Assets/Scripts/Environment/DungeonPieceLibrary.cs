@@ -191,6 +191,7 @@ namespace KowloonBreak.Environment
         public bool isRoadStartPoint = false;
         public bool blocksPaths = true;
         public int spawnPriority = 0;
+        public int roadGroupId = 0; // 道路グループID（0=グループなし、1以上=グループA,B,C...）
         
         [Header("Requirements")]
         public List<string> requiredTags = new List<string>();
@@ -241,6 +242,7 @@ namespace KowloonBreak.Environment
                 isRoadStartPoint = isRoadStartPoint,
                 blocksPaths = blocksPaths,
                 spawnPriority = spawnPriority,
+                roadGroupId = roadGroupId,
                 requiredTags = new List<string>(requiredTags),
                 compatibleLevels = (LevelType[])compatibleLevels.Clone()
             };
