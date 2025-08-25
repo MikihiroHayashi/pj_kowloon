@@ -71,6 +71,23 @@ MonoBehaviour:
       roadGroupId: 0
       requiredTags: []
       compatibleLevels: 
+    - id: aefb0740-ccf0-4358-81e0-77840a83f083
+      name: "\u30D6\u30E9\u30F3\u30AF"
+      description: 
+      type: 3
+      size: {x: 1, y: 1}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0, g: 0, b: 0, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      roadGroupId: 0
+      requiredTags: []
+      compatibleLevels: 
   - name: Roads
     color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
     isExpanded: 1
