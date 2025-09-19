@@ -50,9 +50,8 @@ namespace KowloonBreak.Characters
         [SerializeField] protected float maxHealth = 100f;
         [SerializeField] protected float currentHealth;
         
-        [Header("HP Bar")]
-        [SerializeField] protected SpriteRenderer healthBarBackground;
-        [SerializeField] protected SpriteRenderer healthBarFill;
+        [Header("HP Bar (UI System)")]
+        // 古いSpriteRendererベースのHP表示は削除し、UIシステムを使用
         
         [Header("Damage Display")]
         [SerializeField] protected Transform damageDisplayPoint;
@@ -74,6 +73,7 @@ namespace KowloonBreak.Characters
         [Header("References")]
         [SerializeField] private Transform player;
         [SerializeField] private Transform interactionPromptAnchor;
+        [SerializeField] private Transform dialogueAnchor; // DialogueText表示用アンカー
         
         [Header("Debug")]
         [SerializeField] private bool showDebugGizmos = true;
@@ -108,6 +108,9 @@ namespace KowloonBreak.Characters
         // Health System
         protected bool isDead = false;
         
+        // UI Health Bar System
+        private GameObject uiHealthBar;
+        
         // Movement state tracking
         private CompanionMovementState currentMovementState = CompanionMovementState.Idle;
         private bool isRunning = false;
@@ -120,6 +123,7 @@ namespace KowloonBreak.Characters
         public Transform Player => player;
         public int IntelligenceLevel => GetIntelligenceLevelFromTrust();
         public Transform InteractionPromptAnchor => interactionPromptAnchor;
+        public Transform DialogueAnchor => dialogueAnchor;
         
         public System.Action<AIState> OnStateChanged;
         
@@ -161,7 +165,7 @@ namespace KowloonBreak.Characters
             currentHealth = maxHealth;
             
             InitializeAgent();
-            InitializeHealthBar();
+            InitializeUIHealthBar();
         }
 
         private void Start()
@@ -292,7 +296,6 @@ namespace KowloonBreak.Characters
             CheckForEnemies();
             UpdateLastPlayerPosition();
             UpdateMovementAnimation();
-            UpdateHealthBar();
         }
 
         private void CheckPlayerDangerStatus()
@@ -1725,62 +1728,56 @@ namespace KowloonBreak.Characters
         #region Health System Implementation
         
         /// <summary>
-        /// HPバーの初期化
+        /// UI HPバーの初期化
         /// </summary>
-        protected virtual void InitializeHealthBar()
+        protected virtual void InitializeUIHealthBar()
         {
-            if (healthBarFill != null && healthBarFill.material != null)
+            // UIManagerを介してヘルスバーを作成
+            if (UI.UIManager.Instance != null)
             {
-                // 初期状態では満タンに設定
-                healthBarFill.material.SetFloat("_Fill_1", 1f);
-                
-                // 初期状態ではMAXなので非表示
-                if (healthBarBackground != null)
-                {
-                    healthBarBackground.gameObject.SetActive(false);
-                }
-            }
-        }
-
-        /// <summary>
-        /// HPバーの更新
-        /// </summary>
-        protected virtual void UpdateHealthBar()
-        {
-            if (healthBarFill == null || healthBarFill.material == null) return;
-
-            float healthPercentage = HealthPercentage;
-
-            // HPがMAXの場合は非表示、それ以外は表示
-            if (healthPercentage >= 1f)
-            {
-                if (healthBarBackground != null)
-                {
-                    healthBarBackground.gameObject.SetActive(false);
-                }
+                uiHealthBar = UI.UIManager.Instance.CreateHealthBarForCompanion(this);
             }
             else
             {
-                if (healthBarBackground != null)
-                {
-                    healthBarBackground.gameObject.SetActive(true);
-                }
-                
-                // _Fill_1パラメータでHP量を制御
-                healthBarFill.material.SetFloat("_Fill_1", healthPercentage);
+                // UIManagerが見つからない場合は少し待ってから再試行
+                StartCoroutine(DelayedHealthBarInitialization());
+            }
+        }
+        
+        /// <summary>
+        /// 遅延ヘルスバー初期化（UIManagerが後から初期化される場合）
+        /// </summary>
+        private System.Collections.IEnumerator DelayedHealthBarInitialization()
+        {
+            float timeout = 5f; // 5秒でタイムアウト
+            float elapsed = 0f;
+            
+            while (elapsed < timeout && UI.UIManager.Instance == null)
+            {
+                yield return new WaitForSeconds(0.1f);
+                elapsed += 0.1f;
+            }
+            
+            if (UI.UIManager.Instance != null)
+            {
+                uiHealthBar = UI.UIManager.Instance.CreateHealthBarForCompanion(this);
+            }
+            else
+            {
+                Debug.LogWarning($"[CompanionAI] {gameObject.name} - Failed to create UI health bar: UIManager not found");
             }
         }
 
         /// <summary>
-        /// ヘルスバーを強制的に非表示にする（死亡時など）
+        /// ヘルスバーを強制的に削除する（死亡時など）
         /// </summary>
-        protected virtual void HideHealthBar()
+        protected virtual void DestroyHealthBar()
         {
-            if (healthBarBackground != null)
+            if (UI.UIManager.Instance != null)
             {
-                healthBarBackground.gameObject.SetActive(false);
+                UI.UIManager.Instance.OnCompanionDestroyed(this);
             }
-            
+            uiHealthBar = null;
         }
         
         /// <summary>
@@ -1847,8 +1844,7 @@ namespace KowloonBreak.Characters
                 ShowCombatDialogue(CombatDialogueType.LowHealth);
             }
 
-            // HPバーを更新
-            UpdateHealthBar();
+            // UIベースのHPバーは自動更新されます
 
             // ダメージテキストを表示
             ShowDamageText(damage);
@@ -1908,8 +1904,8 @@ namespace KowloonBreak.Characters
                 navAgent.enabled = false;
             }
 
-            // ヘルスバーを即座に非表示にする
-            HideHealthBar();
+            // ヘルスバーを削除する
+            DestroyHealthBar();
 
             // 死亡アニメーション再生
             if (animatorController != null)
@@ -2107,33 +2103,30 @@ namespace KowloonBreak.Characters
             if (UI.UIManager.Instance == null || UI.UIManager.Instance.DialogueTextPrefab == null)
                 return;
 
-            // 新しいDialogueTextを作成
+            // 新しいDialogueTextを作成（UIManagerが自動的にコールバックを管理）
             currentDialogueText = UI.UIManager.Instance.CreateDialogueTextForCompanion(this, dialogue);
-            
-            // DialogueTextが削除される際の通知を受け取る
-            if (currentDialogueText != null)
-            {
-                var dialogueComponent = currentDialogueText.GetComponent<DialogueText>();
-                if (dialogueComponent != null)
-                {
-                    dialogueComponent.OnDialogueDestroyed += OnDialogueTextDestroyed;
-                }
-            }
         }
         
         /// <summary>
         /// DialogueTextが削除された際のコールバック
         /// </summary>
-        private void OnDialogueTextDestroyed()
+        public void OnDialogueTextDestroyed()
         {
             currentDialogueText = null;
         }
         
         /// <summary>
-        /// 現在のDialogueTextの位置を取得（頭上追従用）
+        /// 現在のDialogueTextの位置を取得（アンカーベース）
         /// </summary>
         public Vector3 GetDialoguePosition()
         {
+            // dialogueAnchorが設定されている場合はそれを使用
+            if (dialogueAnchor != null)
+            {
+                return dialogueAnchor.position;
+            }
+            
+            // アンカーが設定されていない場合は従来の方式（コンパニオン位置 + オフセット）
             return transform.position + dialogueOffset;
         }
         
@@ -2149,6 +2142,22 @@ namespace KowloonBreak.Characters
             if (!string.IsNullOrEmpty(dialogue))
             {
                 ShowDialogueTextAboveHead(dialogue);
+            }
+        }
+        
+        #endregion
+        
+        #region Unity Lifecycle
+        
+        /// <summary>
+        /// オブジェクト破棄時のクリーンアップ
+        /// </summary>
+        private void OnDestroy()
+        {
+            // ヘルスバーのクリーンアップ
+            if (UI.UIManager.Instance != null)
+            {
+                UI.UIManager.Instance.OnCompanionDestroyed(this);
             }
         }
         

@@ -90,7 +90,7 @@ namespace KowloonBreak.UI
         }
         
         /// <summary>
-        /// コンパニオンの頭上位置に追従
+        /// コンパニオンの位置に追従（InteractionPromptと同じ仕組み）
         /// </summary>
         private void UpdateFollowPosition()
         {
@@ -98,37 +98,79 @@ namespace KowloonBreak.UI
             
             Vector3 worldPosition = targetCompanion.GetDialoguePosition();
             
+            // InteractionPromptと同じ座標変換を使用
+            bool success = UpdateDialoguePosition(worldPosition);
+            
+            // 位置更新に失敗した場合は非表示
+            if (!success && canvasGroup != null && canvasGroup.alpha > 0f)
+            {
+                canvasGroup.alpha = 0f;
+            }
+        }
+        
+        /// <summary>
+        /// ワールド座標をスクリーン座標に変換してDialogueTextの位置を更新
+        /// InteractionPromptと同じ仕組みを使用
+        /// </summary>
+        private bool UpdateDialoguePosition(Vector3 worldPosition)
+        {
+            Transform damageContainer = FindDamageContainer();
+            if (mainCamera == null || rectTransform == null || damageContainer == null)
+            {
+                return false;
+            }
+            
             // ワールド座標をスクリーン座標に変換
-            Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPosition);
+            Vector3 screenPosition = mainCamera.WorldToScreenPoint(worldPosition);
             
             // 画面外の場合は非表示
-            if (screenPos.z < 0 || screenPos.x < 0 || screenPos.x > Screen.width || 
-                screenPos.y < 0 || screenPos.y > Screen.height)
+            if (screenPosition.z < 0 || screenPosition.x < 0 || screenPosition.x > Screen.width || 
+                screenPosition.y < 0 || screenPosition.y > Screen.height)
             {
                 if (canvasGroup != null && canvasGroup.alpha > 0f)
                     canvasGroup.alpha = 0f;
-                return;
+                return false;
             }
             
-            // UIManagerと同じ方法で座標変換（damageContainerを基準とする）
-            // damageContainerを探す
-            Transform damageContainer = FindDamageContainer();
-            if (damageContainer != null)
+            // damageContainerのRectTransformを取得
+            RectTransform damageContainerRect = damageContainer.GetComponent<RectTransform>();
+            if (damageContainerRect != null)
             {
-                RectTransform containerRect = damageContainer.GetComponent<RectTransform>();
-                if (containerRect != null)
+                // Canvasの設定を確認
+                Canvas canvas = damageContainer.GetComponentInParent<Canvas>();
+                UnityEngine.Camera canvasCamera = canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera ? canvas.worldCamera : null;
+                
+                // スクリーン座標をcanvas座標に変換
+                Vector2 canvasPosition;
+                bool success = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    damageContainerRect, screenPosition, canvasCamera, out canvasPosition);
+                
+                if (success)
                 {
-                    Canvas canvas = damageContainer.GetComponentInParent<Canvas>();
-                    UnityEngine.Camera canvasCamera = canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera ? canvas.worldCamera : null;
+                    // 座標を設定
+                    rectTransform.localPosition = canvasPosition;
                     
-                    Vector2 canvasPos;
-                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                        containerRect, screenPos, canvasCamera, out canvasPos))
+                    // 成功した場合は適切な透明度を復元
+                    if (canvasGroup != null && canvasGroup.alpha == 0f)
                     {
-                        rectTransform.localPosition = canvasPos;
+                        // フェードイン中でない場合のみ透明度を復元
+                        if (canvasGroup.alpha == 0f)
+                        {
+                            canvasGroup.alpha = 1f;
+                        }
                     }
+                    
+                    return true;
+                }
+                else
+                {
+                    // 変換に失敗した場合は画面中央に表示
+                    rectTransform.localPosition = Vector3.zero;
+                    return true;
                 }
             }
+            
+            return false;
         }
         
         /// <summary>

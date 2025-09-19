@@ -59,6 +59,12 @@ namespace KowloonBreak.UI
         
         // Public access for DialogueTextPrefab
         public GameObject DialogueTextPrefab => dialogueTextPrefab;
+        
+        [Header("Companion Health Bar System")]
+        [SerializeField] private GameObject companionHealthBarPrefab;
+        
+        // Public access for CompanionHealthBarPrefab
+        public GameObject CompanionHealthBarPrefab => companionHealthBarPrefab;
 
         [Header("Companion Command System")]
         [SerializeField] private GameObject commandButtonPrefab;
@@ -106,6 +112,13 @@ namespace KowloonBreak.UI
         private List<Button> activeCommandButtons = new List<Button>();
         private Transform player;
         private KowloonBreak.Core.InputManager inputManager;
+        
+        // Companion Health Bar System
+        private Dictionary<KowloonBreak.Characters.CompanionAI, CompanionHealthBar> activeHealthBars = new Dictionary<KowloonBreak.Characters.CompanionAI, CompanionHealthBar>();
+        
+        // Dialogue Text Management System
+        private Dictionary<KowloonBreak.Characters.CompanionAI, DialogueText> activeDialogueTexts = new Dictionary<KowloonBreak.Characters.CompanionAI, DialogueText>();
+        private bool hasActiveDialogueForNearbyCompanion = false;
         
         // コマンド更新管理
         private bool lastCombatState = false;
@@ -816,6 +829,17 @@ namespace KowloonBreak.UI
             if (string.IsNullOrEmpty(dialogue) || dialogueTextPrefab == null || damageContainer == null)
                 return null;
 
+            // 既存のDialogueTextがある場合は削除
+            if (activeDialogueTexts.ContainsKey(companion))
+            {
+                DialogueText existingDialogue = activeDialogueTexts[companion];
+                if (existingDialogue != null)
+                {
+                    existingDialogue.ForceDestroy();
+                }
+                activeDialogueTexts.Remove(companion);
+            }
+
             // DialogueTextオブジェクトを生成
             GameObject dialogueObj = Instantiate(dialogueTextPrefab, damageContainer);
 
@@ -824,9 +848,38 @@ namespace KowloonBreak.UI
             if (dialogueComponent != null)
             {
                 dialogueComponent.InitializeForCompanion(companion, dialogue, dialogueDuration);
+                
+                // 削除時のコールバックを設定
+                dialogueComponent.OnDialogueDestroyed += () => {
+                    OnDialogueTextDestroyed(companion);
+                };
+                
+                // 辞書に追加
+                activeDialogueTexts[companion] = dialogueComponent;
             }
             
             return dialogueObj;
+        }
+        
+        /// <summary>
+        /// DialogueTextが削除された際のコールバック
+        /// </summary>
+        /// <param name="companion">対象のコンパニオン</param>
+        private void OnDialogueTextDestroyed(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (activeDialogueTexts.ContainsKey(companion))
+            {
+                activeDialogueTexts.Remove(companion);
+            }
+            
+            // CompanionAIにも通知
+            if (companion != null)
+            {
+                companion.OnDialogueTextDestroyed();
+            }
+            
+            // InteractionPromptの表示状態を即座に更新
+            UpdateInteractionPrompt();
         }
 
         public void UpdateUI()
@@ -1076,8 +1129,13 @@ namespace KowloonBreak.UI
         {
             if (interactionPrompt == null) return;
 
-            // コンパニオンが近くにいて、かつCompanionCommandパネルが開いていない場合のみ表示
-            bool shouldShowPrompt = currentNearbyCompanion != null && !IsPanelOpen("CompanionCommand");
+            // DialogueTextが表示されているかチェック
+            UpdateDialogueTextStatus();
+
+            // コンパニオンが近くにいて、かつCompanionCommandパネルが開いていなく、かつDialogueTextが表示されていない場合のみ表示
+            bool shouldShowPrompt = currentNearbyCompanion != null && 
+                                   !IsPanelOpen("CompanionCommand") && 
+                                   !hasActiveDialogueForNearbyCompanion;
             
             if (shouldShowPrompt)
             {
@@ -1574,6 +1632,21 @@ namespace KowloonBreak.UI
 
             return false;
         }
+        
+        /// <summary>
+        /// DialogueTextの表示状態をチェック
+        /// </summary>
+        private void UpdateDialogueTextStatus()
+        {
+            // 近くのコンパニオンのDialogueTextが表示されているかチェック
+            hasActiveDialogueForNearbyCompanion = false;
+            
+            if (currentNearbyCompanion != null && activeDialogueTexts.ContainsKey(currentNearbyCompanion))
+            {
+                DialogueText dialogueText = activeDialogueTexts[currentNearbyCompanion];
+                hasActiveDialogueForNearbyCompanion = dialogueText != null && dialogueText.gameObject.activeInHierarchy;
+            }
+        }
 
         /// <summary>
         /// 1フレーム待ってから最初のボタンにフォーカスを設定
@@ -1627,6 +1700,121 @@ namespace KowloonBreak.UI
             }
         }
 
+        #endregion
+        
+        #region Companion Health Bar System
+        
+        /// <summary>
+        /// コンパニオンのヘルスバーを作成
+        /// </summary>
+        /// <param name="companion">対象のコンパニオン</param>
+        /// <returns>作成されたヘルスバーオブジェクト</returns>
+        public GameObject CreateHealthBarForCompanion(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (companion == null || companionHealthBarPrefab == null || damageContainer == null)
+                return null;
+            
+            // 既に存在する場合は削除
+            if (activeHealthBars.ContainsKey(companion))
+            {
+                RemoveHealthBarForCompanion(companion);
+            }
+            
+            // ヘルスバーオブジェクトを生成
+            GameObject healthBarObj = Instantiate(companionHealthBarPrefab, damageContainer);
+            
+            // CompanionHealthBarコンポーネントを初期化
+            CompanionHealthBar healthBarComponent = healthBarObj.GetComponent<CompanionHealthBar>();
+            if (healthBarComponent != null)
+            {
+                healthBarComponent.InitializeForCompanion(companion);
+                
+                // 削除時のコールバックを設定
+                healthBarComponent.OnHealthBarDestroyed += () => {
+                    OnHealthBarDestroyed(companion);
+                };
+                
+                // 辞書に追加
+                activeHealthBars[companion] = healthBarComponent;
+            }
+            
+            return healthBarObj;
+        }
+        
+        /// <summary>
+        /// コンパニオンのヘルスバーを削除
+        /// </summary>
+        /// <param name="companion">対象のコンパニオン</param>
+        public void RemoveHealthBarForCompanion(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (companion == null || !activeHealthBars.ContainsKey(companion))
+                return;
+            
+            CompanionHealthBar healthBar = activeHealthBars[companion];
+            if (healthBar != null)
+            {
+                healthBar.ForceDestroy();
+            }
+            
+            activeHealthBars.Remove(companion);
+        }
+        
+        /// <summary>
+        /// コンパニオンが破壊された際のヘルスバー削除通知
+        /// </summary>
+        /// <param name="companion">破壊されたコンパニオン</param>
+        public void OnCompanionDestroyed(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (companion == null || !activeHealthBars.ContainsKey(companion))
+                return;
+            
+            CompanionHealthBar healthBar = activeHealthBars[companion];
+            if (healthBar != null)
+            {
+                // フェードアウト後に削除
+                healthBar.OnCompanionDestroyed();
+            }
+            
+            activeHealthBars.Remove(companion);
+        }
+        
+        /// <summary>
+        /// ヘルスバーが削除された際のコールバック
+        /// </summary>
+        /// <param name="companion">対象のコンパニオン</param>
+        private void OnHealthBarDestroyed(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (activeHealthBars.ContainsKey(companion))
+            {
+                activeHealthBars.Remove(companion);
+            }
+        }
+        
+        /// <summary>
+        /// 全てのコンパニオンヘルスバーをクリア
+        /// </summary>
+        public void ClearAllCompanionHealthBars()
+        {
+            var companionsToRemove = new List<KowloonBreak.Characters.CompanionAI>(activeHealthBars.Keys);
+            
+            foreach (var companion in companionsToRemove)
+            {
+                RemoveHealthBarForCompanion(companion);
+            }
+            
+            activeHealthBars.Clear();
+        }
+        
+        /// <summary>
+        /// 指定されたコンパニオンのヘルスバーが存在するかチェック
+        /// </summary>
+        /// <param name="companion">チェック対象のコンパニオン</param>
+        /// <returns>ヘルスバーが存在する場合true</returns>
+        public bool HasHealthBarForCompanion(KowloonBreak.Characters.CompanionAI companion)
+        {
+            return companion != null && activeHealthBars.ContainsKey(companion);
+        }
+        
         #endregion
         
         #region Debug and Diagnostics
