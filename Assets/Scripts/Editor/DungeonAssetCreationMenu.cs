@@ -6,7 +6,7 @@ namespace KowloonBreak.Editor
 {
     public class DungeonAssetCreationMenu
     {
-        [MenuItem("Assets/Create/Kowloon Break/Dungeon Piece Library")]
+        [MenuItem("Assets/Create/Kowloon Break/New Dungeon Piece Library")]
         public static void CreateDungeonPieceLibrary()
         {
             CreateAssetWithDialog<DungeonPieceLibrary>("New Dungeon Piece Library", "asset", (library) =>
@@ -18,7 +18,7 @@ namespace KowloonBreak.Editor
             });
         }
 
-        [MenuItem("Assets/Create/Kowloon Break/Road Prefab Set")]
+        [MenuItem("Assets/Create/Kowloon Break/New Road Prefab Set")]
         public static void CreateRoadPrefabSet()
         {
             CreateAssetWithDialog<DungeonRoadPrefabSet>("New Road Prefab Set", "asset", (roadSet) =>
@@ -145,23 +145,33 @@ namespace KowloonBreak.Editor
 
             var specialPieces = new[]
             {
-                new DungeonPieceTemplate 
-                { 
+                new DungeonPieceTemplate
+                {
                     id = System.Guid.NewGuid().ToString(),
-                    name = "Player Spawn", 
-                    type = PieceType.SpawnPoint, 
+                    name = "Player Spawn",
+                    type = PieceType.SpawnPoint,
                     size = new Vector2Int(1, 1),
                     displayColor = new Color(0.3f, 0.9f, 0.3f),
                     blocksPaths = false
                 },
-                new DungeonPieceTemplate 
-                { 
+                new DungeonPieceTemplate
+                {
                     id = System.Guid.NewGuid().ToString(),
-                    name = "Exit Point", 
-                    type = PieceType.ExitPoint, 
+                    name = "Exit Point",
+                    type = PieceType.ExitPoint,
                     size = new Vector2Int(1, 1),
                     displayColor = new Color(0.9f, 0.3f, 0.3f),
                     blocksPaths = false
+                },
+                new DungeonPieceTemplate
+                {
+                    id = System.Guid.NewGuid().ToString(),
+                    name = "Blank Space",
+                    type = PieceType.Blank,
+                    size = new Vector2Int(1, 1),
+                    displayColor = new Color(0.7f, 0.7f, 0.7f),
+                    blocksPaths = false,
+                    prefab = null // プレファブなし（空きマス用）
                 }
             };
 

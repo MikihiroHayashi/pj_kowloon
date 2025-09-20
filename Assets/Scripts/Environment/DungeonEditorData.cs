@@ -221,7 +221,8 @@ namespace KowloonBreak.Environment
         Obstacle,
         Decoration,
         SpawnPoint,
-        ExitPoint
+        ExitPoint,
+        Blank
     }
 
     public enum RoadType

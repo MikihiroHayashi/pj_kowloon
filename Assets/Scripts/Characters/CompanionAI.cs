@@ -332,14 +332,17 @@ namespace KowloonBreak.Characters
 
         private void RespondToPlayerDanger()
         {
+            // Stay命令中は緊急時以外は状態変更しない
+            if (isStayCommandActive) return;
+
             // Find the most threatening enemy near the player
             GameObject mostThreatening = FindMostThreateningEnemy();
-            
+
             if (mostThreatening != null)
             {
                 currentTarget = mostThreatening;
                 SetState(AIState.Combat);
-                
+
                 // Gain trust for protective behavior
                 companionCharacter.ChangeTrustLevel(2);
             }
@@ -1374,8 +1377,8 @@ namespace KowloonBreak.Characters
             float threatLevel = decisionFactors.GetValueOrDefault("threatLevel", 0f);
             float trustLevel = decisionFactors["trustLevel"];
             
-            // 積極的戦闘の決定
-            if (threatLevel > 0.3f && trustLevel > 0.6f && currentState != AIState.Combat)
+            // 積極的戦闘の決定（Stay命令中は実行しない）
+            if (threatLevel > 0.3f && trustLevel > 0.6f && currentState != AIState.Combat && !isStayCommandActive)
             {
                 decisions.Add(new CompanionDecision(
                     "EngageCombat",
@@ -1389,8 +1392,8 @@ namespace KowloonBreak.Characters
                 ));
             }
             
-            // 退避の決定
-            if (threatLevel > 0.7f && decisionFactors["healthPercentage"] < 0.5f)
+            // 退避の決定（Stay命令中は実行しない）
+            if (threatLevel > 0.7f && decisionFactors["healthPercentage"] < 0.5f && !isStayCommandActive)
             {
                 decisions.Add(new CompanionDecision(
                     "TacticalRetreat",
@@ -1412,8 +1415,8 @@ namespace KowloonBreak.Characters
             float intelligenceLevel = decisionFactors["intelligenceLevel"];
             float trustLevel = decisionFactors["trustLevel"];
             
-            // 積極的サポートの決定
-            if (intelligenceLevel >= 0.8f && trustLevel >= 0.7f) // レベル4以上、信頼度70%以上
+            // 積極的サポートの決定（Stay命令中は実行しない）
+            if (intelligenceLevel >= 0.8f && trustLevel >= 0.7f && !isStayCommandActive) // レベル4以上、信頼度70%以上
             {
                 decisions.Add(new CompanionDecision(
                     "ProactiveSupport",

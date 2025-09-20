@@ -398,6 +398,11 @@ namespace KowloonBreak.Editor
                 {
                     Generate3DDungeon();
                 }
+
+                if (GUILayout.Button("Fill Empty Cells", EditorStyles.toolbarButton))
+                {
+                    FillEmptyCellsWithBlank();
+                }
             }
             finally
             {
@@ -1153,6 +1158,100 @@ namespace KowloonBreak.Editor
                 currentLayout.roadPaths.Clear();
                 EditorUtility.SetDirty(currentLayout);
             }
+        }
+
+        /// <summary>
+        /// 空いているマスをBlankピースで埋める
+        /// </summary>
+        private void FillEmptyCellsWithBlank()
+        {
+            if (currentLayout == null || pieceLibrary == null)
+            {
+                EditorUtility.DisplayDialog("Error", "Layout or Piece Library not found!", "OK");
+                return;
+            }
+
+            // BlankタイプのテンプレートからBlankピースを取得
+            DungeonPieceTemplate blankTemplate = null;
+
+            // 全カテゴリからBlankタイプのピースを探す
+            for (int categoryIndex = 0; categoryIndex < pieceLibrary.Categories.Count; categoryIndex++)
+            {
+                var category = pieceLibrary.Categories[categoryIndex];
+                foreach (var template in category.pieces)
+                {
+                    if (template.type == PieceType.Blank)
+                    {
+                        blankTemplate = template;
+                        break;
+                    }
+                }
+                if (blankTemplate != null) break;
+            }
+
+            if (blankTemplate == null)
+            {
+                EditorUtility.DisplayDialog("Error", "Blank piece template not found in library!\nPlease add a Blank piece to your library first.", "OK");
+                return;
+            }
+
+            int filledCount = 0;
+            List<DungeonPiece> newBlankPieces = new List<DungeonPiece>();
+
+            // グリッド全体をチェックして空いているマスを見つける
+            for (int x = 0; x < currentLayout.gridSize.x; x++)
+            {
+                for (int y = 0; y < currentLayout.gridSize.y; y++)
+                {
+                    Vector2Int gridPos = new Vector2Int(x, y);
+
+                    // そのマスが空いているかチェック
+                    if (grid[x, y] == null)
+                    {
+                        // Blankピースを作成
+                        DungeonPiece blankPiece = new DungeonPiece
+                        {
+                            id = System.Guid.NewGuid().ToString(),
+                            type = PieceType.Blank,
+                            size = new Vector2Int(1, 1),
+                            gridPosition = gridPos,
+                            rotation = 0f,
+                            prefab = blankTemplate.prefab, // nullの可能性があるが問題なし
+                            isRoadStartPoint = false,
+                            roadGroupId = 0
+                        };
+
+                        newBlankPieces.Add(blankPiece);
+                        filledCount++;
+                    }
+                }
+            }
+
+            if (filledCount > 0)
+            {
+                // 新しいBlankピースをレイアウトに追加
+                currentLayout.pieces.AddRange(newBlankPieces);
+
+                // グリッドを再初期化
+                InitializeGrid();
+
+                // レイアウトが変更されたことをマーク
+                EditorUtility.SetDirty(currentLayout);
+
+                // 成功メッセージを表示
+                EditorUtility.DisplayDialog("Fill Complete",
+                    $"Filled {filledCount} empty cells with Blank pieces.", "OK");
+
+                Debug.Log($"[DungeonEditor] Filled {filledCount} empty cells with Blank pieces");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Fill Complete",
+                    "No empty cells found to fill.", "OK");
+            }
+
+            // エディター画面を再描画
+            Repaint();
         }
     }
 }
