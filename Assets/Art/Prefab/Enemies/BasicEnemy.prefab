@@ -193,9 +193,9 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 100
   attackDamage: 10
-  attackRange: 2
+  attackRange: 1.5
   detectionRange: 12
-  attackCooldown: 0.5
+  attackCooldown: 1
   attackType: 0
   attackKnockbackMultiplier: 1
   visionAngle: 60
