@@ -62,9 +62,18 @@ namespace KowloonBreak.UI
         
         [Header("Companion Health Bar System")]
         [SerializeField] private GameObject companionHealthBarPrefab;
-        
+
         // Public access for CompanionHealthBarPrefab
         public GameObject CompanionHealthBarPrefab => companionHealthBarPrefab;
+
+        [Header("Enemy Health Bar System")]
+        [SerializeField] private GameObject enemyHealthBarPrefab;
+
+        // Public access for EnemyHealthBarPrefab
+        public GameObject EnemyHealthBarPrefab => enemyHealthBarPrefab;
+
+        [Header("Game Over System")]
+        [SerializeField] private GameOverUI gameOverUI;
 
         [Header("Companion Command System")]
         [SerializeField] private GameObject commandButtonPrefab;
@@ -115,6 +124,9 @@ namespace KowloonBreak.UI
         
         // Companion Health Bar System
         private Dictionary<KowloonBreak.Characters.CompanionAI, CompanionHealthBar> activeHealthBars = new Dictionary<KowloonBreak.Characters.CompanionAI, CompanionHealthBar>();
+
+        // Enemy Health Bar System
+        private Dictionary<KowloonBreak.Enemies.EnemyBase, EnemyHealthBar> activeEnemyHealthBars = new Dictionary<KowloonBreak.Enemies.EnemyBase, EnemyHealthBar>();
         
         // Dialogue Text Management System
         private Dictionary<KowloonBreak.Characters.CompanionAI, DialogueText> activeDialogueTexts = new Dictionary<KowloonBreak.Characters.CompanionAI, DialogueText>();
@@ -175,6 +187,7 @@ namespace KowloonBreak.UI
             SubscribeToEvents();
             UpdateUI();
             InitializeCompanionCommandSystem();
+            InitializeGameOverSystem();
         }
 
         private void Update()
@@ -1814,9 +1827,353 @@ namespace KowloonBreak.UI
         {
             return companion != null && activeHealthBars.ContainsKey(companion);
         }
-        
+
         #endregion
-        
+
+        #region Enemy Health Bar System
+
+        /// <summary>
+        /// 敵のヘルスバーを作成
+        /// </summary>
+        /// <param name="enemy">対象の敵</param>
+        /// <returns>作成されたヘルスバーオブジェクト</returns>
+        public GameObject CreateHealthBarForEnemy(KowloonBreak.Enemies.EnemyBase enemy)
+        {
+            if (enemy == null || enemyHealthBarPrefab == null || damageContainer == null)
+                return null;
+
+            // 既に存在する場合は削除
+            if (activeEnemyHealthBars.ContainsKey(enemy))
+            {
+                RemoveHealthBarForEnemy(enemy);
+            }
+
+            // ヘルスバーオブジェクトを生成
+            GameObject healthBarObj = Instantiate(enemyHealthBarPrefab, damageContainer);
+
+            // EnemyHealthBarコンポーネントを初期化
+            EnemyHealthBar healthBarComponent = healthBarObj.GetComponent<EnemyHealthBar>();
+            if (healthBarComponent != null)
+            {
+                healthBarComponent.InitializeForEnemy(enemy);
+
+                // 削除時のコールバックを設定
+                healthBarComponent.OnHealthBarDestroyed += () => {
+                    OnEnemyHealthBarDestroyed(enemy);
+                };
+
+                // 辞書に追加
+                activeEnemyHealthBars[enemy] = healthBarComponent;
+            }
+
+            return healthBarObj;
+        }
+
+        /// <summary>
+        /// 敵のヘルスバーを削除
+        /// </summary>
+        /// <param name="enemy">対象の敵</param>
+        public void RemoveHealthBarForEnemy(KowloonBreak.Enemies.EnemyBase enemy)
+        {
+            if (enemy == null || !activeEnemyHealthBars.ContainsKey(enemy))
+                return;
+
+            EnemyHealthBar healthBar = activeEnemyHealthBars[enemy];
+            if (healthBar != null)
+            {
+                healthBar.ForceDestroy();
+            }
+
+            activeEnemyHealthBars.Remove(enemy);
+        }
+
+        /// <summary>
+        /// 敵が破壊された際のヘルスバー削除通知
+        /// </summary>
+        /// <param name="enemy">破壊された敵</param>
+        public void OnEnemyDestroyed(KowloonBreak.Enemies.EnemyBase enemy)
+        {
+            if (enemy == null || !activeEnemyHealthBars.ContainsKey(enemy))
+                return;
+
+            EnemyHealthBar healthBar = activeEnemyHealthBars[enemy];
+            if (healthBar != null)
+            {
+                // フェードアウト後に削除
+                healthBar.OnEnemyDestroyed();
+            }
+
+            activeEnemyHealthBars.Remove(enemy);
+        }
+
+        /// <summary>
+        /// 敵のヘルスバーが削除された際のコールバック
+        /// </summary>
+        /// <param name="enemy">対象の敵</param>
+        private void OnEnemyHealthBarDestroyed(KowloonBreak.Enemies.EnemyBase enemy)
+        {
+            if (activeEnemyHealthBars.ContainsKey(enemy))
+            {
+                activeEnemyHealthBars.Remove(enemy);
+            }
+        }
+
+        /// <summary>
+        /// 全ての敵ヘルスバーをクリア
+        /// </summary>
+        public void ClearAllEnemyHealthBars()
+        {
+            var enemiesToRemove = new List<KowloonBreak.Enemies.EnemyBase>(activeEnemyHealthBars.Keys);
+
+            foreach (var enemy in enemiesToRemove)
+            {
+                RemoveHealthBarForEnemy(enemy);
+            }
+
+            activeEnemyHealthBars.Clear();
+        }
+
+        /// <summary>
+        /// 指定された敵のヘルスバーが存在するかチェック
+        /// </summary>
+        /// <param name="enemy">チェック対象の敵</param>
+        /// <returns>ヘルスバーが存在する場合true</returns>
+        public bool HasHealthBarForEnemy(KowloonBreak.Enemies.EnemyBase enemy)
+        {
+            return enemy != null && activeEnemyHealthBars.ContainsKey(enemy);
+        }
+
+        #endregion
+
+        #region Game Over System
+
+        /// <summary>
+        /// ゲームオーバーシステムの初期化
+        /// </summary>
+        private void InitializeGameOverSystem()
+        {
+            if (gameOverUI != null)
+            {
+                // Game Over UIのイベントを購読
+                gameOverUI.OnRetryRequested += HandleRetryRequested;
+                gameOverUI.OnMainMenuRequested += HandleMainMenuRequested;
+
+                Debug.Log("[UIManager] Game Over system initialized");
+            }
+            else
+            {
+                Debug.LogWarning("[UIManager] GameOverUI component not assigned");
+            }
+        }
+
+        /// <summary>
+        /// ゲームオーバーUIを表示
+        /// </summary>
+        public void ShowGameOver()
+        {
+            if (gameOverUI != null)
+            {
+                Debug.Log("[UIManager] Showing Game Over screen");
+                gameOverUI.ShowGameOverUI();
+            }
+            else
+            {
+                Debug.LogError("[UIManager] Cannot show Game Over - GameOverUI not assigned");
+            }
+        }
+
+        /// <summary>
+        /// ゲームオーバーUIを非表示
+        /// </summary>
+        public void HideGameOver()
+        {
+            if (gameOverUI != null)
+            {
+                gameOverUI.HideGameOverUI();
+            }
+        }
+
+        /// <summary>
+        /// リトライが要求された時の処理
+        /// </summary>
+        private void HandleRetryRequested()
+        {
+            Debug.Log("[UIManager] Retry requested - initiating game restart");
+
+            // リトライ処理を開始
+            StartCoroutine(RestartGame());
+        }
+
+        /// <summary>
+        /// メインメニューが要求された時の処理
+        /// </summary>
+        private void HandleMainMenuRequested()
+        {
+            Debug.Log("[UIManager] Main menu requested");
+
+            // メインメニューに戻る処理
+            // 実装は後で追加（シーン管理が必要）
+            ShowNotification("メインメニュー機能は準備中です", NotificationType.Info);
+        }
+
+        /// <summary>
+        /// ゲーム再開始処理
+        /// </summary>
+        private System.Collections.IEnumerator RestartGame()
+        {
+            // プレイヤーを復活・リセット
+            yield return StartCoroutine(RespawnPlayer());
+
+            // コンパニオンをプレイヤーの近くにワープ
+            RespawnCompanions();
+
+            // その他のゲーム状態をリセット
+            ResetGameState();
+
+            Debug.Log("[UIManager] Game restart completed");
+        }
+
+        /// <summary>
+        /// プレイヤーを復活させる
+        /// </summary>
+        private System.Collections.IEnumerator RespawnPlayer()
+        {
+            if (enhancedPlayerController != null)
+            {
+                Debug.Log("[UIManager] Respawning player");
+
+                // プレイヤーを開始位置に移動
+                Vector3 spawnPosition = GetPlayerSpawnPosition();
+                enhancedPlayerController.transform.position = spawnPosition;
+
+                // HP、スタミナを全快
+                enhancedPlayerController.RestoreFullHealth();
+                enhancedPlayerController.RestoreFullStamina();
+
+                // IF（感染率）を0に
+                if (infectionManager != null)
+                {
+                    infectionManager.ResetPlayerInfection();
+                }
+
+                // プレイヤーを生存状態に復活
+                enhancedPlayerController.Revive();
+
+                yield return new WaitForSeconds(0.1f); // 少し待機
+            }
+            else
+            {
+                Debug.LogError("[UIManager] Cannot respawn player - EnhancedPlayerController not found");
+            }
+        }
+
+        /// <summary>
+        /// コンパニオンをプレイヤーの近くに復活させる
+        /// </summary>
+        private void RespawnCompanions()
+        {
+            if (enhancedPlayerController == null) return;
+
+            // すべてのコンパニオンを検索
+            var companions = FindObjectsOfType<KowloonBreak.Characters.CompanionAI>();
+
+            Vector3 playerPosition = enhancedPlayerController.transform.position;
+
+            for (int i = 0; i < companions.Length; i++)
+            {
+                var companion = companions[i];
+                if (companion != null)
+                {
+                    // プレイヤーの周りにランダムに配置
+                    Vector3 offset = new Vector3(
+                        UnityEngine.Random.Range(-3f, 3f),  // X軸方向のランダムオフセット
+                        0f,
+                        UnityEngine.Random.Range(-3f, 3f)   // Z軸方向のランダムオフセット
+                    );
+
+                    Vector3 companionSpawnPosition = playerPosition + offset;
+                    companion.transform.position = companionSpawnPosition;
+
+                    // コンパニオンのHPを全快
+                    companion.RestoreFullHealth();
+
+                    Debug.Log($"[UIManager] Respawned companion {companion.name} at {companionSpawnPosition}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// プレイヤーのスポーン位置を取得
+        /// </summary>
+        private Vector3 GetPlayerSpawnPosition()
+        {
+            try
+            {
+                // 実際のスポーンポイントがある場合はそれを使用
+                GameObject spawnPoint = GameObject.FindGameObjectWithTag("PlayerSpawn");
+                if (spawnPoint != null)
+                {
+                    return spawnPoint.transform.position;
+                }
+            }
+            catch (UnityException ex)
+            {
+                Debug.LogWarning($"[UIManager] PlayerSpawn tag is not defined: {ex.Message}");
+            }
+
+            // "Player"タグのオブジェクトを探してその位置を基準にする
+            try
+            {
+                GameObject player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    Debug.Log("[UIManager] Using current player position as spawn point");
+                    return player.transform.position;
+                }
+            }
+            catch (UnityException ex)
+            {
+                Debug.LogWarning($"[UIManager] Player tag is not defined: {ex.Message}");
+            }
+
+            // EnhancedPlayerControllerを直接探す
+            var playerController = UnityEngine.Object.FindObjectOfType<Player.EnhancedPlayerController>();
+            if (playerController != null)
+            {
+                Debug.Log("[UIManager] Using EnhancedPlayerController position as spawn point");
+                return playerController.transform.position;
+            }
+
+            // 最終フォールバック：原点から少し上
+            Debug.LogWarning("[UIManager] No spawn point found, using default position (0, 1, 0)");
+            return new Vector3(0f, 1f, 0f);
+        }
+
+        /// <summary>
+        /// ゲーム状態をリセット
+        /// </summary>
+        private void ResetGameState()
+        {
+            // 時間スケールを元に戻す
+            Time.timeScale = 1f;
+
+            // カーソルを元の状態に戻す
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
+            // その他のゲーム状態リセット
+            // 必要に応じて追加
+
+            Debug.Log("[UIManager] Game state reset completed");
+        }
+
+        /// <summary>
+        /// ゲームオーバー状態かどうか
+        /// </summary>
+        public bool IsGameOverActive => gameOverUI != null && gameOverUI.IsGameOverActive;
+
+        #endregion
+
         #region Debug and Diagnostics
         
         

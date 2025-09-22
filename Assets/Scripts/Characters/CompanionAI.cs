@@ -11,7 +11,7 @@ using KowloonBreak.UI;
 namespace KowloonBreak.Characters
 {
     [RequireComponent(typeof(NavMeshAgent), typeof(CompanionCharacter))]
-    public class CompanionAI : MonoBehaviour, IDestructible
+    public class CompanionAI : MonoBehaviour, IDestructible, IKnockbackable
     {
         [Header("AI Settings")]
         [SerializeField] private float followDistance = 3f;
@@ -65,6 +65,9 @@ namespace KowloonBreak.Characters
         [SerializeField] private bool enableDialogueSystem = true;
         [SerializeField] private float dialogueCooldown = 3f;
         [SerializeField] private float combatDialogueCooldown = 5f;
+
+        [Header("Knockback System")]
+        [SerializeField] private KnockbackSystem knockbackSystem = new KnockbackSystem();
         
         // 現在表示中のDialogueText管理
         private GameObject currentDialogueText;
@@ -172,6 +175,7 @@ namespace KowloonBreak.Characters
         {
             FindPlayer();
             FindPlayerCamera();
+            InitializeKnockbackSystem();
             SetState(AIState.Follow);
             StartCoroutine(UpdateAILoop());
         }
@@ -258,7 +262,13 @@ namespace KowloonBreak.Characters
         private void UpdateAI()
         {
             if (isDead) return;
-            
+
+            // ノックバック状態の更新
+            knockbackSystem.UpdateKnockbackState();
+
+            // ノックバック中はAI処理を一時停止
+            if (knockbackSystem.IsKnockedBack) return;
+
             if (player == null)
             {
                 FindPlayer();
@@ -865,9 +875,6 @@ namespace KowloonBreak.Characters
             {
                 Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
                 transform.rotation = targetRotation; // 即座に回転
-                
-                if (debugCommandExecution)
-                    Debug.Log($"[CompanionAI] {gameObject.name} instantly turned to face target at {targetPosition}");
             }
         }
 
@@ -1343,9 +1350,6 @@ namespace KowloonBreak.Characters
             var bestDecision = decisions[0];
             if (bestDecision.confidence > 0.5f) // 50%以上の信頼度
             {
-                if (debugStateChanges)
-                    Debug.Log($"[CompanionAI] {companionCharacter.Name} - Executing decision: {bestDecision.decisionType} (Priority: {bestDecision.priority:F2}, Confidence: {bestDecision.confidence:F2}) - {bestDecision.reasoning}");
-                
                 bestDecision.action?.Invoke();
             }
         }
@@ -1364,8 +1368,6 @@ namespace KowloonBreak.Characters
                     $"Health critically low ({healthPercentage:P0})",
                     () => {
                         // 回復行動の実装
-                        if (debugStateChanges)
-                            Debug.Log($"{companionCharacter.Name} attempting emergency self-healing");
                         // 実際の回復ロジックをここに実装
                     }
                 ));
@@ -1425,8 +1427,6 @@ namespace KowloonBreak.Characters
                     $"High intelligence ({intelligenceLevel:P0}) and trust ({trustLevel:P0})",
                     () => {
                         // 積極的なサポート行動
-                        if (debugStateChanges)
-                            Debug.Log($"{companionCharacter.Name} providing proactive support");
                         // プレイヤーの近くで警戒態勢
                         SetState(AIState.Support);
                     }
@@ -1491,10 +1491,8 @@ namespace KowloonBreak.Characters
         public bool ExecuteCommand(CompanionCommand command, Vector3 position = default, GameObject target = null)
         {
             
-            if (!CanExecuteCommand(command)) 
+            if (!CanExecuteCommand(command))
             {
-                if (debugCommandExecution)
-                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - Cannot execute command {command} (Intelligence Level: {GetIntelligenceLevelFromTrust()})");
                 return false;
             }
             
@@ -1526,7 +1524,6 @@ namespace KowloonBreak.Characters
                     }
                     else
                     {
-                        Debug.LogWarning($"[CompanionAI] {gameObject.name} - Attack command failed: no target specified");
                         return false;
                     }
                     
@@ -1625,6 +1622,78 @@ namespace KowloonBreak.Characters
         public void CommandSupport()
         {
             ExecuteCommand(CompanionCommand.Support);
+        }
+
+        /// <summary>
+        /// プレイヤーの近くにワープする（リトライ時のコンパニオン復活用）
+        /// </summary>
+        public void WarpToPlayerNearby()
+        {
+            if (player == null)
+            {
+                Debug.LogWarning($"[CompanionAI] {gameObject.name} - Cannot warp: Player reference is null");
+                return;
+            }
+
+            // プレイヤーの周囲にワープポイントを探す
+            Vector3 warpPosition = FindSafeWarpPosition(player.position, 3f, 8f);
+
+            // NavMeshAgentを一時停止してワープ
+            if (navAgent != null && navAgent.isActiveAndEnabled)
+            {
+                navAgent.enabled = false;
+            }
+
+            // 位置をワープ
+            transform.position = warpPosition;
+
+            // NavMeshAgentを再有効化
+            if (navAgent != null)
+            {
+                navAgent.enabled = true;
+                navAgent.Warp(warpPosition);
+            }
+
+        }
+
+        /// <summary>
+        /// 安全なワープ位置を探す
+        /// </summary>
+        private Vector3 FindSafeWarpPosition(Vector3 centerPosition, float minDistance, float maxDistance)
+        {
+            // 複数の候補位置を試す
+            for (int attempts = 0; attempts < 8; attempts++)
+            {
+                // ランダムな角度でプレイヤーの周囲に配置
+                float angle = attempts * 45f; // 45度ずつ回転
+                float distance = UnityEngine.Random.Range(minDistance, maxDistance);
+
+                Vector3 direction = new Vector3(
+                    Mathf.Cos(angle * Mathf.Deg2Rad),
+                    0f,
+                    Mathf.Sin(angle * Mathf.Deg2Rad)
+                );
+
+                Vector3 candidatePosition = centerPosition + direction * distance;
+
+                // NavMeshの有効な位置かチェック
+                UnityEngine.AI.NavMeshHit hit;
+                if (UnityEngine.AI.NavMesh.SamplePosition(candidatePosition, out hit, 2f, UnityEngine.AI.NavMesh.AllAreas))
+                {
+                    return hit.position;
+                }
+            }
+
+            // 安全な位置が見つからない場合はプレイヤー位置をベースに調整
+            Vector3 fallbackPosition = centerPosition + Vector3.forward * minDistance;
+            UnityEngine.AI.NavMeshHit fallbackHit;
+            if (UnityEngine.AI.NavMesh.SamplePosition(fallbackPosition, out fallbackHit, 5f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                return fallbackHit.position;
+            }
+
+            // 最終的にはプレイヤー位置を返す
+            return centerPosition;
         }
 
         private void OnDrawGizmosSelected()
@@ -1878,6 +1947,60 @@ namespace KowloonBreak.Characters
         {
             TakeDamage(damage, ToolType.IronPipe); // デフォルトツール
         }
+
+        /// <summary>
+        /// 敵からの攻撃でダメージを受ける（ノックバック付き）
+        /// </summary>
+        /// <param name="damage">ダメージ量</param>
+        /// <param name="attackerPosition">攻撃者の位置</param>
+        /// <param name="attackType">敵の攻撃タイプ</param>
+        /// <param name="knockbackMultiplier">ノックバック乗算値</param>
+        public virtual void TakeDamage(float damage, Vector3 attackerPosition, EnemyAttackType attackType, float knockbackMultiplier = 1.0f)
+        {
+            if (isDead) return;
+
+            // 通常のダメージ処理
+            TakeDamage(damage);
+
+            // 生存している場合のみノックバック適用
+            if (!isDead && knockbackSystem != null)
+            {
+                // ノックバック力を敵の攻撃乗算値で調整
+                var originalSettings = (knockbackSystem.KnockbackForce, knockbackSystem.KnockbackDuration);
+                knockbackSystem.SetKnockbackSettings(
+                    knockbackSystem.KnockbackForce * knockbackMultiplier,
+                    knockbackSystem.KnockbackDuration
+                );
+
+                // ノックバックを実行（isEnemyAttack=trueで武器乗算値を1.0固定）
+                knockbackSystem.StartKnockback(attackerPosition, ToolType.IronPipe,
+                    onKnockbackStart: OnKnockbackStart,
+                    onKnockbackEnd: () => {
+                        OnKnockbackEnd();
+                        // 設定を元に戻す
+                        knockbackSystem.SetKnockbackSettings(originalSettings.KnockbackForce, originalSettings.KnockbackDuration);
+                    },
+                    isEnemyAttack: true);
+            }
+        }
+
+        /// <summary>
+        /// 敵の攻撃タイプを疑似的にToolTypeに変換
+        /// </summary>
+        /// <param name="attackType">敵の攻撃タイプ</param>
+        /// <returns>対応するToolType</returns>
+        private ToolType ConvertEnemyAttackToToolType(EnemyAttackType attackType)
+        {
+            switch (attackType)
+            {
+                case EnemyAttackType.Slam:
+                case EnemyAttackType.Tackle:
+                case EnemyAttackType.Charge:
+                    return ToolType.Pickaxe;  // 重い攻撃はつるはし扱い
+                default:
+                    return ToolType.IronPipe; // その他は鉄パイプ扱い
+            }
+        }
         
         /// <summary>
         /// ヒーリング処理
@@ -1887,6 +2010,34 @@ namespace KowloonBreak.Characters
             if (isDead) return;
 
             currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+        }
+
+        /// <summary>
+        /// HPを全快にする（リトライ時のコンパニオン復活用）
+        /// </summary>
+        public virtual void RestoreFullHealth()
+        {
+            currentHealth = maxHealth;
+            isDead = false;
+
+            // NavMeshAgentを再有効化
+            if (navAgent != null && !navAgent.enabled)
+            {
+                navAgent.enabled = true;
+            }
+
+            // オブジェクトを再アクティブ化
+            if (!gameObject.activeInHierarchy)
+            {
+                gameObject.SetActive(true);
+            }
+
+            // ヘルスバーを再初期化
+            if (uiHealthBar == null)
+            {
+                InitializeUIHealthBar();
+            }
+
         }
         
         /// <summary>
@@ -2167,8 +2318,107 @@ namespace KowloonBreak.Characters
         #endregion
         
         #region Debug and Diagnostics
-        
-        
+
+
+        #endregion
+
+        #region Knockback System
+
+        /// <summary>
+        /// ノックバックシステムの初期化
+        /// </summary>
+        private void InitializeKnockbackSystem()
+        {
+            // Rigidbodyコンポーネントを取得または追加
+            Rigidbody companionRigidbody = GetComponent<Rigidbody>();
+            if (companionRigidbody == null)
+            {
+                companionRigidbody = gameObject.AddComponent<Rigidbody>();
+                companionRigidbody.isKinematic = true;
+                companionRigidbody.useGravity = false;
+            }
+
+            // Animatorを取得
+            Animator companionAnimator = GetComponent<Animator>();
+
+            // ノックバックシステムを初期化
+            knockbackSystem.Initialize(this, companionRigidbody, companionAnimator);
+        }
+
+        /// <summary>
+        /// ノックバックを開始（IKnockbackableインターフェース実装）
+        /// </summary>
+        /// <param name="attackerPosition">攻撃者の位置</param>
+        /// <param name="toolType">使用された武器のタイプ</param>
+        public void StartKnockback(Vector3 attackerPosition, ToolType toolType = ToolType.IronPipe)
+        {
+            knockbackSystem.StartKnockback(attackerPosition, toolType,
+                onKnockbackStart: OnKnockbackStart,
+                onKnockbackEnd: OnKnockbackEnd);
+        }
+
+        /// <summary>
+        /// ノックバック中かどうか（IKnockbackableインターフェース実装）
+        /// </summary>
+        public bool IsKnockedBack => knockbackSystem.IsKnockedBack;
+
+        /// <summary>
+        /// ノックバック設定を変更（IKnockbackableインターフェース実装）
+        /// </summary>
+        /// <param name="force">ノックバック力</param>
+        /// <param name="duration">ノックバック持続時間</param>
+        public void SetKnockbackSettings(float force, float duration)
+        {
+            knockbackSystem.SetKnockbackSettings(force, duration);
+        }
+
+        /// <summary>
+        /// ノックバック機能の有効/無効を切り替え（IKnockbackableインターフェース実装）
+        /// </summary>
+        /// <param name="enabled">有効かどうか</param>
+        public void SetKnockbackEnabled(bool enabled)
+        {
+            knockbackSystem.SetKnockbackEnabled(enabled);
+        }
+
+        /// <summary>
+        /// ノックバック開始時のコールバック
+        /// </summary>
+        private void OnKnockbackStart()
+        {
+            // NavMeshAgentを一時的に停止
+            if (navAgent != null && navAgent.isActiveAndEnabled)
+            {
+                navAgent.enabled = false;
+            }
+        }
+
+        /// <summary>
+        /// ノックバック終了時のコールバック
+        /// </summary>
+        private void OnKnockbackEnd()
+        {
+            // NavMeshAgentを再有効化
+            if (navAgent != null)
+            {
+                navAgent.enabled = true;
+
+                // NavMesh上にワープして位置を修正
+                UnityEngine.AI.NavMeshHit hit;
+                if (UnityEngine.AI.NavMesh.SamplePosition(transform.position, out hit, 2f, UnityEngine.AI.NavMesh.AllAreas))
+                {
+                    navAgent.Warp(hit.position);
+                }
+            }
+
+            // 戦闘状態に復帰（元の状態に応じて）
+            if (!isDead && currentState != AIState.Combat)
+            {
+                // 敵が近くにいる場合は戦闘状態に
+                CheckForEnemies();
+            }
+        }
+
         #endregion
     }
 
@@ -2191,7 +2441,7 @@ namespace KowloonBreak.Characters
         Retreat,    // Level 5+
         Advanced    // Level 5+
     }
-    
+
     // 意思決定システム関連の構造体
     [System.Serializable]
     public struct CompanionDecision

@@ -312,10 +312,13 @@ namespace KowloonBreak.Player
         
         private void LogDebug(string message)
         {
+            // デバッグログは開発時のみ有効（本番環境では出力しない）
+            #if UNITY_EDITOR
             if (showDebugInfo)
             {
                 Debug.Log($"[ToolInteractionSystem] {message}");
             }
+            #endif
         }
         
         private void OnDrawGizmosSelected()

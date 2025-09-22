@@ -337,6 +337,35 @@ namespace KowloonBreak.Managers
             if (cityInfectionRate >= 0.2f) return InfectionLevel.Exposed;
             return InfectionLevel.Clean;
         }
+
+        /// <summary>
+        /// プレイヤーの感染状態をリセット（リトライ時用）
+        /// </summary>
+        public void ResetPlayerInfection()
+        {
+            // プレイヤーキャラクターの感染状態をクリーンに戻す
+            var playerController = UnityEngine.Object.FindObjectOfType<Player.EnhancedPlayerController>();
+            if (playerController != null)
+            {
+                // プレイヤー自体に感染システムがある場合はここでリセット
+                // 現在のプレイヤーシステムでは感染情報は別途管理されている可能性があります
+                Debug.Log("[InfectionManager] Player infection reset");
+            }
+
+            // プレイヤー関連の感染リスクをクリア
+            if (characterInfectionRisk.ContainsKey("Player"))
+            {
+                characterInfectionRisk["Player"] = 0f;
+            }
+
+            // 全てのアクティブな感染イベントを終了（リトライ時は感染イベントもリセット）
+            activeOutbreaks.Clear();
+
+            // 都市感染率をリセット
+            SetCityInfectionRate(0f);
+
+            Debug.Log("[InfectionManager] Player infection and city infection rate reset to 0");
+        }
     }
 
     [Serializable]

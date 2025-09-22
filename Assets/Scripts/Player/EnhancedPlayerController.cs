@@ -18,7 +18,7 @@ namespace KowloonBreak.Player
     
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(AudioSource))]
-    public class EnhancedPlayerController : MonoBehaviour
+    public class EnhancedPlayerController : MonoBehaviour, IKnockbackable
     {
         [Header("Movement Settings")]
         [SerializeField] private float walkSpeed = 3f;
@@ -42,6 +42,10 @@ namespace KowloonBreak.Player
         [Header("Health System")]
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
+
+        [Header("Game Over Settings")]
+        [Tooltip("プレイヤー死亡からゲームオーバーUI表示までの遅延時間（秒）")]
+        [SerializeField] private float gameOverDelay = 2f;
 
         [Header("Stamina System")]
         [SerializeField] private float maxStamina = 100f;
@@ -92,6 +96,9 @@ namespace KowloonBreak.Player
 
         [Header("Animation")]
         [SerializeField] private PlayerAnimationEventHandler playerAnimationEventHandler;
+
+        [Header("Knockback System")]
+        [SerializeField] private KnockbackSystem knockbackSystem = new KnockbackSystem();
 
         private CharacterController characterController;
         private AudioSource audioSource;
@@ -205,13 +212,20 @@ namespace KowloonBreak.Player
 
         private void Update()
         {
-            HandleInput();
-            
-            if (canMove)
+            // ノックバック状態の更新
+            knockbackSystem.UpdateKnockbackState();
+
+            // ノックバック中は入力と移動を制限
+            if (!knockbackSystem.IsKnockedBack)
             {
-                HandleMovement(); // 統一された移動処理
+                HandleInput();
+
+                if (canMove)
+                {
+                    HandleMovement(); // 統一された移動処理
+                }
             }
-            
+
             // その他のシステム処理
             HandleStamina();
             HandleHealth();
@@ -240,6 +254,7 @@ namespace KowloonBreak.Player
             SetupCameraFollowTarget();
             InitializeStats();
             InitializeInventorySystem();
+            InitializeKnockbackSystem();
 
             // Health and Stamina initialization
             currentHealth = maxHealth;
@@ -320,6 +335,12 @@ namespace KowloonBreak.Player
         private void HandleInput()
         {
             if (InputManagerInstance == null) return;
+
+            // 死亡状態では入力を一切受け付けない
+            if (currentMovementState == MovementState.Dead)
+            {
+                return;
+            }
 
             if (InputManagerInstance.IsInteractionPressed())
             {
@@ -462,7 +483,8 @@ namespace KowloonBreak.Player
                     // スタン状態の処理
                     break;
                 case MovementState.Dead:
-                    // 死亡状態の処理
+                    // 死亡状態の処理：すべての入力とアクションを無効化
+                    HandleDeadState();
                     break;
             }
         }
@@ -1277,7 +1299,7 @@ namespace KowloonBreak.Player
         {
             if (currentUsedTool == null || currentUsedTool.IsEmpty)
             {
-                Debug.LogWarning("[EnhancedPlayerController] No current tool available for effect execution");
+                Debug.Log("[EnhancedPlayerController] No current tool available for effect execution - animation event called without tool");
                 return;
             }
 
@@ -1526,7 +1548,6 @@ namespace KowloonBreak.Player
         {
             if (!IsAlive || isInvincible) return;
 
-
             currentHealth -= damage;
             currentHealth = Mathf.Max(0f, currentHealth);
 
@@ -1541,6 +1562,60 @@ namespace KowloonBreak.Player
             if (currentHealth <= 0f)
             {
                 Die();
+            }
+        }
+
+        /// <summary>
+        /// 敵からの攻撃でダメージを受ける（ノックバック付き）
+        /// </summary>
+        /// <param name="damage">ダメージ量</param>
+        /// <param name="attackerPosition">攻撃者の位置</param>
+        /// <param name="attackType">敵の攻撃タイプ</param>
+        /// <param name="knockbackMultiplier">ノックバック乗算値</param>
+        public void TakeDamage(float damage, Vector3 attackerPosition, EnemyAttackType attackType, float knockbackMultiplier = 1.0f)
+        {
+            if (!IsAlive || isInvincible) return;
+
+            // 通常のダメージ処理
+            TakeDamage(damage);
+
+            // 生存している場合のみノックバック適用
+            if (IsAlive && knockbackSystem != null)
+            {
+                // ノックバック力を敵の攻撃乗算値で調整
+                var originalSettings = (knockbackSystem.KnockbackForce, knockbackSystem.KnockbackDuration);
+                knockbackSystem.SetKnockbackSettings(
+                    knockbackSystem.KnockbackForce * knockbackMultiplier,
+                    knockbackSystem.KnockbackDuration
+                );
+
+                // ノックバックを実行（isEnemyAttack=trueで武器乗算値を1.0固定）
+                knockbackSystem.StartKnockback(attackerPosition, ToolType.IronPipe,
+                    onKnockbackStart: OnKnockbackStart,
+                    onKnockbackEnd: () => {
+                        OnKnockbackEnd();
+                        // 設定を元に戻す
+                        knockbackSystem.SetKnockbackSettings(originalSettings.KnockbackForce, originalSettings.KnockbackDuration);
+                    },
+                    isEnemyAttack: true);
+            }
+        }
+
+        /// <summary>
+        /// 敵の攻撃タイプを疑似的にToolTypeに変換
+        /// </summary>
+        /// <param name="attackType">敵の攻撃タイプ</param>
+        /// <returns>対応するToolType</returns>
+        private ToolType ConvertEnemyAttackToToolType(EnemyAttackType attackType)
+        {
+            switch (attackType)
+            {
+                case EnemyAttackType.Slam:
+                case EnemyAttackType.Tackle:
+                case EnemyAttackType.Charge:
+                    return ToolType.Pickaxe;  // 重い攻撃はつるはし扱い
+                default:
+                    return ToolType.IronPipe; // その他は鉄パイプ扱い
             }
         }
 
@@ -1596,19 +1671,141 @@ namespace KowloonBreak.Player
 
         private void Die()
         {
+            // 既に死亡している場合は重複実行を防ぐ
+            if (currentMovementState == MovementState.Dead)
+            {
+                return;
+            }
+
+            Debug.Log("[EnhancedPlayerController] Player death initiated");
+
             OnPlayerDeath?.Invoke();
 
             SetMovementState(MovementState.Dead);
 
-            // PlayerAnimatorControllerでDeathアニメーションを再生
+            // 強制的にDeathアニメーションを再生（攻撃モーション中でも確実に実行）
             if (animatorController != null)
             {
-                animatorController.TriggerDeath();
+                animatorController.ForceDeathAnimation();
+                Debug.Log("[EnhancedPlayerController] Force death animation called");
             }
             else
             {
                 Debug.LogWarning("[EnhancedPlayerController] PlayerAnimatorController not found on player");
             }
+
+            // 死亡時に移動とアクションを完全に停止
+            DisablePlayerActions();
+
+            // 設定された遅延時間後にゲームオーバーUIを表示
+            StartCoroutine(ShowGameOverAfterDelay());
+            Debug.Log($"[EnhancedPlayerController] Game Over UI will be displayed after {gameOverDelay} seconds");
+        }
+
+        /// <summary>
+        /// プレイヤーのアクションを無効化（死亡時用）
+        /// </summary>
+        private void DisablePlayerActions()
+        {
+            // 移動方向を無効化
+            moveDirection = Vector3.zero;
+
+            // CharacterControllerの動きを停止
+            if (characterController != null && characterController.enabled)
+            {
+                velocity = Vector3.zero;
+            }
+
+            // 現在のアクションを中断
+            if (currentUsedTool != null)
+            {
+                currentUsedTool = null;
+            }
+
+            Debug.Log("[EnhancedPlayerController] Player actions disabled due to death");
+        }
+
+        /// <summary>
+        /// 死亡状態での処理（毎フレーム実行）
+        /// </summary>
+        private void HandleDeadState()
+        {
+            // 死亡状態では一切の移動・アクションを無効化
+            moveDirection = Vector3.zero;
+            velocity = Vector3.zero;
+
+            // ツール使用を無効化
+            if (currentUsedTool != null)
+            {
+                currentUsedTool = null;
+            }
+
+            // アニメーターに速度0を設定
+            if (animatorController != null)
+            {
+                animatorController.SetRealSpeed(0f); // 速度0で更新
+                animatorController.SetCrouch(false); // しゃがみ状態も解除
+            }
+        }
+
+        /// <summary>
+        /// プレイヤーを復活させる（ゲームオーバー後のリトライ用）
+        /// </summary>
+        public void Revive()
+        {
+            Debug.Log("[EnhancedPlayerController] Player reviving");
+
+            // 死亡状態を解除
+            SetMovementState(MovementState.Normal);
+
+            // HPとスタミナを全快
+            RestoreFullHealth();
+            RestoreFullStamina();
+
+            // 移動を再び有効化
+            canMove = true;
+
+            // 現在使用中のツールをリセット
+            currentUsedTool = null;
+
+            // アニメーターを完全にリセット
+            if (animatorController != null)
+            {
+                // 新しいリセットメソッドを使用してアニメーターを初期状態に戻す
+                animatorController.ResetAnimatorToDefault();
+
+                // 念のため、基本的なパラメータも設定
+                animatorController.SetRealSpeed(0f);
+                animatorController.SetCrouch(false);
+
+                Debug.Log("[EnhancedPlayerController] Animator reset to default state");
+            }
+            else
+            {
+                Debug.LogWarning("[EnhancedPlayerController] PlayerAnimatorController not found for reset");
+            }
+
+            Debug.Log("[EnhancedPlayerController] Player revived successfully");
+        }
+
+        /// <summary>
+        /// HPを全快にする
+        /// </summary>
+        public void RestoreFullHealth()
+        {
+            currentHealth = maxHealth;
+            OnHealthChanged?.Invoke(HealthPercentage);
+            Debug.Log($"[EnhancedPlayerController] Health restored to {currentHealth}/{maxHealth}");
+        }
+
+        /// <summary>
+        /// スタミナを全快にする
+        /// </summary>
+        public void RestoreFullStamina()
+        {
+            currentStamina = maxStamina;
+            OnStaminaChanged?.Invoke(currentStamina);
+            Debug.Log($"[EnhancedPlayerController] Stamina restored to {currentStamina}/{maxStamina}");
         }
 
         /// <summary>
@@ -1873,6 +2070,123 @@ namespace KowloonBreak.Player
             yield return new WaitForSeconds(duration);
             
             if (currentMovementState == MovementState.Stunned)
+            {
+                SetMovementState(MovementState.Normal);
+            }
+        }
+
+        /// <summary>
+        /// 遅延してからゲームオーバーUIを表示
+        /// </summary>
+        private System.Collections.IEnumerator ShowGameOverAfterDelay()
+        {
+            // 設定された遅延時間だけ待つ（死亡アニメーション再生のため）
+            yield return new WaitForSeconds(gameOverDelay);
+
+            // UIManagerを通してゲームオーバーUIを表示
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowGameOver();
+                Debug.Log("[EnhancedPlayerController] Game Over UI displayed");
+            }
+            else
+            {
+                Debug.LogWarning("[EnhancedPlayerController] UIManager instance not found, cannot show game over UI");
+            }
+        }
+
+        #endregion
+
+        #region Knockback System
+
+        /// <summary>
+        /// ノックバックシステムの初期化
+        /// </summary>
+        private void InitializeKnockbackSystem()
+        {
+            // Rigidbodyコンポーネントを取得または追加
+            Rigidbody playerRigidbody = GetComponent<Rigidbody>();
+            if (playerRigidbody == null)
+            {
+                playerRigidbody = gameObject.AddComponent<Rigidbody>();
+                playerRigidbody.isKinematic = true;
+                playerRigidbody.useGravity = false;
+            }
+
+            // Animatorを取得
+            Animator playerAnimator = GetComponent<Animator>();
+
+            // ノックバックシステムを初期化
+            knockbackSystem.Initialize(this, playerRigidbody, playerAnimator);
+        }
+
+        /// <summary>
+        /// ノックバックを開始（IKnockbackableインターフェース実装）
+        /// </summary>
+        /// <param name="attackerPosition">攻撃者の位置</param>
+        /// <param name="toolType">使用された武器のタイプ</param>
+        public void StartKnockback(Vector3 attackerPosition, ToolType toolType = ToolType.IronPipe)
+        {
+            knockbackSystem.StartKnockback(attackerPosition, toolType,
+                onKnockbackStart: OnKnockbackStart,
+                onKnockbackEnd: OnKnockbackEnd);
+        }
+
+        /// <summary>
+        /// ノックバック中かどうか（IKnockbackableインターフェース実装）
+        /// </summary>
+        public bool IsKnockedBack => knockbackSystem.IsKnockedBack;
+
+        /// <summary>
+        /// ノックバック設定を変更（IKnockbackableインターフェース実装）
+        /// </summary>
+        /// <param name="force">ノックバック力</param>
+        /// <param name="duration">ノックバック持続時間</param>
+        public void SetKnockbackSettings(float force, float duration)
+        {
+            knockbackSystem.SetKnockbackSettings(force, duration);
+        }
+
+        /// <summary>
+        /// ノックバック機能の有効/無効を切り替え（IKnockbackableインターフェース実装）
+        /// </summary>
+        /// <param name="enabled">有効かどうか</param>
+        public void SetKnockbackEnabled(bool enabled)
+        {
+            knockbackSystem.SetKnockbackEnabled(enabled);
+        }
+
+        /// <summary>
+        /// ノックバック開始時のコールバック
+        /// </summary>
+        private void OnKnockbackStart()
+        {
+            // CharacterControllerを一時的に無効化
+            if (characterController != null)
+            {
+                characterController.enabled = false;
+            }
+
+            // プレイヤーの制御を一時的に無効化
+            canMove = false;
+        }
+
+        /// <summary>
+        /// ノックバック終了時のコールバック
+        /// </summary>
+        private void OnKnockbackEnd()
+        {
+            // CharacterControllerを再有効化
+            if (characterController != null)
+            {
+                characterController.enabled = true;
+            }
+
+            // プレイヤーの制御を復活
+            canMove = true;
+
+            // 移動状態を通常に戻す
+            if (currentMovementState != MovementState.Dead)
             {
                 SetMovementState(MovementState.Normal);
             }

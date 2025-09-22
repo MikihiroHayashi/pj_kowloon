@@ -15,15 +15,6 @@ MonoBehaviour:
   gridSize: {x: 20, y: 20}
   cellSize: 10
   pieces:
-  - id: 34c7aad9-6751-444d-9110-7a05b92030ee
-    type: 0
-    size: {x: 2, y: 2}
-    gridPosition: {x: 15, y: 10}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: c979ec95a7e81534792f0fc36d83a9da,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: 61b22fca-1879-4903-b279-76e0fb574e53
     type: 0
     size: {x: 4, y: 2}
@@ -39,15 +30,6 @@ MonoBehaviour:
     gridPosition: {x: 2, y: 2}
     rotation: 0
     prefab: {fileID: 8847296823842949343, guid: 61d8c1128a93a914ab78545861c35ae4,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 60f65b30-d48a-4f13-91c5-1f554ac9bb86
-    type: 0
-    size: {x: 2, y: 2}
-    gridPosition: {x: 5, y: 16}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: c979ec95a7e81534792f0fc36d83a9da,
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
@@ -501,69 +483,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: 913d80bf-1e42-475f-a860-b0cb5335edfb
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 4, y: 7}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 185821d0-bbb4-4508-bd24-a2c2cd462812
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 4, y: 8}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: c64f54d6-1ecd-4fef-aad4-271d6fd5ee2e
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 4, y: 9}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: f93cb34f-60c8-46eb-9847-58d0eaab3680
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 4, y: 10}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 81472362-4215-4339-9428-307736714212
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 4, y: 12}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: fb25c90a-15a5-40df-8287-c0b364083efd
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 4, y: 13}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: ad4836d6-a651-48c5-81d8-f35f29c834b1
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 4, y: 14}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: a9e0b087-c2e7-4026-a297-22bf3c535d23
     type: 6
     size: {x: 1, y: 1}
@@ -879,15 +798,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: 401c8f68-1a44-4452-be5e-570cbec027e4
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 6, y: 15}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: 43e02930-f96c-4532-8921-7a746c352c82
     type: 6
     size: {x: 1, y: 1}
@@ -1032,24 +942,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: 27cc2cd3-f32b-406f-aac7-f3044376252a
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 7, y: 15}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 4b0e73ae-e9dd-4317-888c-0c658e4c16a6
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 7, y: 17}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: e539eb04-abda-4e8a-b299-2be8412435cb
     type: 6
     size: {x: 1, y: 1}
@@ -1176,24 +1068,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: de1b8305-8b26-4913-8e3a-f122fe472453
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 8, y: 15}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: ba55ecfe-4671-4ded-b4c7-155fc0b3e676
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 8, y: 17}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: da7a3253-017e-4716-82ce-8403615b30fd
     type: 6
     size: {x: 1, y: 1}
@@ -1306,24 +1180,6 @@ MonoBehaviour:
     type: 6
     size: {x: 1, y: 1}
     gridPosition: {x: 9, y: 13}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 7375e01d-c07e-4c84-91f0-24cf8251fbc8
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 9, y: 14}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 08426678-7eef-4cbf-830e-1d438e319729
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 9, y: 15}
     rotation: 0
     prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
       type: 3}
@@ -1527,24 +1383,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: 11b25db5-7cfe-4068-8b8f-9b61383d10b0
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 11, y: 14}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 977dbab3-9aa4-4c96-8605-a52f84497cc5
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 11, y: 15}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: 1052b728-01a4-432a-9f23-7edae612756d
     type: 6
     size: {x: 1, y: 1}
@@ -1684,24 +1522,6 @@ MonoBehaviour:
     type: 6
     size: {x: 1, y: 1}
     gridPosition: {x: 12, y: 13}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: c64fab2a-46fe-435f-b019-39cadb4524e3
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 12, y: 14}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 625ad737-57aa-4fac-9629-e0865557d2c6
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 12, y: 15}
     rotation: 0
     prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
       type: 3}
@@ -1851,15 +1671,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: 1e7d2ed1-fe11-4b71-8407-0115e58bea74
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 13, y: 14}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: ffa92f81-b0e9-4939-88b6-fbdc46d320a9
     type: 6
     size: {x: 1, y: 1}
@@ -1977,15 +1788,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: 8d832969-08b7-452c-9a02-9d631ae629d5
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 14, y: 14}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: 42c7109c-0391-41fd-96ef-271e421e99eb
     type: 6
     size: {x: 1, y: 1}
@@ -2089,15 +1891,6 @@ MonoBehaviour:
     type: 6
     size: {x: 1, y: 1}
     gridPosition: {x: 15, y: 13}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 4c0c3852-af00-461e-b6dd-e192706837e3
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 15, y: 14}
     rotation: 0
     prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
       type: 3}
@@ -2350,24 +2143,6 @@ MonoBehaviour:
     type: 6
     size: {x: 1, y: 1}
     gridPosition: {x: 17, y: 9}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 201d4220-c144-4fa2-9b68-12b7a13ab7e9
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 17, y: 10}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 7560402d-84d0-4da0-92be-afe54e4e9d6a
-    type: 6
-    size: {x: 1, y: 1}
-    gridPosition: {x: 17, y: 11}
     rotation: 0
     prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
       type: 3}
@@ -2805,69 +2580,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: 3041ad17-9a6c-4b51-b7e4-4fdd53143f83
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 6}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: e896c066-db8d-442b-92c5-30da90643231
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 7}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: e92f2413-d6e6-40be-95d1-3e589b49361e
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 8}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: ca8ee34f-1470-4998-a2cb-c3d92d9dd2b4
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 9}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: b9960955-9a8e-47fa-90e5-d0171dc88485
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 10}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: 47951845-1aae-4d26-bb8d-696f37beba15
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 11}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: fe79ec98-3602-43bb-b858-06b0d8bb0727
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 4, y: 11}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
   - id: 4f72cf87-34f3-440e-a89b-7cfb8559ffd5
     type: 1
     size: {x: 1, y: 1}
@@ -2958,78 +2670,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 3
-  - id: 0a1459f1-b054-48db-9407-f142d85ba088
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 7, y: 16}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: c603bd40-83ff-4718-bf25-1c1cc0caaf2f
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 8, y: 16}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: 45f54100-7148-4bbf-99e1-fd747048dd81
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 10, y: 16}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: 5122c5a7-db00-4c51-8dfa-5f15694d85d5
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 9, y: 16}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: e0e1d1f7-bf96-40f1-8b2b-2ba8e71c4521
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 11, y: 16}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: 53f9b1f2-d7d3-470e-94c9-0df9bc631fcb
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 12, y: 16}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: dba63b0a-5edc-4c2b-964c-a8602dd5816a
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 10, y: 15}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
-  - id: e5b6b1aa-2186-4e37-92a6-e9faee9aa3ef
-    type: 1
-    size: {x: 1, y: 1}
-    gridPosition: {x: 10, y: 14}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 3
   - id: 37e26b3f-ae4c-40fa-994d-2465655d4214
     type: 1
     size: {x: 1, y: 1}
@@ -3093,78 +2733,6 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
-  - id: d15b9cb2-f5c5-4990-a229-5a2da28cebdc
-    type: 0
-    size: {x: 3, y: 4}
-    gridPosition: {x: 13, y: 16}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 61d8c1128a93a914ab78545861c35ae4,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 210fde20-e096-455e-93b9-47b90eb39f70
-    type: 3
-    size: {x: 1, y: 1}
-    gridPosition: {x: 13, y: 15}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 79a9485c-d42c-4ce7-9afd-3ec8e626a707
-    type: 3
-    size: {x: 1, y: 1}
-    gridPosition: {x: 14, y: 15}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 1c45d8f2-6b21-4773-bb7a-3278203dbc0f
-    type: 3
-    size: {x: 1, y: 1}
-    gridPosition: {x: 15, y: 15}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 704ea561-8c4e-4525-b9f4-9c308bf54c18
-    type: 0
-    size: {x: 3, y: 4}
-    gridPosition: {x: 0, y: 11}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 61d8c1128a93a914ab78545861c35ae4,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: ddb43a06-999b-45bd-8e09-5dbd8b6bc8a4
-    type: 3
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 12}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 709061be-ab01-4a3f-9ca8-9eea3266d815
-    type: 3
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 13}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
-  - id: 51f39734-9e16-4c3a-b536-4b1e507c43fe
-    type: 3
-    size: {x: 1, y: 1}
-    gridPosition: {x: 3, y: 14}
-    rotation: 0
-    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
-      type: 3}
-    isRoadStartPoint: 0
-    roadGroupId: 0
   - id: c953a627-5632-4c72-be62-183a34e766aa
     type: 3
     size: {x: 1, y: 1}
@@ -3201,16 +2769,441 @@ MonoBehaviour:
       type: 3}
     isRoadStartPoint: 0
     roadGroupId: 0
+  - id: 05e02113-556e-4ae4-beac-348c9926daca
+    type: 0
+    size: {x: 2, y: 2}
+    gridPosition: {x: 16, y: 10}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: c979ec95a7e81534792f0fc36d83a9da,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 722ec0fb-6377-4094-89a7-2e4598984ba9
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 15, y: 11}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: c813b0b6-0de4-4789-ae3f-92a19f96ff91
+    type: 0
+    size: {x: 3, y: 4}
+    gridPosition: {x: 13, y: 15}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 61d8c1128a93a914ab78545861c35ae4,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 89968e69-dde7-4a5d-a58d-95940c567ac3
+    type: 0
+    size: {x: 2, y: 2}
+    gridPosition: {x: 7, y: 15}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: c979ec95a7e81534792f0fc36d83a9da,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 9cd26e5d-75e7-447d-8c9a-3e2691c733b8
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 9, y: 15}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: be04cfaa-edb8-45dc-b605-c695d16975cf
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 10, y: 15}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: fae4927d-5e96-47c8-9616-37c2bd7276fb
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 11, y: 15}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: 8125f504-2864-480d-8909-ad7e4fb5191b
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 12, y: 15}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: 23d2338d-f804-4807-853c-687eff5b3eae
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 10, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: 4b60b6d0-43ee-48a3-bbb5-41cd9cfb595b
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 3, y: 6}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: c042b3f1-267c-421d-9782-3b474f917b86
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 3, y: 7}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: 438da587-cc8d-4ee0-a87a-8028163befa5
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 7}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: 934c942d-357b-4049-94b4-68f20afc30f3
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 8}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: b5e1937f-83ee-45f0-b9b2-844d8d2cd155
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 9}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: 160519ae-c975-4537-b5ef-ac8dc73bb64c
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 10}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: c3755863-56d9-439c-be15-71edd6da848f
+    type: 0
+    size: {x: 3, y: 4}
+    gridPosition: {x: 1, y: 11}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 61d8c1128a93a914ab78545861c35ae4,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: fd18fbc5-64c2-4c17-9894-f1e2bd830aac
+    type: 1
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 11}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 3
+  - id: ee7882b6-e480-4396-a92f-d1fd1ebf4f34
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 0, y: 11}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 9c91fd9c-8b0b-4cc5-a8ed-ffa5fb2f95be
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 0, y: 12}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: b5a945ce-1ea4-4fcb-90e9-e3aa34602a10
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 0, y: 13}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: d2c07137-c7a5-47bf-82e4-af7522fcc34d
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 0, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 4c42c80d-38ce-4627-8914-54793db3d666
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 3, y: 8}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 7988c018-7651-4231-bf26-b12999e57e30
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 3, y: 9}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 1559eedc-1c53-410d-97d9-e82fd0ea2748
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 3, y: 10}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 0ef3bfeb-cbeb-4ed5-848b-c49e44e90556
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 12}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: f6ca4e84-a9e3-4bff-82f9-d328eaa3b3ab
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 13}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 48c2ddc5-c9ed-496a-a2fb-c7a8a2e1d4d7
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 4, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 4273410a-9815-4291-87b5-69c906e9a630
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 5, y: 16}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: f9c3b661-c093-41fa-8a16-fd36afb93bd6
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 5, y: 17}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: fe2e497b-dcec-46d0-9e53-c4ea5b0bfc79
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 6, y: 15}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 8f7262f4-6099-419f-b587-dccf5d169913
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 6, y: 16}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: e532a93b-469e-4130-bc39-2a92963841b7
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 6, y: 17}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 8bb0b501-6d47-4e56-8714-5fca33d69855
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 7, y: 17}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 278d8971-1a68-4c77-8cc6-0e23ec3d7f5f
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 8, y: 17}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 1df03a6b-9c63-488d-b7cd-25d2a73eaf69
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 9, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 7c4034c3-9255-4d72-99b7-dd329c3ad55b
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 9, y: 16}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 2d6387f5-6985-432f-b73d-5f1a73d440b8
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 10, y: 16}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: e00c9b97-0311-4b50-943a-2c83fc83fa45
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 11, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 718f7236-7c27-44f0-8dc5-d0b818da9d16
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 11, y: 16}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 7428db3b-df89-406c-a48e-f5387f595fd0
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 12, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: c0fdddd8-331a-4dc5-97e5-5141094eda85
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 12, y: 16}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: a47cc8c8-32c0-4b26-92dc-d2116cc3f7f1
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 13, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: fc73c474-c101-4108-b949-bcd71aea37e0
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 13, y: 19}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 40793803-6831-4bb0-bb03-0c316084849f
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 14, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 9e01d3c7-e276-46c5-a06f-a7656a15fae8
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 14, y: 19}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: dfd6473f-949e-4bbd-8fb9-dfeb710d5caa
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 15, y: 10}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: 42066c78-0073-4b9d-ae64-c2cb2e7d0f6b
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 15, y: 14}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
+  - id: e95edd4c-e0c2-4219-bd10-e6d7adb3937a
+    type: 6
+    size: {x: 1, y: 1}
+    gridPosition: {x: 15, y: 19}
+    rotation: 0
+    prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+      type: 3}
+    isRoadStartPoint: 0
+    roadGroupId: 0
   roadPaths:
-  - id: c0192844-1a95-463e-af50-5d8fd291039b
+  - id: 651a9043-24a9-45fe-a7a7-8152360bb1de
     pathPoints:
-    - {x: 3, y: 6}
-    - {x: 3, y: 7}
-    - {x: 3, y: 8}
-    - {x: 3, y: 9}
-    - {x: 3, y: 10}
-    - {x: 3, y: 11}
-    - {x: 4, y: 11}
     - {x: 5, y: 11}
     - {x: 6, y: 11}
     - {x: 7, y: 11}
@@ -3221,6 +3214,8 @@ MonoBehaviour:
     - {x: 12, y: 11}
     - {x: 13, y: 11}
     - {x: 14, y: 11}
+    - {x: 15, y: 11}
+    - {x: 14, y: 11}
     - {x: 13, y: 11}
     - {x: 12, y: 11}
     - {x: 11, y: 11}
@@ -3229,17 +3224,11 @@ MonoBehaviour:
     - {x: 10, y: 13}
     - {x: 10, y: 14}
     - {x: 10, y: 15}
-    - {x: 10, y: 16}
-    - {x: 9, y: 16}
-    - {x: 8, y: 16}
-    - {x: 7, y: 16}
-    - {x: 8, y: 16}
-    - {x: 9, y: 16}
-    - {x: 10, y: 16}
-    - {x: 11, y: 16}
-    - {x: 12, y: 16}
-    - {x: 11, y: 16}
-    - {x: 10, y: 16}
+    - {x: 11, y: 15}
+    - {x: 12, y: 15}
+    - {x: 11, y: 15}
+    - {x: 10, y: 15}
+    - {x: 9, y: 15}
     - {x: 10, y: 15}
     - {x: 10, y: 14}
     - {x: 10, y: 13}
@@ -3249,91 +3238,29 @@ MonoBehaviour:
     - {x: 10, y: 9}
     - {x: 10, y: 8}
     - {x: 10, y: 7}
+    - {x: 10, y: 8}
+    - {x: 10, y: 9}
+    - {x: 10, y: 10}
+    - {x: 10, y: 11}
+    - {x: 9, y: 11}
+    - {x: 8, y: 11}
+    - {x: 7, y: 11}
+    - {x: 6, y: 11}
+    - {x: 5, y: 11}
+    - {x: 4, y: 11}
+    - {x: 4, y: 10}
+    - {x: 4, y: 9}
+    - {x: 4, y: 8}
+    - {x: 4, y: 7}
+    - {x: 3, y: 7}
+    - {x: 3, y: 6}
+    - {x: 3, y: 7}
+    - {x: 4, y: 7}
+    - {x: 4, y: 8}
+    - {x: 4, y: 9}
+    - {x: 4, y: 10}
+    - {x: 4, y: 11}
     segments:
-    - position: {x: 3, y: 6}
-      roadType: 0
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 3, y: 7}
-      roadType: 0
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 3, y: 8}
-      roadType: 0
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 3, y: 9}
-      roadType: 0
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 3, y: 10}
-      roadType: 0
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 3, y: 11}
-      roadType: 2
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 4, y: 11}
-      roadType: 0
-      rotation: 90
-      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
     - position: {x: 5, y: 11}
       roadType: 0
       rotation: 90
@@ -3454,6 +3381,30 @@ MonoBehaviour:
       - {x: 0, y: 0}
       roadGroupId: 3
       intersectionGroups: 
+    - position: {x: 15, y: 11}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 14, y: 11}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
     - position: {x: 13, y: 11}
       roadType: 0
       rotation: 90
@@ -3539,18 +3490,6 @@ MonoBehaviour:
       roadGroupId: 3
       intersectionGroups: 
     - position: {x: 10, y: 15}
-      roadType: 0
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 10, y: 16}
       roadType: 2
       rotation: 0
       prefab: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
@@ -3562,7 +3501,7 @@ MonoBehaviour:
       - {x: 0, y: 0}
       roadGroupId: 3
       intersectionGroups: 
-    - position: {x: 9, y: 16}
+    - position: {x: 11, y: 15}
       roadType: 0
       rotation: 90
       prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
@@ -3574,7 +3513,7 @@ MonoBehaviour:
       - {x: 0, y: 0}
       roadGroupId: 3
       intersectionGroups: 
-    - position: {x: 8, y: 16}
+    - position: {x: 12, y: 15}
       roadType: 0
       rotation: 90
       prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
@@ -3586,94 +3525,10 @@ MonoBehaviour:
       - {x: 0, y: 0}
       roadGroupId: 3
       intersectionGroups: 
-    - position: {x: 7, y: 16}
+    - position: {x: 11, y: 15}
       roadType: 0
       rotation: 90
       prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 8, y: 16}
-      roadType: 0
-      rotation: 90
-      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 9, y: 16}
-      roadType: 0
-      rotation: 90
-      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 10, y: 16}
-      roadType: 2
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 11, y: 16}
-      roadType: 0
-      rotation: 90
-      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 12, y: 16}
-      roadType: 0
-      rotation: 90
-      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 11, y: 16}
-      roadType: 0
-      rotation: 90
-      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
-        type: 3}
-      connections:
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      - {x: 0, y: 0}
-      roadGroupId: 3
-      intersectionGroups: 
-    - position: {x: 10, y: 16}
-      roadType: 2
-      rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
         type: 3}
       connections:
       - {x: 0, y: 0}
@@ -3683,9 +3538,33 @@ MonoBehaviour:
       roadGroupId: 3
       intersectionGroups: 
     - position: {x: 10, y: 15}
-      roadType: 0
+      roadType: 2
       rotation: 0
-      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+      prefab: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 9, y: 15}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 10, y: 15}
+      roadType: 2
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
         type: 3}
       connections:
       - {x: 0, y: 0}
@@ -3782,6 +3661,270 @@ MonoBehaviour:
       roadType: 0
       rotation: 0
       prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 10, y: 8}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 10, y: 9}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 10, y: 10}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 10, y: 11}
+      roadType: 3
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 88aacd1b7a8c8b54e9c79c3b688d05c4,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 9, y: 11}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 8, y: 11}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 7, y: 11}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 6, y: 11}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 5, y: 11}
+      roadType: 0
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07fc69f7745371f49883fc08a1ccbaf7,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 11}
+      roadType: 2
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 10}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 9}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 8}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 7}
+      roadType: 1
+      rotation: 270
+      prefab: {fileID: 8847296823842949343, guid: 7adce309a6314d547a72df59a1573f84,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 3, y: 7}
+      roadType: 1
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07c6e52f97222d340bce0f89a3999a26,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 3, y: 6}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 3, y: 7}
+      roadType: 1
+      rotation: 90
+      prefab: {fileID: 8847296823842949343, guid: 07c6e52f97222d340bce0f89a3999a26,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 7}
+      roadType: 1
+      rotation: 270
+      prefab: {fileID: 8847296823842949343, guid: 7adce309a6314d547a72df59a1573f84,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 8}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 9}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 10}
+      roadType: 0
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: 8dd6da8b7fe6ed6468cffc738d102268,
+        type: 3}
+      connections:
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      - {x: 0, y: 0}
+      roadGroupId: 3
+      intersectionGroups: 
+    - position: {x: 4, y: 11}
+      roadType: 2
+      rotation: 0
+      prefab: {fileID: 8847296823842949343, guid: e1c938f67727ae94ea293309e1ceecf5,
         type: 3}
       connections:
       - {x: 0, y: 0}

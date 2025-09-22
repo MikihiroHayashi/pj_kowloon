@@ -21,6 +21,7 @@ MonoBehaviour:
   durability: 100
   attackDamage: 10
   attackRange: 1.5
+  knockbackMultiplier: 0.5
   materialType: 0
   value: 1
   droppedItemPrefab: {fileID: 4047021543740612791, guid: e71e595bc92b48343bc75200993bea6d,

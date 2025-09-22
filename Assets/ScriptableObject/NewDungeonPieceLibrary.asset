@@ -88,6 +88,74 @@ MonoBehaviour:
       roadGroupId: 0
       requiredTags: []
       compatibleLevels: 
+    - id: Blank
+      name: "\u30D6\u30E9\u30F3\u30AF"
+      description: 
+      type: 6
+      size: {x: 1, y: 1}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: 3bc867ef7269fee40a83ea95113c2d5e,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0, g: 0, b: 0, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      roadGroupId: 0
+      requiredTags: []
+      compatibleLevels: 
+    - id: BlankFront
+      name: "\u30D6\u30E9\u30F3\u30AF\u30D5\u30ED\u30F3\u30C8"
+      description: 
+      type: 3
+      size: {x: 1, y: 1}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: d125aba1aaf486442a81c733baa66bfb,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0.37679327, g: 0.23798503, b: 0.3962264, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      roadGroupId: 0
+      requiredTags: []
+      compatibleLevels: 
+    - id: BlankFront_L
+      name: "\u30D6\u30E9\u30F3\u30AF\u30D5\u30ED\u30F3\u30C8L"
+      description: 
+      type: 3
+      size: {x: 1, y: 1}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: 5df8750a93958254684770a7bbc88e86,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0.5568628, g: 0.36078432, b: 0.58431375, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      roadGroupId: 0
+      requiredTags: []
+      compatibleLevels: 
+    - id: BlankFront_R
+      name: "\u30D6\u30E9\u30F3\u30AF\u30D5\u30ED\u30F3\u30C8R"
+      description: 
+      type: 3
+      size: {x: 1, y: 1}
+      canRotate: 0
+      allowedRotations: []
+      prefab: {fileID: 8847296823842949343, guid: 7c1f356c599d56e4aba22934a0a057e3,
+        type: 3}
+      icon: {fileID: 0}
+      displayColor: {r: 0.55724555, g: 0.36234716, b: 0.5849056, a: 0}
+      isRoadStartPoint: 0
+      blocksPaths: 0
+      spawnPriority: 0
+      roadGroupId: 0
+      requiredTags: []
+      compatibleLevels: 
   - name: Roads
     color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
     isExpanded: 1

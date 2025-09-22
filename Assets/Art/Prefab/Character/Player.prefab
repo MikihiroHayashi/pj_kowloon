@@ -46,6 +46,7 @@ GameObject:
   - component: {fileID: 1104567319099991210}
   - component: {fileID: 8028166677090169455}
   - component: {fileID: 6792100724070896434}
+  - component: {fileID: -8413595359013566092}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -125,6 +126,7 @@ MonoBehaviour:
   movementStealthPenalty: 0.2
   maxHealth: 100
   currentHealth: 0
+  gameOverDelay: 0.5
   maxStamina: 100
   staminaRegenRate: 20
   runStaminaCost: 30
@@ -159,6 +161,10 @@ MonoBehaviour:
   cameraShakeIntensity: 0.1
   playerRenderer: {fileID: 5671558435591580967}
   playerAnimationEventHandler: {fileID: 489548735391818573}
+  knockbackSystem:
+    knockbackForce: 3
+    knockbackDuration: 0.2
+    enableKnockback: 1
 --- !u!114 &220816612674348028
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187,6 +193,7 @@ MonoBehaviour:
   speedParameterName: Speed
   dodgeParameterName: Dodge
   crouchParameterName: Crouch
+  resetParameterName: Reset
   idleSpeedThreshold: 0.1
   crouchSpeedThreshold: 2
   walkSpeedThreshold: 4
@@ -328,6 +335,33 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!54 &-8413595359013566092
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4601225622746221893}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 0
 --- !u!1 &6195070814820800851
 GameObject:
   m_ObjectHideFlags: 0

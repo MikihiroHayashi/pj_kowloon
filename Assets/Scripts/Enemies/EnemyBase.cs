@@ -26,6 +26,10 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected float detectionRange = 10f;
         [SerializeField] protected float attackCooldown = 2f;
 
+        [Header("Enemy Attack Type")]
+        [SerializeField] protected EnemyAttackType attackType = EnemyAttackType.Punch;
+        [SerializeField] protected float attackKnockbackMultiplier = 1.0f;
+
         [Header("Vision System")]
         [SerializeField] protected float visionAngle = 120f; // 視野角度
         [SerializeField] protected LayerMask visionBlockingLayers = -1; // 視線を遮るレイヤー
@@ -57,6 +61,11 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected float chaseSpeedMultiplier = 1.2f;    // 追跡時の速度倍率 (Move Speed × この値)
         [SerializeField] protected float returnSpeedMultiplier = 1.0f;   // 復帰時の速度倍率 (Move Speed × この値)
 
+        [Header("Knockback Settings")]
+        [SerializeField] protected float knockbackForce = 5f;
+        [SerializeField] protected float knockbackDuration = 0.8f;
+        [SerializeField] protected bool enableKnockback = true;
+
         [Header("Drop Items")]
         [SerializeField] protected ItemData[] dropItems;
         [SerializeField] protected int[] dropQuantities;
@@ -68,17 +77,24 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected Collider enemyCollider;
         [SerializeField] protected Renderer modelRenderer;
 
-        [Header("HP Bar")]
-        [SerializeField] protected SpriteRenderer healthBarBackground;
-        [SerializeField] protected SpriteRenderer healthBarFill;
 
         [Header("Damage Display")]
         [SerializeField] protected Transform damageDisplayPoint;
+
+        [Header("Health Bar Display")]
+        [SerializeField] protected Transform healthBarDisplayPoint;
 
         protected Transform player;
         protected EnhancedPlayerController playerController;
         protected float lastAttackTime;
         protected bool isDead = false;
+        protected bool isAttacking = false;  // 攻撃アニメーション中かどうか
+        private Coroutine attackTimeoutCoroutine;  // 攻撃タイムアウトコルーチンの参照
+
+        // ノックバック関連
+        protected bool isKnockedBack = false;
+        protected float knockbackEndTime = 0f;
+        protected Rigidbody enemyRigidbody;
         
         // Target System
         protected Transform currentTarget;
@@ -116,6 +132,12 @@ namespace KowloonBreak.Enemies
         protected const string ANIM_SPEED = "Speed";
         protected const string ANIM_ATTACK = "Attack";
         protected const string ANIM_DEATH = "Death";
+        protected const string ANIM_DAMAGE = "Damage";
+        protected const string ANIM_RESET = "Reset";
+
+        // UI Health Bar
+        private UI.EnemyHealthBar uiHealthBar;
+        private bool hasUIHealthBar = false;
 
         // 公開プロパティ
         public Transform Player => player;
@@ -127,6 +149,7 @@ namespace KowloonBreak.Enemies
         public Transform CurrentTarget => currentTarget;
         public bool HasTarget => hasTarget;
         public bool IsTargetLocked => targetLocked;
+        public Transform HealthBarDisplayPoint => healthBarDisplayPoint;
         
         // 速度関連プロパティ
         public float BaseMoveSpeed => moveSpeed;
@@ -153,21 +176,34 @@ namespace KowloonBreak.Enemies
             if (modelRenderer == null)
                 modelRenderer = GetComponentInChildren<Renderer>();
 
-            // HPバーの初期化
-            InitializeHealthBar();
+            // Rigidbodyの取得
+            if (enemyRigidbody == null)
+                enemyRigidbody = GetComponent<Rigidbody>();
+
+            // Rigidbodyの初期設定（回転を制限）
+            if (enemyRigidbody != null)
+            {
+                enemyRigidbody.isKinematic = true;
+                enemyRigidbody.freezeRotation = true;
+            }
+
+            // UIヘルスバーの初期化（Startで行う）
         }
 
         protected virtual void Start()
         {
             FindPlayer();
-            
+
             // NavMeshAgentの設定（継承先でのパラメータ設定後に実行）
             if (navAgent != null)
             {
                 SetupNavMeshAgent();
             }
-            
+
             InitializePatrol();
+
+            // UIヘルスバーの初期化（UIManagerが確実に存在するタイミング）
+            InitializeUIHealthBar();
         }
         
         protected virtual void InitializePatrol()
@@ -210,18 +246,25 @@ namespace KowloonBreak.Enemies
         {
             if (isDead || player == null) return;
 
+            // ノックバック状態のチェック
+            UpdateKnockbackState();
+
+            // ノックバック中は移動やターゲット検知を停止
+            if (isKnockedBack) return;
+
             // 新しいターゲットシステム
             UpdateTargetDetection();
-            
+
             // 現在のターゲットが見えるかどうかを判定
             bool canSeeCurrentTarget = hasTarget && (targetLocked || CanSeeTarget(currentTarget));
-            
+
             // 統合された移動システム
             UpdateMovement(canSeeCurrentTarget);
-            
+
             UpdateAnimations();
             CheckNavMeshAgentStatus();
-            UpdateHealthBar();
+
+            // UIヘルスバーは自動追従するため、特に処理不要
         }
         
         /// <summary>
@@ -289,7 +332,6 @@ namespace KowloonBreak.Enemies
                     // パトロール復帰時の処理
                     float patrolSpeed = GetPatrolSpeed();
                     SetMovementSpeed(patrolSpeed);
-                    Debug.Log($"[{gameObject.name}] State changed to Patrol. Speed: {patrolSpeed}");
                     break;
                     
                 case EnemyState.Chase:
@@ -304,14 +346,12 @@ namespace KowloonBreak.Enemies
                         LookAtTarget(currentTarget.position);
                     }
                     
-                    Debug.Log($"[{gameObject.name}] State changed to Chase. Speed: {chaseSpeed} (Move Speed: {moveSpeed} × {chaseSpeedMultiplier})");
                     break;
-                    
+
                 case EnemyState.Return:
                     // 復帰開始時の処理
                     float returnSpeed = GetReturnSpeed();
                     SetMovementSpeed(returnSpeed);
-                    Debug.Log($"[{gameObject.name}] State changed to Return. Speed: {returnSpeed} (Move Speed: {moveSpeed} × {returnSpeedMultiplier})");
                     break;
             }
         }
@@ -447,7 +487,6 @@ namespace KowloonBreak.Enemies
             // ターゲットが死亡している場合は攻撃を停止
             if (!IsTargetAlive(currentTarget))
             {
-                Debug.Log($"[{gameObject.name}] Target {currentTarget.name} is dead during chase, losing target");
                 LoseTarget();
                 return;
             }
@@ -569,8 +608,10 @@ namespace KowloonBreak.Enemies
         protected virtual void TryAttack()
         {
             float timeSinceLastAttack = Time.time - lastAttackTime;
-            bool canAttack = timeSinceLastAttack >= attackCooldown;
 
+            // アニメーション状態もチェック
+            bool isAnimatorAttacking = IsPlayingAttackAnimation();
+            bool canAttack = timeSinceLastAttack >= attackCooldown && !isAttacking && !isDead && !isKnockedBack && !isAnimatorAttacking;
 
             if (canAttack)
             {
@@ -579,13 +620,63 @@ namespace KowloonBreak.Enemies
             }
         }
 
+        /// <summary>
+        /// 攻撃アニメーションが再生中かチェック
+        /// </summary>
+        /// <returns>攻撃アニメーション再生中の場合true</returns>
+        private bool IsPlayingAttackAnimation()
+        {
+            if (animator == null) return false;
+
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            return stateInfo.IsName("Attack") || stateInfo.IsTag("Attack");
+        }
+
         protected virtual void PerformAttack()
         {
             // 攻撃アニメーション再生（ダメージはアニメーションイベントで実行）
             if (animator != null)
             {
+                isAttacking = true;  // 攻撃開始
                 animator.SetTrigger(ANIM_ATTACK);
+
+                // フォールバック：一定時間後に強制的に攻撃状態をリセット
+                if (attackTimeoutCoroutine != null)
+                {
+                    StopCoroutine(attackTimeoutCoroutine);
+                }
+                attackTimeoutCoroutine = StartCoroutine(AttackTimeout());
             }
+        }
+
+        /// <summary>
+        /// 攻撃タイムアウト（アニメーションイベントが呼ばれない場合のフォールバック）
+        /// </summary>
+        private System.Collections.IEnumerator AttackTimeout()
+        {
+            yield return new WaitForSeconds(2f);
+
+            // アニメーション状態をチェックして、攻撃アニメーションが終了していれば自動リセット
+            if (isAttacking)
+            {
+                bool stillPlayingAttack = IsPlayingAttackAnimation();
+                if (!stillPlayingAttack)
+                {
+                    isAttacking = false;
+                }
+                else
+                {
+                    // まだ再生中の場合は追加で待機
+                    yield return new WaitForSeconds(1f);
+                    if (isAttacking)
+                    {
+                        isAttacking = false;
+                    }
+                }
+            }
+
+            // コルーチン終了時に参照をクリア
+            attackTimeoutCoroutine = null;
         }
 
         /// <summary>
@@ -598,7 +689,6 @@ namespace KowloonBreak.Enemies
             // ターゲットが死亡している場合は攻撃しない
             if (!IsTargetAlive(currentTarget))
             {
-                Debug.Log($"[{gameObject.name}] Target {currentTarget.name} is dead, canceling attack");
                 return;
             }
             
@@ -621,7 +711,9 @@ namespace KowloonBreak.Enemies
 
                 if (enhancedPlayerController != null)
                 {
-                    enhancedPlayerController.TakeDamage(attackDamage);
+                    // 攻撃タイプ別ノックバック付きダメージ
+                    float knockbackMultiplier = GetEnemyAttackKnockbackMultiplier(attackType);
+                    enhancedPlayerController.TakeDamage(attackDamage, transform.position, attackType, knockbackMultiplier);
                 }
             }
             // CompanionAIの場合
@@ -630,7 +722,9 @@ namespace KowloonBreak.Enemies
                 var companionAI = currentTarget.GetComponent<CompanionAI>();
                 if (companionAI != null && companionAI.IsAlive)
                 {
-                    companionAI.TakeDamage(attackDamage);
+                    // 攻撃タイプ別ノックバック付きダメージ
+                    float knockbackMultiplier = GetEnemyAttackKnockbackMultiplier(attackType);
+                    companionAI.TakeDamage(attackDamage, transform.position, attackType, knockbackMultiplier);
                 }
                 else
                 {
@@ -656,6 +750,9 @@ namespace KowloonBreak.Enemies
         // IDestructible interface implementation
         public virtual bool CanBeDestroyedBy(ToolType toolType)
         {
+            // 死亡している場合は攻撃不可能
+            if (isDead) return false;
+
             // 全ての武器で攻撃可能（必要に応じて個別に制限可能）
             return toolType == ToolType.Pickaxe || toolType == ToolType.IronPipe;
         }
@@ -667,21 +764,14 @@ namespace KowloonBreak.Enemies
         
         public virtual void TakeDamage(float damage, ToolType toolType, Transform attacker)
         {
+            // 死亡している場合は一切のダメージを受けない
             if (isDead) return;
 
-            Debug.Log($"[ENEMY TAKE DAMAGE] {gameObject.name} - TakeDamage called");
-            Debug.Log($"[ENEMY TAKE DAMAGE] Damage: {damage}, ToolType: {toolType}");
-            Debug.Log($"[ENEMY TAKE DAMAGE] Attacker: {attacker?.name ?? "None"}");
-            Debug.Log($"[ENEMY TAKE DAMAGE] Current target before: {currentTarget?.name ?? "None"}");
-            Debug.Log($"[ENEMY TAKE DAMAGE] Is target locked before: {targetLocked}");
 
             // 攻撃者がいる場合、そいつをターゲットに設定
             if (attacker != null)
             {
-                Debug.Log($"[ENEMY TAKE DAMAGE] Calling ForceSetTarget with {attacker.name}");
                 ForceSetTarget(attacker);
-                Debug.Log($"[ENEMY TAKE DAMAGE] After ForceSetTarget - Current target: {currentTarget?.name ?? "None"}");
-                Debug.Log($"[ENEMY TAKE DAMAGE] After ForceSetTarget - Is locked: {targetLocked}");
             }
             else
             {
@@ -716,9 +806,6 @@ namespace KowloonBreak.Enemies
 
             currentHealth -= finalDamage;
 
-            // HPバーを更新
-            UpdateHealthBar();
-
             // ダメージテキストを表示
             ShowDamageText(finalDamage, isStealthAttack);
 
@@ -728,8 +815,19 @@ namespace KowloonBreak.Enemies
                 StartCoroutine(DamageEffect());
             }
 
+            // ノックバック処理（死亡しない場合のみ）
+            if (enableKnockback && attacker != null && currentHealth > 0)
+            {
+                StartKnockback(attacker.position, toolType);
+            }
+
             if (currentHealth <= 0)
             {
+                // ノックバック中の場合は即座に終了
+                if (isKnockedBack)
+                {
+                    isKnockedBack = false;
+                }
                 Die();
             }
         }
@@ -742,13 +840,11 @@ namespace KowloonBreak.Enemies
         // 既存のTakeDamageメソッドをオーバーロードとして残す
         public virtual void TakeDamage(float damage)
         {
-            Debug.Log($"[EnemyBase] {gameObject.name} - TakeDamage called with damage: {damage}");
             TakeDamage(damage, ToolType.IronPipe, null); // デフォルトツール、攻撃者なし
         }
         
         public virtual void TakeDamage(float damage, Transform attacker)
         {
-            Debug.Log($"[EnemyBase] {gameObject.name} - TakeDamage called with damage: {damage}, attacker: {attacker?.name}");
             TakeDamage(damage, ToolType.IronPipe, attacker);
         }
 
@@ -782,6 +878,7 @@ namespace KowloonBreak.Enemies
         protected virtual void Die()
         {
             isDead = true;
+            isAttacking = false;  // 死亡時は攻撃状態をリセット
 
             // NavMeshAgentを停止
             if (navAgent != null)
@@ -789,8 +886,24 @@ namespace KowloonBreak.Enemies
                 navAgent.enabled = false;
             }
 
-            // ヘルスバーを即座に非表示にする
-            HideHealthBar();
+            // Rigidbodyを地面に固定（地面をすり抜けないように）
+            if (enemyRigidbody != null)
+            {
+                // kinematicに設定する前にvelocityをリセット
+                if (!enemyRigidbody.isKinematic)
+                {
+                    enemyRigidbody.velocity = Vector3.zero;
+                    enemyRigidbody.angularVelocity = Vector3.zero;
+                }
+                enemyRigidbody.isKinematic = true;
+                enemyRigidbody.freezeRotation = true;
+            }
+
+            // UIヘルスバーを削除
+            if (hasUIHealthBar)
+            {
+                DestroyUIHealthBar();
+            }
 
             // 死亡アニメーション再生
             if (animator != null)
@@ -805,10 +918,11 @@ namespace KowloonBreak.Enemies
                 DestroyEnemy();
             }
 
-            // コライダーを無効化
-            if (enemyCollider != null)
+            // コライダーはそのまま有効にしておく（地面との当たり判定を維持）
+            // 攻撃対象にならないようにレイヤーを変更（Untaggedレイヤーに移動）
+            if (gameObject.layer != 0) // 0 = Default layer
             {
-                enemyCollider.enabled = false;
+                gameObject.layer = 0; // Defaultレイヤーに変更
             }
 
             // アイテムドロップ
@@ -877,6 +991,12 @@ namespace KowloonBreak.Enemies
 
         private void DestroyEnemy()
         {
+            // UIヘルスバーのクリーンアップ
+            if (hasUIHealthBar)
+            {
+                DestroyUIHealthBar();
+            }
+
             Destroy(gameObject);
         }
         
@@ -995,11 +1115,19 @@ namespace KowloonBreak.Enemies
         #region Animation Event Methods
 
         /// <summary>
-        /// 攻撃アニメーション終了時の処理
+        /// 攻撃アニメーション終了時に呼ばれる（アニメーションイベントから）
         /// </summary>
         public virtual void OnAttackAnimationEnd()
         {
-            // 攻撃終了処理
+            isAttacking = false;  // 攻撃終了
+
+            // タイムアウトコルーチンを停止
+            if (attackTimeoutCoroutine != null)
+            {
+                StopCoroutine(attackTimeoutCoroutine);
+                attackTimeoutCoroutine = null;
+            }
+
         }
 
         /// <summary>
@@ -1038,6 +1166,216 @@ namespace KowloonBreak.Enemies
 
         #endregion
 
+        #region Knockback System
+
+        /// <summary>
+        /// ノックバック状態の更新
+        /// </summary>
+        protected virtual void UpdateKnockbackState()
+        {
+            if (isKnockedBack && Time.time >= knockbackEndTime)
+            {
+                EndKnockback();
+            }
+        }
+
+        /// <summary>
+        /// ノックバックを開始
+        /// </summary>
+        /// <param name="attackerPosition">攻撃者の位置</param>
+        /// <param name="toolType">使用された武器のタイプ</param>
+        protected virtual void StartKnockback(Vector3 attackerPosition, ToolType toolType = ToolType.IronPipe)
+        {
+            if (isDead) return;
+
+            isKnockedBack = true;
+            isAttacking = false;  // ノックバック時は攻撃状態をリセット
+            knockbackEndTime = Time.time + knockbackDuration;
+
+            // NavMeshAgentを一時的に停止
+            if (navAgent != null && navAgent.isActiveAndEnabled)
+            {
+                navAgent.enabled = false;
+            }
+
+            // ダメージアニメーションを再生
+            if (animator != null)
+            {
+                animator.SetTrigger(ANIM_DAMAGE);
+            }
+
+            // ノックバック方向の計算
+            Vector3 knockbackDirection = (transform.position - attackerPosition).normalized;
+            knockbackDirection.y = 0f; // Y軸方向の力を除去
+
+            // 武器による乗算値を取得
+            float weaponKnockbackMultiplier = GetWeaponKnockbackMultiplier(toolType);
+            float finalKnockbackForce = knockbackForce * weaponKnockbackMultiplier;
+
+            // Rigidbodyを使用してノックバック
+            if (enemyRigidbody != null)
+            {
+                enemyRigidbody.isKinematic = false;
+                // 回転を防ぐためにConstraintsを設定
+                enemyRigidbody.freezeRotation = true;
+                enemyRigidbody.AddForce(knockbackDirection * finalKnockbackForce, ForceMode.Impulse);
+            }
+        }
+
+        /// <summary>
+        /// ノックバックを終了
+        /// </summary>
+        protected virtual void EndKnockback()
+        {
+            isKnockedBack = false;
+
+            // Rigidbodyを停止
+            if (enemyRigidbody != null)
+            {
+                // kinematicに設定する前にvelocityをリセット
+                if (!enemyRigidbody.isKinematic)
+                {
+                    enemyRigidbody.velocity = Vector3.zero;
+                    enemyRigidbody.angularVelocity = Vector3.zero;
+                }
+                enemyRigidbody.isKinematic = true;
+                // 回転制約を維持
+                enemyRigidbody.freezeRotation = true;
+            }
+
+            // NavMeshAgentを再有効化
+            if (navAgent != null)
+            {
+                navAgent.enabled = true;
+
+                // NavMesh上にワープして位置を修正
+                UnityEngine.AI.NavMeshHit hit;
+                if (UnityEngine.AI.NavMesh.SamplePosition(transform.position, out hit, 2f, UnityEngine.AI.NavMesh.AllAreas))
+                {
+                    navAgent.Warp(hit.position);
+                }
+            }
+
+            // リセットアニメーションを再生
+            if (animator != null)
+            {
+                animator.SetTrigger(ANIM_RESET);
+            }
+
+            // 戦闘状態に復帰
+            if (hasTarget && !isDead)
+            {
+                if (currentState != EnemyState.Chase)
+                {
+                    ChangeState(EnemyState.Chase);
+                }
+            }
+        }
+
+        /// <summary>
+        /// ノックバック設定を変更
+        /// </summary>
+        /// <param name="force">ノックバック力</param>
+        /// <param name="duration">ノックバック持続時間</param>
+        public virtual void SetKnockbackSettings(float force, float duration)
+        {
+            knockbackForce = force;
+            knockbackDuration = duration;
+        }
+
+        /// <summary>
+        /// ノックバック機能の有効/無効を切り替え
+        /// </summary>
+        /// <param name="enabled">有効かどうか</param>
+        public virtual void SetKnockbackEnabled(bool enabled)
+        {
+            enableKnockback = enabled;
+        }
+
+        /// <summary>
+        /// 武器タイプに基づいてノックバック乗算値を取得
+        /// </summary>
+        /// <param name="toolType">武器タイプ</param>
+        /// <returns>ノックバック乗算値</returns>
+        protected virtual float GetWeaponKnockbackMultiplier(ToolType toolType)
+        {
+            // ItemDataが存在する場合はそちらを優先
+            ItemData weaponData = GetWeaponItemData(toolType);
+            if (weaponData != null)
+            {
+                return weaponData.knockbackMultiplier;
+            }
+
+            // フォールバック：デフォルトの武器別ノックバック乗算値
+            switch (toolType)
+            {
+                case ToolType.Pickaxe:
+                    return 1.5f;  // つるはしは強力なノックバック
+                case ToolType.IronPipe:
+                    return 1.0f;  // 鉄パイプは通常のノックバック
+                default:
+                    return 1.0f;  // デフォルト
+            }
+        }
+
+        /// <summary>
+        /// 指定された武器タイプのItemDataを取得
+        /// </summary>
+        /// <param name="toolType">武器タイプ</param>
+        /// <returns>対応するItemData、見つからない場合はnull</returns>
+        protected virtual ItemData GetWeaponItemData(ToolType toolType)
+        {
+            // すべてのItemDataアセットを検索（実際のプロジェクトではより効率的な方法を推奨）
+            ItemData[] allItems = Resources.FindObjectsOfTypeAll<ItemData>();
+            foreach (var item in allItems)
+            {
+                if (item.IsTool() && item.toolType == toolType)
+                {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 敵の攻撃タイプに基づいてノックバック乗算値を取得
+        /// </summary>
+        /// <param name="enemyAttackType">敵の攻撃タイプ</param>
+        /// <returns>ノックバック乗算値</returns>
+        protected virtual float GetEnemyAttackKnockbackMultiplier(EnemyAttackType enemyAttackType)
+        {
+            // 個別設定がある場合はそれを使用
+            if (attackKnockbackMultiplier != 1.0f)
+            {
+                return attackKnockbackMultiplier;
+            }
+
+            // デフォルトの攻撃タイプ別ノックバック乗算値
+            switch (enemyAttackType)
+            {
+                case EnemyAttackType.Punch:
+                    return 0.8f;   // パンチ（軽め）
+                case EnemyAttackType.Claw:
+                    return 1.0f;   // 爪攻撃（通常）
+                case EnemyAttackType.Bite:
+                    return 0.6f;   // 噛み付き（軽め、でも痛い）
+                case EnemyAttackType.Tackle:
+                    return 1.8f;   // 体当たり（重い）
+                case EnemyAttackType.Slam:
+                    return 2.0f;   // 叩きつけ（非常に重い）
+                case EnemyAttackType.Charge:
+                    return 2.5f;   // 突進攻撃（最重量）
+                case EnemyAttackType.Projectile:
+                    return 0.7f;   // 飛び道具（軽い）
+                case EnemyAttackType.Special:
+                    return 1.5f;   // 特殊攻撃（やや重い）
+                default:
+                    return 1.0f;   // デフォルト
+            }
+        }
+
+        #endregion
+
         #region Navigation and Obstacle Avoidance
 
         /// <summary>
@@ -1057,7 +1395,6 @@ namespace KowloonBreak.Enemies
             navAgent.avoidancePriority = 50; // 中程度の優先度
             navAgent.radius = avoidanceRadius * 0.5f; // エージェントの半径
             
-            Debug.Log($"[{gameObject.name}] NavMeshAgent setup completed. Initial patrol speed: {initialSpeed} (Move Speed: {moveSpeed}, chase: ×{chaseSpeedMultiplier})");
         }
 
         /// <summary>
@@ -1270,7 +1607,6 @@ namespace KowloonBreak.Enemies
             if (targetLocked && currentTime - targetLockTime > TARGET_LOCK_DURATION)
             {
                 targetLocked = false;
-                Debug.Log($"[{gameObject.name}] Target lock expired");
             }
             
             if (!hasTarget)
@@ -1286,7 +1622,6 @@ namespace KowloonBreak.Enemies
                 // 現在のターゲットが生きているかチェック
                 if (!IsTargetAlive(currentTarget))
                 {
-                    Debug.Log($"[{gameObject.name}] Current target {currentTarget.name} is dead, losing target");
                     LoseTarget();
                     return;
                 }
@@ -1418,8 +1753,7 @@ namespace KowloonBreak.Enemies
                 playerDetected = hasTarget;
                 playerDetectionTime = Time.time;
                 
-                Debug.Log($"[{gameObject.name}] Target changed to: {(newTarget != null ? newTarget.name : "None")}");
-            }
+                }
         }
         
         /// <summary>
@@ -1432,7 +1766,6 @@ namespace KowloonBreak.Enemies
             playerDetected = false;
             targetLocked = false; // ロック状態もリセット
             
-            Debug.Log($"[{gameObject.name}] Lost target");
         }
         
         /// <summary>
@@ -1460,7 +1793,6 @@ namespace KowloonBreak.Enemies
                     ChangeState(EnemyState.Chase);
                 }
                 
-                Debug.Log($"[{gameObject.name}] Force target set to: {newTarget.name} (locked for {TARGET_LOCK_DURATION}s) and turned to face target");
             }
         }
         
@@ -1504,7 +1836,6 @@ namespace KowloonBreak.Enemies
                 // 即座に回転させる場合
                 transform.rotation = targetRotation;
                 
-                Debug.Log($"[{gameObject.name}] Turned to face target at position: {targetPosition}");
             }
         }
         
@@ -1672,67 +2003,81 @@ namespace KowloonBreak.Enemies
 
         #endregion
 
-        #region Health Bar Management
+        #region UI Health Bar Management
 
         /// <summary>
-        /// HPバーの初期化
+        /// UIヘルスバーの初期化
         /// </summary>
-        protected virtual void InitializeHealthBar()
+        protected virtual void InitializeUIHealthBar()
         {
-            if (healthBarFill != null && healthBarFill.material != null)
+            // 既に初期化済みの場合はスキップ
+            if (hasUIHealthBar) return;
+
+            // UIManagerを通じてヘルスバーを作成
+            if (UI.UIManager.Instance != null)
             {
-                // 初期状態では満タンに設定
-                healthBarFill.material.SetFloat("_Fill_1", 1f);
-                
-                // 初期状態ではMAXなので非表示
-                if (healthBarBackground != null)
+                GameObject healthBarObj = UI.UIManager.Instance.CreateHealthBarForEnemy(this);
+                if (healthBarObj != null)
                 {
-                    healthBarBackground.gameObject.SetActive(false);
+                    uiHealthBar = healthBarObj.GetComponent<UI.EnemyHealthBar>();
+                    hasUIHealthBar = uiHealthBar != null;
+
+                    if (hasUIHealthBar)
+                    {
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[{gameObject.name}] Failed to get EnemyHealthBar component");
+                    }
                 }
-            }
-        }
-
-        /// <summary>
-        /// HPバーの更新
-        /// </summary>
-        protected virtual void UpdateHealthBar()
-        {
-            if (healthBarFill == null || healthBarFill.material == null) return;
-
-            float healthPercentage = currentHealth / maxHealth;
-
-            // HPがMAXの場合は非表示、それ以外は表示
-            if (healthPercentage >= 1f)
-            {
-                if (healthBarBackground != null)
+                else
                 {
-                    healthBarBackground.gameObject.SetActive(false);
+                    Debug.LogWarning($"[{gameObject.name}] Failed to create UI Health Bar");
                 }
             }
             else
             {
-                if (healthBarBackground != null)
-                {
-                    healthBarBackground.gameObject.SetActive(true);
-                }
-                
-                // _Fill_1パラメータでHP量を制御
-                healthBarFill.material.SetFloat("_Fill_1", healthPercentage);
+                // UIManagerがまだ存在しない場合は後で再試行
+                StartCoroutine(RetryUIHealthBarInitialization());
             }
         }
 
         /// <summary>
-        /// ヘルスバーを強制的に非表示にする（死亡時など）
+        /// UIManagerが利用可能になるまで待機してヘルスバーを初期化
         /// </summary>
-        protected virtual void HideHealthBar()
+        private System.Collections.IEnumerator RetryUIHealthBarInitialization()
         {
-            if (healthBarBackground != null)
+            // 最大5秒間、0.1秒間隔で再試行
+            for (int i = 0; i < 50; i++)
             {
-                healthBarBackground.gameObject.SetActive(false);
+                yield return new WaitForSeconds(0.1f);
+
+                if (UI.UIManager.Instance != null)
+                {
+                    InitializeUIHealthBar();
+                    yield break;
+                }
             }
-            
-            Debug.Log($"[EnemyBase] {gameObject.name} - Health bar hidden");
+
+            Debug.LogWarning($"[{gameObject.name}] UIManager not found after retry attempts, UI Health Bar will not be created");
         }
+
+        /// <summary>
+        /// UIヘルスバーを削除
+        /// </summary>
+        protected virtual void DestroyUIHealthBar()
+        {
+            if (!hasUIHealthBar) return;
+
+            if (UI.UIManager.Instance != null)
+            {
+                UI.UIManager.Instance.OnEnemyDestroyed(this);
+            }
+
+            uiHealthBar = null;
+            hasUIHealthBar = false;
+        }
+
 
 
         /// <summary>

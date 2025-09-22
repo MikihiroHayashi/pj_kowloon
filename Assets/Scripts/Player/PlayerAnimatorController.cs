@@ -25,6 +25,7 @@ namespace KowloonBreak.Player
         [SerializeField] private string speedParameterName = "Speed";
         [SerializeField] private string dodgeParameterName = "Dodge";
         [SerializeField] private string crouchParameterName = "Crouch";
+        [SerializeField] private string resetParameterName = "Reset";
         
         [Header("Speed Values - Actual Velocities")]
         [Tooltip("しきい値: 停止状態の最大速度 (単位/秒)")]
@@ -45,6 +46,7 @@ namespace KowloonBreak.Player
         private int speedParameterHash;
         private int dodgeParameterHash;
         private int crouchParameterHash;
+        private int resetParameterHash;
         
         // パラメータ存在フラグ
         private bool hasAngleParameter;
@@ -54,6 +56,7 @@ namespace KowloonBreak.Player
         private bool hasSpeedParameter;
         private bool hasDodgeParameter;
         private bool hasCrouchParameter;
+        private bool hasResetParameter;
         
         // 速度しきい値のプロパティ
         public float IdleSpeedThreshold => idleSpeedThreshold;
@@ -179,7 +182,8 @@ namespace KowloonBreak.Player
             speedParameterHash = Animator.StringToHash(speedParameterName);
             dodgeParameterHash = Animator.StringToHash(dodgeParameterName);
             crouchParameterHash = Animator.StringToHash(crouchParameterName);
-            
+            resetParameterHash = Animator.StringToHash(resetParameterName);
+
             // パラメータの存在チェック
             hasAngleParameter = HasParameter(angleParameterName);
             hasDeathParameter = HasParameter(deathParameterName);
@@ -188,6 +192,7 @@ namespace KowloonBreak.Player
             hasSpeedParameter = HasParameter(speedParameterName);
             hasDodgeParameter = HasParameter(dodgeParameterName);
             hasCrouchParameter = HasParameter(crouchParameterName);
+            hasResetParameter = HasParameter(resetParameterName);
             
             // 存在しないパラメータをログ出力（重要な警告のみ）
             if (!hasAngleParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{angleParameterName}' not found in Animator");
@@ -331,6 +336,144 @@ namespace KowloonBreak.Player
             {
                 animator.SetTrigger(deathParameterHash);
             }
+        }
+
+        /// <summary>
+        /// 強制的にDeathアニメーションを再生（攻撃モーション中でも確実に実行）
+        /// </summary>
+        public void ForceDeathAnimation()
+        {
+            if (animator == null) return;
+
+            // 現在のアニメーションを強制的に中断してDeathアニメーションに移行
+            if (hasDeathParameter)
+            {
+                // アニメーターの他のパラメータをリセット
+                ResetAnimatorParameters();
+
+                // Deathトリガーを設定
+                animator.SetTrigger(deathParameterHash);
+
+                // 可能であればDeathステートに直接移行
+                TryPlayDeathAnimationDirectly();
+
+                Debug.Log("[PlayerAnimatorController] Force death animation triggered");
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerAnimatorController] Death parameter not found, cannot force death animation");
+            }
+        }
+
+        /// <summary>
+        /// アニメーターパラメータをリセット（死亡時に他のアニメーションが干渉しないように）
+        /// </summary>
+        /// <summary>
+        /// アニメーターを完全にリセット（リトライ時用のパブリックメソッド）
+        /// </summary>
+        public void ResetAnimatorToDefault()
+        {
+            if (animator == null) return;
+
+            Debug.Log("[PlayerAnimatorController] Resetting animator to default state");
+
+            // 全てのパラメータをリセット
+            ResetAnimatorParameters();
+
+            // Idleステートに強制遷移
+            TryPlayIdleState();
+
+            // 内部変数もリセット
+            currentAngle = 0f;
+            targetAngle = 0f;
+        }
+
+        private void ResetAnimatorParameters()
+        {
+            if (animator == null) return;
+
+            // 移動関連パラメータをリセット
+            if (hasSpeedParameter)
+                animator.SetFloat(speedParameterHash, 0f);
+
+            if (hasAngleParameter)
+                animator.SetFloat(angleParameterHash, 0f);
+
+            // しゃがみ状態をリセット
+            if (hasCrouchParameter)
+                animator.SetBool(crouchParameterHash, false);
+
+            // 攻撃やその他のトリガーをリセット（可能であれば）
+            // 注意：SetTriggerで設定されたトリガーは直接リセットできないため、
+            // 他のステートに遷移させることで間接的にリセット
+        }
+
+        /// <summary>
+        /// Resetトリガーでアニメーターをリセット
+        /// </summary>
+        private void TryPlayIdleState()
+        {
+            if (animator == null) return;
+
+            if (hasResetParameter)
+            {
+                animator.SetTrigger(resetParameterHash);
+                Debug.Log("[PlayerAnimatorController] Reset trigger activated");
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerAnimatorController] Reset parameter not found in animator");
+            }
+        }
+
+        /// <summary>
+        /// Deathアニメーションを直接再生を試行
+        /// </summary>
+        private void TryPlayDeathAnimationDirectly()
+        {
+            if (animator == null) return;
+
+            try
+            {
+                // "Death"という名前のステートを直接再生を試行
+                // 注意：このステート名はアニメーターによって異なる可能性がある
+                var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+
+                // 既に死亡アニメーション中でない場合のみ実行
+                if (!stateInfo.IsName("Death") && !stateInfo.IsTag("Death"))
+                {
+                    // 一般的な死亡ステート名を試行
+                    string[] deathStateNames = { "Death", "Die", "Dead", "Player_Death" };
+
+                    foreach (string stateName in deathStateNames)
+                    {
+                        if (HasState(stateName))
+                        {
+                            animator.Play(stateName, 0, 0f);
+                            Debug.Log($"[PlayerAnimatorController] Directly playing death state: {stateName}");
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[PlayerAnimatorController] Could not play death animation directly: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 指定された名前のステートが存在するかチェック
+        /// </summary>
+        private bool HasState(string stateName)
+        {
+            if (animator == null || animator.runtimeAnimatorController == null) return false;
+
+            foreach (var clip in animator.runtimeAnimatorController.animationClips)
+            {
+                if (clip.name == stateName) return true;
+            }
+            return false;
         }
 
         /// <summary>

@@ -18,6 +18,7 @@ namespace KowloonBreak.Core
         public int durability = 100;
         public float attackDamage = 1f;
         public float attackRange = 1.5f;
+        public float knockbackMultiplier = 1f;  // ノックバック力の乗算値
         
         [Header("Material Specific")]
         public MaterialType materialType;
@@ -38,6 +39,7 @@ namespace KowloonBreak.Core
                 durability = 100;
                 attackDamage = 1f;
                 attackRange = 1.5f;
+                knockbackMultiplier = 1f;
                 value = 1f;
             }
         }
