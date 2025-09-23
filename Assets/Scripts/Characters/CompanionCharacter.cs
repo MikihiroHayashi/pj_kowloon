@@ -17,7 +17,7 @@ namespace KowloonBreak.Characters
         [Header("Stats")]
         [SerializeField] private CharacterStats stats;
         [SerializeField] private HealthStatus health;
-        [SerializeField] private InfectionStatus infection;
+        [SerializeField] private SimpleInfectionStatus infection;
 
         [Header("Skills")]
         [SerializeField] private List<Skill> skills = new List<Skill>();
@@ -27,15 +27,18 @@ namespace KowloonBreak.Characters
         [SerializeField] private CompanionActivity currentActivity = CompanionActivity.Idle;
         [SerializeField] private float activityTimer = 0f;
 
+        [Header("Animation")]
+        [SerializeField] private Animator animator;
+
         public string Name => characterName;
         public CharacterRole Role => role;
         public int TrustLevel => trustLevel;
         public string CharacterId => characterId;
         public CharacterStats Stats => stats;
         public HealthStatus Health => health;
-        public InfectionStatus Infection => infection;
+        public SimpleInfectionStatus Infection => infection;
         public List<Skill> Skills => skills;
-        public bool IsAvailable => isAvailable && infection.CanPerformAction();
+        public bool IsAvailable => isAvailable && infection.CanMove;
         public CompanionActivity CurrentActivity => currentActivity;
 
         public event Action<int> OnTrustLevelChanged;
@@ -67,12 +70,15 @@ namespace KowloonBreak.Characters
         {
             if (stats == null)
                 stats = new CharacterStats();
-            
+
             if (health == null)
                 health = new HealthStatus();
-            
+
             if (infection == null)
-                infection = new InfectionStatus();
+                infection = new SimpleInfectionStatus();
+
+            if (animator == null)
+                animator = GetComponent<Animator>();
 
             InitializeSkills();
         }
@@ -110,7 +116,7 @@ namespace KowloonBreak.Characters
         private void SubscribeToEvents()
         {
             stats.OnDeath += HandleCharacterDeath;
-            infection.OnTurnedZombie += HandleCharacterTurned;
+            infection.OnBecameInfected += HandleCharacterTurned;
         }
 
         private void UpdateCharacter()
@@ -118,7 +124,6 @@ namespace KowloonBreak.Characters
             float deltaTime = Time.deltaTime;
             
             health.UpdateCondition(deltaTime);
-            infection.UpdateInfection(deltaTime);
 
             if (activityTimer > 0f)
             {
@@ -135,8 +140,7 @@ namespace KowloonBreak.Characters
         private void ApplyHealthPenalties()
         {
             int healthPenalty = health.GetHealthPenalty();
-            float infectionPenalty = infection.GetPerformancePenalty();
-            
+
             if (healthPenalty > 0)
             {
                 stats.Health = stats.MaxHealth - healthPenalty;
@@ -210,7 +214,7 @@ namespace KowloonBreak.Characters
         public bool CanPerformAction(string actionType)
         {
             // 基本的な行動可能性チェック
-            if (!IsAvailable || health.IsCritical || infection.IsTurned)
+            if (!IsAvailable || health.IsCritical || infection.IsInfected)
                 return false;
             
             // 信頼度による行動制限
@@ -299,9 +303,12 @@ namespace KowloonBreak.Characters
 
             float baseEffectiveness = skill.GetEffectiveness();
             float healthPenalty = health.GetMovementPenalty();
-            float infectionPenalty = infection.GetPerformancePenalty();
 
-            return baseEffectiveness * (1f - healthPenalty - infectionPenalty);
+            // 感染状態や腕切断状態による能力低下
+            float infectionPenalty = infection.IsInfected ? 1f : 0f; // 感染状態なら完全に行動不能
+            float amputationPenalty = infection.HasArmAmputated ? 0.3f : 0f; // 腕切断で30%低下
+
+            return baseEffectiveness * (1f - healthPenalty - infectionPenalty - amputationPenalty);
         }
 
         private void HandleCharacterDeath()
@@ -313,7 +320,40 @@ namespace KowloonBreak.Characters
         private void HandleCharacterTurned()
         {
             isAvailable = false;
+
+            // 感染状態のAnimationトリガーを発動
+            if (animator != null)
+            {
+                animator.SetTrigger("Infection");
+                Debug.Log($"{characterName} became infected - playing infection animation");
+            }
+
             OnCharacterTurned?.Invoke(this);
+        }
+
+        /// <summary>
+        /// 感染ダメージを受ける（敵の攻撃による感染）
+        /// </summary>
+        /// <param name="infectionDamage">感染ダメージ量</param>
+        /// <param name="attackType">攻撃タイプ（感染ダメージ計算用）</param>
+        public void TakeInfectionDamage(float infectionDamage, Core.EnemyAttackType attackType = Core.EnemyAttackType.Punch)
+        {
+            if (infectionDamage <= 0 || infection.IsInfected) return;
+
+            infection.IncreaseInfection(infectionDamage);
+            Debug.Log($"{characterName} took {infectionDamage} infection damage from {attackType} attack. Current infection: {infection.InfectionPercentage:P0}");
+
+            // 感染バーが存在しない場合は作成
+            if (UI.UIManager.Instance != null && !UI.UIManager.Instance.HasInfectionBarForCompanion(GetComponent<CompanionAI>()))
+            {
+                UI.UIManager.Instance.CreateInfectionBarForCompanion(GetComponent<CompanionAI>());
+            }
+
+            // UIに表示
+            if (UI.UIManager.Instance != null)
+            {
+                UI.UIManager.Instance.ShowDamageText(transform.position, infectionDamage, UI.DamageType.Infection);
+            }
         }
 
         public void SetCharacterData(string name, CharacterRole characterRole)
@@ -329,7 +369,7 @@ namespace KowloonBreak.Characters
                 stats.OnDeath -= HandleCharacterDeath;
             
             if (infection != null)
-                infection.OnTurnedZombie -= HandleCharacterTurned;
+                infection.OnBecameInfected -= HandleCharacterTurned;
         }
     }
 

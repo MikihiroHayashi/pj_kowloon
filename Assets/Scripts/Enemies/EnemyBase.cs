@@ -22,6 +22,7 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected float maxHealth = 100f;
         [SerializeField] protected float currentHealth;
         [SerializeField] protected float attackDamage = 10f;
+        [SerializeField] protected float baseInfectionDamage = 15f;
         [SerializeField] protected float attackRange = 2f;
         [SerializeField] protected float detectionRange = 10f;
         [SerializeField] protected float attackCooldown = 2f;
@@ -29,6 +30,9 @@ namespace KowloonBreak.Enemies
         [Header("Enemy Attack Type")]
         [SerializeField] protected EnemyAttackType attackType = EnemyAttackType.Punch;
         [SerializeField] protected float attackKnockbackMultiplier = 1.0f;
+
+        [Header("Infection Damage by Attack Type")]
+        [SerializeField] protected InfectionDamageSettings infectionDamageSettings;
 
         [Header("Vision System")]
         [SerializeField] protected float visionAngle = 120f; // 視野角度
@@ -711,9 +715,14 @@ namespace KowloonBreak.Enemies
 
                 if (enhancedPlayerController != null)
                 {
-                    // 攻撃タイプ別ノックバック付きダメージ
+                    // 感染ダメージを計算
+                    float finalInfectionDamage = GetInfectionDamageForAttackType(attackType);
                     float knockbackMultiplier = GetEnemyAttackKnockbackMultiplier(attackType);
-                    enhancedPlayerController.TakeDamage(attackDamage, transform.position, attackType, knockbackMultiplier);
+
+                    // 複合ダメージを適用
+                    enhancedPlayerController.TakeCombinedDamage(attackDamage, finalInfectionDamage, transform.position, attackType, knockbackMultiplier);
+
+                    Debug.Log($"Enemy attacked Player with {attackDamage} physical + {finalInfectionDamage} infection damage (Attack: {attackType})!");
                 }
             }
             // CompanionAIの場合
@@ -722,9 +731,14 @@ namespace KowloonBreak.Enemies
                 var companionAI = currentTarget.GetComponent<CompanionAI>();
                 if (companionAI != null && companionAI.IsAlive)
                 {
-                    // 攻撃タイプ別ノックバック付きダメージ
+                    // 感染ダメージを計算
+                    float finalInfectionDamage = GetInfectionDamageForAttackType(attackType);
                     float knockbackMultiplier = GetEnemyAttackKnockbackMultiplier(attackType);
-                    companionAI.TakeDamage(attackDamage, transform.position, attackType, knockbackMultiplier);
+
+                    // 複合ダメージを適用
+                    companionAI.TakeCombinedDamage(attackDamage, finalInfectionDamage, transform.position, attackType, knockbackMultiplier);
+
+                    Debug.Log($"Enemy attacked {companionAI.name} with {attackDamage} physical + {finalInfectionDamage} infection damage (Attack: {attackType})!");
                 }
                 else
                 {
@@ -2096,6 +2110,80 @@ namespace KowloonBreak.Enemies
                     
                 UI.UIManager.Instance.ShowDamageText(damagePosition, damage, isCritical);
             }
+        }
+
+        #endregion
+
+        #region Infection Damage System
+
+        /// <summary>
+        /// 指定された攻撃タイプの感染ダメージを取得
+        /// </summary>
+        /// <param name="enemyAttackType">攻撃タイプ</param>
+        /// <returns>感染ダメージ値</returns>
+        protected virtual float GetInfectionDamageForAttackType(EnemyAttackType enemyAttackType)
+        {
+            // 感染ダメージ設定が存在する場合はそれを使用
+            if (infectionDamageSettings != null)
+            {
+                return infectionDamageSettings.GetInfectionDamage(enemyAttackType, baseInfectionDamage);
+            }
+
+            // デフォルトの攻撃タイプ別感染ダメージ
+            return GetDefaultInfectionDamage(enemyAttackType);
+        }
+
+        /// <summary>
+        /// デフォルトの攻撃タイプ別感染ダメージを取得
+        /// </summary>
+        /// <param name="enemyAttackType">攻撃タイプ</param>
+        /// <returns>感染ダメージ値</returns>
+        protected virtual float GetDefaultInfectionDamage(EnemyAttackType enemyAttackType)
+        {
+            return enemyAttackType switch
+            {
+                EnemyAttackType.Punch => baseInfectionDamage * 0.7f,    // パンチ（軽め）
+                EnemyAttackType.Claw => baseInfectionDamage * 1.3f,     // 爪攻撃（やや重い）
+                EnemyAttackType.Bite => baseInfectionDamage * 2.0f,     // 噛み付き（重い - 唾液感染）
+                EnemyAttackType.Tackle => baseInfectionDamage * 1.0f,   // 体当たり（通常）
+                EnemyAttackType.Slam => baseInfectionDamage * 1.5f,     // 叩きつけ（やや重い）
+                EnemyAttackType.Charge => baseInfectionDamage * 1.2f,   // 突進攻撃（やや重い）
+                EnemyAttackType.Projectile => baseInfectionDamage * 0.8f, // 飛び道具（やや軽い）
+                EnemyAttackType.Special => baseInfectionDamage * 2.5f,  // 特殊攻撃（非常に重い）
+                _ => baseInfectionDamage
+            };
+        }
+
+        /// <summary>
+        /// 感染ダメージ設定を初期化（エディターまたは実行時に呼び出し可能）
+        /// </summary>
+        public virtual void InitializeInfectionDamageSettings()
+        {
+            if (infectionDamageSettings == null)
+            {
+                infectionDamageSettings = new InfectionDamageSettings();
+            }
+        }
+
+        /// <summary>
+        /// 特定の攻撃タイプの感染ダメージを設定
+        /// </summary>
+        /// <param name="attackType">攻撃タイプ</param>
+        /// <param name="damage">感染ダメージ値</param>
+        public virtual void SetInfectionDamage(EnemyAttackType attackType, float damage)
+        {
+            InitializeInfectionDamageSettings();
+            infectionDamageSettings.SetInfectionDamage(attackType, damage);
+        }
+
+        /// <summary>
+        /// 感染ダメージのグローバル倍率を設定
+        /// </summary>
+        /// <param name="multiplier">倍率</param>
+        public virtual void SetInfectionDamageMultiplier(float multiplier)
+        {
+            InitializeInfectionDamageSettings();
+            infectionDamageSettings.SetGlobalMultiplier(multiplier);
         }
 
         #endregion

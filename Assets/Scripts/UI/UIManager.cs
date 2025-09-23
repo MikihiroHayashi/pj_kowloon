@@ -66,6 +66,12 @@ namespace KowloonBreak.UI
         // Public access for CompanionHealthBarPrefab
         public GameObject CompanionHealthBarPrefab => companionHealthBarPrefab;
 
+        [Header("Companion Infection Bar System")]
+        [SerializeField] private GameObject companionInfectionBarPrefab;
+
+        // Public access for CompanionInfectionBarPrefab
+        public GameObject CompanionInfectionBarPrefab => companionInfectionBarPrefab;
+
         [Header("Enemy Health Bar System")]
         [SerializeField] private GameObject enemyHealthBarPrefab;
 
@@ -112,7 +118,6 @@ namespace KowloonBreak.UI
         private List<GameObject> activeNotifications;
         private GameManager gameManager;
         private EnhancedResourceManager resourceManager;
-        private InfectionManager infectionManager;
         private KowloonBreak.Player.EnhancedPlayerController enhancedPlayerController;
         
         // Companion Command System
@@ -124,6 +129,9 @@ namespace KowloonBreak.UI
         
         // Companion Health Bar System
         private Dictionary<KowloonBreak.Characters.CompanionAI, CompanionHealthBar> activeHealthBars = new Dictionary<KowloonBreak.Characters.CompanionAI, CompanionHealthBar>();
+
+        // Companion Infection Bar System
+        private Dictionary<KowloonBreak.Characters.CompanionAI, CompanionInfectionBar> activeInfectionBars = new Dictionary<KowloonBreak.Characters.CompanionAI, CompanionInfectionBar>();
 
         // Enemy Health Bar System
         private Dictionary<KowloonBreak.Enemies.EnemyBase, EnemyHealthBar> activeEnemyHealthBars = new Dictionary<KowloonBreak.Enemies.EnemyBase, EnemyHealthBar>();
@@ -169,7 +177,6 @@ namespace KowloonBreak.UI
         {
             gameManager = GameManager.Instance;
             resourceManager = EnhancedResourceManager.Instance;
-            infectionManager = InfectionManager.Instance;
             inputManager = KowloonBreak.Core.InputManager.Instance;
             
             enhancedPlayerController = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
@@ -229,22 +236,20 @@ namespace KowloonBreak.UI
                 resourceManager.OnResourceChanged += UpdateResourceDisplay;
             }
 
-            if (infectionManager != null)
-            {
-                infectionManager.OnCityInfectionRateChanged += UpdateInfectionDisplay;
-            }
             
-            // プレイヤーのヘルス・スタミナ変更イベントに直接購読
+            // プレイヤーのヘルス・スタミナ・感染レベル変更イベントに直接購読
             if (enhancedPlayerController != null)
             {
                 enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
                 enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
+                enhancedPlayerController.OnInfectionLevelChanged += UpdatePlayerInfectionBar;
                 enhancedPlayerController.OnStealthAttack += HandleStealthAttack;
-                
+
                 // 初期値を設定
                 UpdateHealthBar(enhancedPlayerController.HealthPercentage);
                 UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
                 UpdateStealthBar(enhancedPlayerController.StealthLevel);
+                UpdatePlayerInfectionBar(enhancedPlayerController.InfectionLevel / 100f);
             }
             else
             {
@@ -267,12 +272,14 @@ namespace KowloonBreak.UI
                 {
                     enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
                     enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
+                    enhancedPlayerController.OnInfectionLevelChanged += UpdatePlayerInfectionBar;
                     enhancedPlayerController.OnStealthAttack += HandleStealthAttack;
-                    
+
                     // 初期値を設定
                     UpdateHealthBar(enhancedPlayerController.HealthPercentage);
                     UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
                     UpdateStealthBar(enhancedPlayerController.StealthLevel);
+                    UpdatePlayerInfectionBar(enhancedPlayerController.InfectionLevel / 100f);
                     break;
                 }
             }
@@ -406,22 +413,28 @@ namespace KowloonBreak.UI
             }
         }
 
-        private void UpdateInfectionDisplay(float infectionRate)
+
+        /// <summary>
+        /// プレイヤーの個人的な感染レベルを更新（EnhancedPlayerControllerのイベントから呼び出される）
+        /// </summary>
+        /// <param name="infectionLevel">感染レベル（0.0-1.0）</param>
+        private void UpdatePlayerInfectionBar(float infectionLevel)
         {
             if (infectionSlider != null)
             {
-                infectionSlider.value = infectionRate;
-                
-                Color sliderColor = infectionRate switch
+                infectionSlider.value = Mathf.Clamp01(infectionLevel);
+
+                // 感染レベルに応じて色を変更
+                Color sliderColor = infectionLevel switch
                 {
-                    >= 0.8f => Color.red,
-                    >= 0.6f => Color.yellow,
-                    >= 0.4f => new Color(1f, 0.5f, 0f),
-                    >= 0.2f => Color.green,
-                    _ => Color.white
+                    >= 0.8f => Color.red,        // 80%以上：赤（重篤）
+                    >= 0.6f => new Color(1f, 0.5f, 0f), // 60%以上：オレンジ（危険）
+                    >= 0.4f => Color.yellow,     // 40%以上：黄色（警戒）
+                    >= 0.2f => new Color(0.5f, 1f, 0.5f), // 20%以上：薄緑（軽微）
+                    _ => Color.white             // 20%未満：白（正常）
                 };
-                
-                var fillArea = infectionSlider.fillRect.GetComponent<Image>();
+
+                var fillArea = infectionSlider.fillRect?.GetComponent<Image>();
                 if (fillArea != null)
                 {
                     fillArea.color = sliderColor;
@@ -770,6 +783,24 @@ namespace KowloonBreak.UI
         }
 
         /// <summary>
+        /// ワールド座標にダメージテキストを表示（ダメージタイプ指定版）
+        /// </summary>
+        /// <param name="worldPosition">ワールド座標</param>
+        /// <param name="damage">ダメージ量</param>
+        /// <param name="damageType">ダメージタイプ</param>
+        public void ShowDamageText(Vector3 worldPosition, float damage, DamageType damageType)
+        {
+            bool isCritical = damageType == DamageType.Critical;
+            ShowDamageText(worldPosition, damage, isCritical);
+
+            // 感染ダメージの場合は追加処理（必要に応じて）
+            if (damageType == DamageType.Infection)
+            {
+                Debug.Log($"Showing infection damage: {damage}");
+            }
+        }
+
+        /// <summary>
         /// 指定位置にセリフテキストを表示（非推奨：コンパニオンはCreateDialogueTextForCompanionを使用）
         /// </summary>
         /// <param name="worldPosition">ワールド座標</param>
@@ -911,17 +942,14 @@ namespace KowloonBreak.UI
                 UpdateDayDisplay(gameManager.CurrentDay);
             }
 
-            if (infectionManager != null)
-            {
-                UpdateInfectionDisplay(infectionManager.CityInfectionRate);
-            }
             
-            // プレイヤーのヘルスとスタミナを更新
+            // プレイヤーのヘルス・スタミナ・感染レベルを更新
             if (enhancedPlayerController != null)
             {
                 UpdateHealthBar(enhancedPlayerController.HealthPercentage);
                 UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
                 UpdateStealthBar(enhancedPlayerController.StealthLevel);
+                UpdatePlayerInfectionBar(enhancedPlayerController.InfectionLevel / 100f);
             }
         }
 
@@ -943,16 +971,13 @@ namespace KowloonBreak.UI
                 resourceManager.OnResourceChanged -= UpdateResourceDisplay;
             }
 
-            if (infectionManager != null)
-            {
-                infectionManager.OnCityInfectionRateChanged -= UpdateInfectionDisplay;
-            }
             
             // プレイヤーコントローラーのイベント購読を解除
             if (enhancedPlayerController != null)
             {
                 enhancedPlayerController.OnHealthChanged -= UpdateHealthBar;
                 enhancedPlayerController.OnStaminaChanged -= UpdateStaminaBar;
+                enhancedPlayerController.OnInfectionLevelChanged -= UpdatePlayerInfectionBar;
                 enhancedPlayerController.OnStealthAttack -= HandleStealthAttack;
             }
         }
@@ -1830,6 +1855,133 @@ namespace KowloonBreak.UI
 
         #endregion
 
+        #region Companion Infection Bar System
+
+        /// <summary>
+        /// コンパニオンの感染バーを作成
+        /// </summary>
+        /// <param name="companion">対象のコンパニオン</param>
+        /// <returns>作成された感染バーオブジェクト</returns>
+        public GameObject CreateInfectionBarForCompanion(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (companion == null || companionInfectionBarPrefab == null || damageContainer == null)
+            {
+                Debug.LogWarning("[UIManager] Cannot create infection bar - missing references");
+                return null;
+            }
+
+            // 既存の感染バーがある場合は削除
+            if (activeInfectionBars.ContainsKey(companion))
+            {
+                RemoveInfectionBarForCompanion(companion);
+            }
+
+            // 感染バーオブジェクトを生成
+            GameObject infectionBarObj = Instantiate(companionInfectionBarPrefab, damageContainer);
+
+            // CompanionInfectionBarコンポーネントを初期化
+            CompanionInfectionBar infectionBarComponent = infectionBarObj.GetComponent<CompanionInfectionBar>();
+            if (infectionBarComponent != null)
+            {
+                infectionBarComponent.InitializeForCompanion(companion);
+
+                // 削除時のコールバックを設定
+                infectionBarComponent.OnInfectionBarDestroyed += () => {
+                    OnInfectionBarDestroyed(companion);
+                };
+
+                // 辞書に追加
+                activeInfectionBars[companion] = infectionBarComponent;
+
+                Debug.Log($"[UIManager] Created infection bar for companion: {companion.name}");
+                return infectionBarObj;
+            }
+            else
+            {
+                Debug.LogError("[UIManager] CompanionInfectionBar component not found on prefab");
+                Destroy(infectionBarObj);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// コンパニオンの感染バーを即座に削除
+        /// </summary>
+        /// <param name="companion">対象のコンパニオン</param>
+        public void RemoveInfectionBarForCompanion(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (companion == null || !activeInfectionBars.ContainsKey(companion))
+                return;
+
+            CompanionInfectionBar infectionBar = activeInfectionBars[companion];
+            if (infectionBar != null)
+            {
+                infectionBar.ForceDestroy();
+            }
+
+            activeInfectionBars.Remove(companion);
+            Debug.Log($"[UIManager] Removed infection bar for companion: {companion.name}");
+        }
+
+        /// <summary>
+        /// コンパニオンの感染バーを削除（フェードアウト付き）
+        /// </summary>
+        /// <param name="companion">対象のコンパニオン</param>
+        public void HideInfectionBarForCompanion(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (companion == null || !activeInfectionBars.ContainsKey(companion))
+                return;
+
+            CompanionInfectionBar infectionBar = activeInfectionBars[companion];
+            if (infectionBar != null)
+            {
+                // フェードアウト後に削除
+                infectionBar.OnCompanionDestroyed();
+            }
+
+            Debug.Log($"[UIManager] Hiding infection bar for companion: {companion.name}");
+        }
+
+        /// <summary>
+        /// 感染バーが削除された時の処理
+        /// </summary>
+        /// <param name="companion">感染バーが削除されたコンパニオン</param>
+        private void OnInfectionBarDestroyed(KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (companion != null && activeInfectionBars.ContainsKey(companion))
+            {
+                activeInfectionBars.Remove(companion);
+                Debug.Log($"[UIManager] Infection bar destroyed for companion: {companion.name}");
+            }
+        }
+
+        /// <summary>
+        /// 全てのコンパニオン感染バーをクリア
+        /// </summary>
+        public void ClearAllCompanionInfectionBars()
+        {
+            var companionsToRemove = new List<KowloonBreak.Characters.CompanionAI>(activeInfectionBars.Keys);
+
+            foreach (var companion in companionsToRemove)
+            {
+                RemoveInfectionBarForCompanion(companion);
+            }
+
+            activeInfectionBars.Clear();
+        }
+
+        /// <summary>
+        /// 指定されたコンパニオンの感染バーが存在するかチェック
+        /// </summary>
+        /// <param name="companion">チェック対象のコンパニオン</param>
+        /// <returns>感染バーが存在する場合true</returns>
+        public bool HasInfectionBarForCompanion(KowloonBreak.Characters.CompanionAI companion)
+        {
+            return companion != null && activeInfectionBars.ContainsKey(companion);
+        }
+
+        #endregion
+
         #region Enemy Health Bar System
 
         /// <summary>
@@ -2038,32 +2190,62 @@ namespace KowloonBreak.UI
         /// </summary>
         private System.Collections.IEnumerator RespawnPlayer()
         {
-            if (enhancedPlayerController != null)
+            bool respawnSuccessful = false;
+
+            try
             {
-                Debug.Log("[UIManager] Respawning player");
-
-                // プレイヤーを開始位置に移動
-                Vector3 spawnPosition = GetPlayerSpawnPosition();
-                enhancedPlayerController.transform.position = spawnPosition;
-
-                // HP、スタミナを全快
-                enhancedPlayerController.RestoreFullHealth();
-                enhancedPlayerController.RestoreFullStamina();
-
-                // IF（感染率）を0に
-                if (infectionManager != null)
+                // プレイヤーコントローラーを確保
+                if (enhancedPlayerController == null)
                 {
-                    infectionManager.ResetPlayerInfection();
+                    enhancedPlayerController = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
                 }
 
-                // プレイヤーを生存状態に復活
-                enhancedPlayerController.Revive();
+                if (enhancedPlayerController != null)
+                {
+                    Debug.Log("[UIManager] Respawning player");
 
-                yield return new WaitForSeconds(0.1f); // 少し待機
+                    // プレイヤーを開始位置に移動
+                    Vector3 spawnPosition = GetPlayerSpawnPosition();
+                    enhancedPlayerController.transform.position = spawnPosition;
+
+                    // HP、スタミナ、感染レベルを全快・リセット
+                    try
+                    {
+                        enhancedPlayerController.RestoreFullHealth();
+                        enhancedPlayerController.RestoreFullStamina();
+                        enhancedPlayerController.ResetInfection();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"[UIManager] Error restoring player stats: {ex.Message}");
+                    }
+
+
+                    // プレイヤーを生存状態に復活
+                    try
+                    {
+                        enhancedPlayerController.Revive();
+                        respawnSuccessful = true;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"[UIManager] Error reviving player: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Debug.LogError("[UIManager] Cannot respawn player - EnhancedPlayerController not found");
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                Debug.LogError("[UIManager] Cannot respawn player - EnhancedPlayerController not found");
+                Debug.LogError($"[UIManager] Critical error during player respawn: {ex.Message}");
+            }
+
+            // try-catchブロックの外でyield returnを実行
+            if (respawnSuccessful)
+            {
+                yield return new WaitForSeconds(0.1f); // 少し待機
             }
         }
 
@@ -2107,45 +2289,60 @@ namespace KowloonBreak.UI
         /// </summary>
         private Vector3 GetPlayerSpawnPosition()
         {
-            try
+            // まずEnhancedPlayerControllerを直接探す（確実性が高い）
+            if (enhancedPlayerController != null)
             {
-                // 実際のスポーンポイントがある場合はそれを使用
-                GameObject spawnPoint = GameObject.FindGameObjectWithTag("PlayerSpawn");
-                if (spawnPoint != null)
-                {
-                    return spawnPoint.transform.position;
-                }
-            }
-            catch (UnityException ex)
-            {
-                Debug.LogWarning($"[UIManager] PlayerSpawn tag is not defined: {ex.Message}");
+                Debug.Log("[UIManager] Using current EnhancedPlayerController position as spawn point");
+                return enhancedPlayerController.transform.position;
             }
 
-            // "Player"タグのオブジェクトを探してその位置を基準にする
+            // EnhancedPlayerControllerが見つからない場合は検索
+            var playerController = UnityEngine.Object.FindObjectOfType<Player.EnhancedPlayerController>();
+            if (playerController != null)
+            {
+                Debug.Log("[UIManager] Found EnhancedPlayerController via search, using its position as spawn point");
+                return playerController.transform.position;
+            }
+
+            // PlayerSpawnタグを安全に検索
+            GameObject[] allObjects = GameObject.FindGameObjectsWithTag("Untagged");
+            foreach (var obj in allObjects)
+            {
+                if (obj.name.Contains("PlayerSpawn") || obj.name.Contains("Spawn"))
+                {
+                    Debug.Log($"[UIManager] Found spawn point by name: {obj.name}");
+                    return obj.transform.position;
+                }
+            }
+
+            // "Player"タグを安全に検索
             try
             {
                 GameObject player = GameObject.FindGameObjectWithTag("Player");
                 if (player != null)
                 {
-                    Debug.Log("[UIManager] Using current player position as spawn point");
+                    Debug.Log("[UIManager] Using Player tag position as spawn point");
                     return player.transform.position;
                 }
             }
             catch (UnityException ex)
             {
-                Debug.LogWarning($"[UIManager] Player tag is not defined: {ex.Message}");
+                Debug.LogWarning($"[UIManager] Player tag search failed: {ex.Message}");
             }
 
-            // EnhancedPlayerControllerを直接探す
-            var playerController = UnityEngine.Object.FindObjectOfType<Player.EnhancedPlayerController>();
-            if (playerController != null)
+            // 最終フォールバック：シーン中のプレイヤーらしきオブジェクトを検索
+            var allComponents = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
+            foreach (var component in allComponents)
             {
-                Debug.Log("[UIManager] Using EnhancedPlayerController position as spawn point");
-                return playerController.transform.position;
+                if (component.GetType().Name.Contains("Player") && component.transform.position != Vector3.zero)
+                {
+                    Debug.Log($"[UIManager] Found player-like component: {component.GetType().Name}");
+                    return component.transform.position;
+                }
             }
 
-            // 最終フォールバック：原点から少し上
-            Debug.LogWarning("[UIManager] No spawn point found, using default position (0, 1, 0)");
+            // 最終フォールバック：安全な位置
+            Debug.LogWarning("[UIManager] No spawn point found, using safe default position (0, 1, 0)");
             return new Vector3(0f, 1f, 0f);
         }
 

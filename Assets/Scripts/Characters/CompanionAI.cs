@@ -44,6 +44,7 @@ namespace KowloonBreak.Characters
         [SerializeField] private Transform attackPoint;
         [SerializeField] private ToolType weaponType = ToolType.IronPipe;
         [SerializeField] private float attackDamage = 15f;
+        [SerializeField] private float attackCooldown = 2f;
         [SerializeField] private Vector3 attackBoxSize = new Vector3(2f, 2f, 3f);
         
         [Header("Health System")]
@@ -107,6 +108,7 @@ namespace KowloonBreak.Characters
         private IDestructible pendingTarget;
         private ToolType pendingToolType;
         private float pendingDamage;
+        private float lastAttackTime;
         
         // Health System
         protected bool isDead = false;
@@ -152,21 +154,29 @@ namespace KowloonBreak.Characters
             companionCharacter = GetComponent<CompanionCharacter>();
             animatorController = GetComponent<CompanionAnimatorController>();
             toolSystem = GetComponent<CompanionToolInteractionSystem>();
-            
+
+            // CompanionCharacterがない場合は作成
+            if (companionCharacter == null)
+            {
+                if (debugCommandExecution)
+                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - CompanionCharacter component not found, creating one");
+                companionCharacter = gameObject.AddComponent<CompanionCharacter>();
+            }
+
             if (animatorController == null)
             {
                 animatorController = GetComponentInChildren<CompanionAnimatorController>();
             }
-            
+
             // companionRendererを自動で見つける
             if (companionRenderer == null)
             {
                 companionRenderer = GetComponentInChildren<SpriteRenderer>();
             }
-            
+
             // Health system initialization
             currentHealth = maxHealth;
-            
+
             InitializeAgent();
             InitializeUIHealthBar();
         }
@@ -176,8 +186,22 @@ namespace KowloonBreak.Characters
             FindPlayer();
             FindPlayerCamera();
             InitializeKnockbackSystem();
+            InitializeInfectionBar();
             SetState(AIState.Follow);
             StartCoroutine(UpdateAILoop());
+        }
+
+        /// <summary>
+        /// 感染バーUIを初期化
+        /// </summary>
+        private void InitializeInfectionBar()
+        {
+            // UIManagerが利用可能で、感染バーがまだ作成されていない場合に作成
+            if (UI.UIManager.Instance != null && !UI.UIManager.Instance.HasInfectionBarForCompanion(this))
+            {
+                UI.UIManager.Instance.CreateInfectionBarForCompanion(this);
+                Debug.Log($"[CompanionAI] Created infection bar for {gameObject.name}");
+            }
         }
         
         private void FindPlayerCamera()
@@ -880,23 +904,26 @@ namespace KowloonBreak.Characters
 
         private void PerformAttack()
         {
-            if (Time.time - lastUpdateTime < 1f) return;
-            
-            lastUpdateTime = Time.time;
-            
+            // 攻撃クールダウンをチェック
+            float timeSinceLastAttack = Time.time - lastAttackTime;
+            if (timeSinceLastAttack < attackCooldown) return;
+
             if (currentTarget != null && animatorController != null)
             {
                 // 攻撃前に必ず敵を向く（即座に向く）
                 LookAtTargetInstantly(currentTarget.transform.position);
-                
+
                 // 攻撃開始のセリフを表示
                 ShowCombatDialogue(CombatDialogueType.AttackStart);
-                    
+
                 // 統合された攻撃準備
                 bool attackPrepared = PrepareAttack(currentTarget);
-                
+
                 // アニメーション開始
                 animatorController.TriggerAttack();
+
+                // 最後の攻撃時間を更新
+                lastAttackTime = Time.time;
             }
         }
 
@@ -1277,15 +1304,31 @@ namespace KowloonBreak.Characters
         }
 
 
+        /// <summary>
+        /// CompanionCharacterコンポーネントを安全に取得
+        /// </summary>
+        private bool EnsureCompanionCharacter()
+        {
+            if (companionCharacter == null)
+            {
+                companionCharacter = GetComponent<CompanionCharacter>();
+                if (companionCharacter == null)
+                {
+                    if (debugCommandExecution)
+                        Debug.LogWarning($"[CompanionAI] {gameObject.name} - CompanionCharacter component is missing");
+                    return false;
+                }
+            }
+            return true;
+        }
+
         private int GetIntelligenceLevelFromTrust()
         {
-            if (companionCharacter == null) 
+            if (!EnsureCompanionCharacter())
             {
-                if (debugCommandExecution)
-                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - CompanionCharacter component is null! Returning intelligence level 1");
                 return 1;
             }
-            
+
             int trust = companionCharacter.TrustLevel;
             int intelligenceLevel = trust switch
             {
@@ -1296,7 +1339,7 @@ namespace KowloonBreak.Characters
                 >= 81 and <= 100 => 5,
                 _ => 1
             };
-            
+
             return intelligenceLevel;
         }
         
@@ -1316,7 +1359,7 @@ namespace KowloonBreak.Characters
         
         private void UpdateDecisionFactors()
         {
-            if (companionCharacter == null || player == null) return;
+            if (!EnsureCompanionCharacter() || player == null) return;
             
             float playerDistance = Vector3.Distance(transform.position, player.position);
             float healthPercentage = currentHealth / maxHealth;
@@ -1931,7 +1974,7 @@ namespace KowloonBreak.Characters
             }
 
             // 信頼度を少し下げる（味方に攻撃されたため）
-            if (companionCharacter != null)
+            if (EnsureCompanionCharacter())
             {
                 companionCharacter.ChangeTrustLevel(-5);
             }
@@ -1981,6 +2024,31 @@ namespace KowloonBreak.Characters
                         knockbackSystem.SetKnockbackSettings(originalSettings.KnockbackForce, originalSettings.KnockbackDuration);
                     },
                     isEnemyAttack: true);
+            }
+        }
+
+        /// <summary>
+        /// 複合ダメージを受ける（物理ダメージ + 感染ダメージ）
+        /// </summary>
+        /// <param name="physicalDamage">物理ダメージ量</param>
+        /// <param name="infectionDamage">感染ダメージ量</param>
+        /// <param name="attackerPosition">攻撃者の位置</param>
+        /// <param name="attackType">攻撃タイプ</param>
+        /// <param name="knockbackMultiplier">ノックバック乗算値</param>
+        public virtual void TakeCombinedDamage(float physicalDamage, float infectionDamage, Vector3 attackerPosition, EnemyAttackType attackType, float knockbackMultiplier = 1.0f)
+        {
+            if (isDead) return;
+
+            // 物理ダメージ処理
+            if (physicalDamage > 0)
+            {
+                TakeDamage(physicalDamage, attackerPosition, attackType, knockbackMultiplier);
+            }
+
+            // 感染ダメージ処理
+            if (infectionDamage > 0 && EnsureCompanionCharacter())
+            {
+                companionCharacter.TakeInfectionDamage(infectionDamage, attackType);
             }
         }
 
@@ -2072,7 +2140,7 @@ namespace KowloonBreak.Characters
             }
 
             // コンパニオンキャラクターに死亡を通知
-            if (companionCharacter != null)
+            if (EnsureCompanionCharacter())
             {
                 // CompanionCharacterクラスの死亡処理を呼び出す（最大ダメージを与えて死亡状態にする）
                 companionCharacter.Stats?.TakeDamage(companionCharacter.Stats.MaxHealth);
@@ -2081,7 +2149,8 @@ namespace KowloonBreak.Characters
             // 死亡セリフが表示される時間を考慮して少し遅らせて死亡シーケンス開始
             StartCoroutine(HandleDeathSequence());
         }
-        
+
+
         /// <summary>
         /// 死亡シーケンス処理
         /// </summary>

@@ -43,6 +43,9 @@ namespace KowloonBreak.Player
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
 
+        [Header("Carry System")]
+        [SerializeField] private bool isCarrying = false;
+
         [Header("Game Over Settings")]
         [Tooltip("プレイヤー死亡からゲームオーバーUI表示までの遅延時間（秒）")]
         [SerializeField] private float gameOverDelay = 2f;
@@ -111,8 +114,8 @@ namespace KowloonBreak.Player
         public event Action<float> OnHealthChanged;
         public event Action<float> OnStaminaChanged;
         public event Action<bool> OnInfectionStatusChanged;
+        public event Action<float> OnInfectionLevelChanged;
         public event Action OnPlayerDeath;
-        private InfectionStatus playerInfection;
         private EnhancedResourceManager resourceManager;
         
         // Input管理
@@ -138,6 +141,9 @@ namespace KowloonBreak.Player
         private float lastToolUsageTime;
         private bool isUsingTool;
         private InventorySlot currentUsedTool;
+
+        // 感染ダメージ関連
+        private float lastInfectionDamageTime;
 
         // 道具選択関連
         private int selectedToolIndex = 0;
@@ -263,6 +269,7 @@ namespace KowloonBreak.Player
             // Fire initial events
             OnHealthChanged?.Invoke(HealthPercentage);
             OnStaminaChanged?.Invoke(StaminaPercentage);
+            OnInfectionLevelChanged?.Invoke(infectionLevel / 100f);
 
             // 道具使用ポイントを設定
             SetupToolUsagePoint();
@@ -321,10 +328,8 @@ namespace KowloonBreak.Player
         {
             playerStats = new CharacterStats();
             playerHealth = new HealthStatus();
-            playerInfection = new InfectionStatus();
 
             playerStats.OnDeath += HandlePlayerDeath;
-            playerInfection.OnTurnedZombie += HandlePlayerTurnedZombie;
         }
 
         private void SetupInput()
@@ -975,17 +980,6 @@ namespace KowloonBreak.Player
             // プレイヤー死亡処理完了
         }
 
-        private void HandlePlayerTurnedZombie()
-        {
-            canMove = false;
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowNotification("感染が進行し、意識を失った...", NotificationType.Error);
-            }
-
-            // プレイヤーゾンビ化処理完了
-        }
 
         public void TakeDamage(int damage)
         {
@@ -1498,10 +1492,6 @@ namespace KowloonBreak.Player
                 playerStats.OnDeath -= HandlePlayerDeath;
             }
 
-            if (playerInfection != null)
-            {
-                playerInfection.OnTurnedZombie -= HandlePlayerTurnedZombie;
-            }
 
             if (toolSelectionHUD != null)
             {
@@ -1533,13 +1523,28 @@ namespace KowloonBreak.Player
 
         private void HandleInfection()
         {
-            if (isInfected)
+            if (isInfected && IsAlive)
             {
+                float previousLevel = infectionLevel;
                 infectionLevel += 0.1f * Time.deltaTime;
+
+                // 感染レベル変更をUIに通知
+                if (Mathf.Abs(infectionLevel - previousLevel) > 0.01f)
+                {
+                    OnInfectionLevelChanged?.Invoke(infectionLevel / 100f); // 0-1の範囲で送信
+                }
 
                 if (infectionLevel >= 100f)
                 {
-                    TakeDamage(1f * Time.deltaTime);
+                    // 感染レベルを100に固定して無限増加を防ぐ
+                    infectionLevel = 100f;
+
+                    // 継続ダメージは1秒間隔で実行（毎フレームではない）
+                    if (Time.time - lastInfectionDamageTime >= 1f)
+                    {
+                        TakeDamage(10f); // 固定ダメージに変更
+                        lastInfectionDamageTime = Time.time;
+                    }
                 }
             }
         }
@@ -1602,6 +1607,142 @@ namespace KowloonBreak.Player
         }
 
         /// <summary>
+        /// 感染ダメージを受ける
+        /// </summary>
+        /// <param name="infectionDamage">感染ダメージ量</param>
+        public void TakeInfectionDamage(float infectionDamage)
+        {
+            if (!IsAlive) return;
+
+            float previousLevel = infectionLevel;
+
+            // 感染レベルを更新
+            infectionLevel += infectionDamage;
+            infectionLevel = Mathf.Clamp(infectionLevel, 0f, 100f);
+
+            // UIに感染レベル変更を通知
+            if (Mathf.Abs(infectionLevel - previousLevel) > 0.01f)
+            {
+                OnInfectionLevelChanged?.Invoke(infectionLevel / 100f);
+            }
+
+            Debug.Log($"Player received {infectionDamage} infection damage. Current infection: {infectionLevel}%");
+
+            // 感染状態になった場合の処理
+            if (infectionLevel > 0f && !isInfected)
+            {
+                SetInfectionStatus(true);
+                OnPlayerInfected();
+            }
+        }
+
+        /// <summary>
+        /// 複合ダメージを受ける（物理ダメージ + 感染ダメージ）
+        /// </summary>
+        /// <param name="physicalDamage">物理ダメージ量</param>
+        /// <param name="infectionDamage">感染ダメージ量</param>
+        /// <param name="attackerPosition">攻撃者の位置</param>
+        /// <param name="attackType">攻撃タイプ</param>
+        /// <param name="knockbackMultiplier">ノックバック乗算値</param>
+        public void TakeCombinedDamage(float physicalDamage, float infectionDamage, Vector3 attackerPosition, EnemyAttackType attackType, float knockbackMultiplier = 1.0f)
+        {
+            if (!IsAlive || isInvincible) return;
+
+            // 物理ダメージ処理
+            if (physicalDamage > 0)
+            {
+                TakeDamage(physicalDamage, attackerPosition, attackType, knockbackMultiplier);
+            }
+
+            // 感染ダメージ処理
+            if (infectionDamage > 0)
+            {
+                TakeInfectionDamage(infectionDamage);
+            }
+        }
+
+
+        /// <summary>
+        /// プレイヤーが感染状態になった時の処理
+        /// </summary>
+        private void OnPlayerInfected()
+        {
+            Debug.Log("Player became infected!");
+
+            // UI通知
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowNotification("感染しました！", NotificationType.Warning);
+            }
+
+            // 感染アニメーション（もしあれば）
+            if (animatorController != null)
+            {
+                // PlayerAnimatorControllerには直接アクセスメソッドがないため、
+                // GetComponentでAnimatorを取得
+                var animator = GetComponent<Animator>();
+                if (animator != null)
+                {
+                    animator.SetTrigger("Infection");
+                }
+            }
+
+            // 感染によるゲームオーバーは廃止 - HPが0になった時のみゲームオーバー
+            Debug.Log("[EnhancedPlayerController] Player infected, but continuing gameplay until HP reaches 0");
+        }
+
+
+
+        /// <summary>
+        /// キャリー状態を設定
+        /// </summary>
+        /// <param name="carrying">背負い状態かどうか</param>
+        public void SetCarryingState(bool carrying)
+        {
+            isCarrying = carrying;
+
+            // Animatorに反映
+            var animator = GetComponent<Animator>();
+            if (animator != null)
+            {
+                animator.SetBool("Carry", carrying);
+            }
+
+            Debug.Log($"Player carrying state set to: {carrying}");
+        }
+
+        /// <summary>
+        /// 現在のキャリー状態を取得
+        /// </summary>
+        public bool IsCarrying() => isCarrying;
+
+        /// <summary>
+        /// キャリー状態を考慮した行動可能性チェック
+        /// </summary>
+        /// <param name="actionType">行動タイプ</param>
+        /// <returns>実行可能かどうか</returns>
+        public bool CanPerformAction(string actionType)
+        {
+            if (!IsAlive) return false;
+
+            switch (actionType.ToLower())
+            {
+                case "run":
+                    return !isCarrying && CanRun();
+                case "attack":
+                    return !isCarrying;
+                case "crouch":
+                    return !isCarrying;
+                case "dodge":
+                    return !isCarrying;
+                case "walk":
+                    return true; // 歩きは常に可能
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>
         /// 敵の攻撃タイプを疑似的にToolTypeに変換
         /// </summary>
         /// <param name="attackType">敵の攻撃タイプ</param>
@@ -1652,6 +1793,7 @@ namespace KowloonBreak.Player
                 if (!infected)
                 {
                     infectionLevel = 0f;
+                    OnInfectionLevelChanged?.Invoke(0f);
                 }
                 OnInfectionStatusChanged?.Invoke(isInfected);
             }
@@ -1661,7 +1803,15 @@ namespace KowloonBreak.Player
         {
             if (isInfected)
             {
+                float previousLevel = infectionLevel;
                 infectionLevel = Mathf.Max(0f, infectionLevel - treatmentAmount);
+
+                // 感染レベル変更をUIに通知
+                if (Mathf.Abs(infectionLevel - previousLevel) > 0.01f)
+                {
+                    OnInfectionLevelChanged?.Invoke(infectionLevel / 100f);
+                }
+
                 if (infectionLevel <= 0f)
                 {
                     SetInfectionStatus(false);
@@ -1762,6 +1912,9 @@ namespace KowloonBreak.Player
             RestoreFullHealth();
             RestoreFullStamina();
 
+            // 感染レベルを完全にリセット
+            ResetInfection();
+
             // 移動を再び有効化
             canMove = true;
 
@@ -1806,6 +1959,22 @@ namespace KowloonBreak.Player
             currentStamina = maxStamina;
             OnStaminaChanged?.Invoke(currentStamina);
             Debug.Log($"[EnhancedPlayerController] Stamina restored to {currentStamina}/{maxStamina}");
+        }
+
+        /// <summary>
+        /// 感染レベルを完全にリセット
+        /// </summary>
+        public void ResetInfection()
+        {
+            isInfected = false;
+            infectionLevel = 0f;
+            lastInfectionDamageTime = 0f;
+
+            // UIに感染レベル変更を通知
+            OnInfectionLevelChanged?.Invoke(0f);
+            OnInfectionStatusChanged?.Invoke(false);
+
+            Debug.Log("[EnhancedPlayerController] Infection completely reset");
         }
 
         /// <summary>

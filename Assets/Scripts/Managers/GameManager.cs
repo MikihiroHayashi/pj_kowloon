@@ -24,7 +24,6 @@ namespace KowloonBreak.Managers
         [Header("Manager Dependencies")]
         [SerializeField] private PhaseManager phaseManager;
         [SerializeField] private EnhancedResourceManager resourceManager;
-        [SerializeField] private InfectionManager infectionManager;
 
         public event Action<GamePhase> OnPhaseChanged;
         public event Action<int> OnDayChanged;
@@ -80,8 +79,6 @@ namespace KowloonBreak.Managers
                 phaseManager = FindObjectOfType<PhaseManager>();
             if (resourceManager == null)
                 resourceManager = FindObjectOfType<EnhancedResourceManager>();
-            if (infectionManager == null)
-                infectionManager = FindObjectOfType<InfectionManager>();
                 
             // ゲーム状態の初期化
             gameTime = 0f;
@@ -154,11 +151,8 @@ namespace KowloonBreak.Managers
                 Debug.Log("Processing daily resource changes...");
             }
             
-            // 感染状態の進行
-            if (infectionManager != null)
-            {
-                Debug.Log("Processing daily infection progression...");
-            }
+            // 日次処理の進行
+            Debug.Log("Processing daily progression...");
         }
 
         private void HandlePhaseTransition(GamePhase from, GamePhase to)
