@@ -204,14 +204,21 @@ namespace KowloonBreak.Player
         /// </summary>
         private bool HasParameter(string parameterName)
         {
-            if (animator == null) return false;
-            
-            foreach (AnimatorControllerParameter param in animator.parameters)
+            if (animator == null || animator.runtimeAnimatorController == null) return false;
+
+            try
             {
-                if (param.name == parameterName)
+                foreach (AnimatorControllerParameter param in animator.parameters)
                 {
-                    return true;
+                    if (param.name == parameterName)
+                    {
+                        return true;
+                    }
                 }
+            }
+            catch (System.Exception)
+            {
+                return false;
             }
             return false;
         }

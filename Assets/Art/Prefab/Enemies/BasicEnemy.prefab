@@ -196,11 +196,11 @@ MonoBehaviour:
   baseInfectionDamage: 15
   attackRange: 1.5
   detectionRange: 12
-  attackCooldown: 0.7
+  attackCooldown: 0.4
   attackType: 0
   attackKnockbackMultiplier: 1
   infectionDamageSettings:
-    punchInfectionDamage: 10
+    punchInfectionDamage: 50
     clawInfectionDamage: 20
     biteInfectionDamage: 30
     tackleInfectionDamage: 15
@@ -232,9 +232,10 @@ MonoBehaviour:
   enablePatrol: 1
   chaseSpeedMultiplier: 3
   returnSpeedMultiplier: 1
-  knockbackForce: 2
-  knockbackDuration: 0.2
-  enableKnockback: 1
+  knockbackSystem:
+    knockbackForce: 1
+    knockbackDuration: 0.3
+    enableKnockback: 1
   dropItems:
   - {fileID: 11400000, guid: 2d0f461f6b273d14786a4c37c05c2878, type: 2}
   dropQuantities: 0100000002000000

@@ -87,7 +87,7 @@ NavMeshAgent:
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
-  m_StoppingDistance: 1
+  m_StoppingDistance: 1.5
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
@@ -125,14 +125,17 @@ MonoBehaviour:
     severity: 0
     duration: 0
   infection:
-    level: 0
-    infectionRate: 0
-    immunity: 1
-    timeToProgress: 0
+    maxInfectionValue: 100
+    currentInfection: 0
+    isInfected: 0
+    hasArmAmputated: 0
+    canRun: 1
+    canAttack: 1
   skills: []
   isAvailable: 1
   currentActivity: 0
   activityTimer: 0
+  animator: {fileID: 4972783984286411978}
 --- !u!114 &6173148797356194282
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -173,6 +176,7 @@ MonoBehaviour:
   attackPoint: {fileID: 0}
   weaponType: 1
   attackDamage: 15
+  attackCooldown: 2
   attackBoxSize: {x: 2, y: 2, z: 3}
   maxHealth: 100
   currentHealth: 0
@@ -184,7 +188,7 @@ MonoBehaviour:
   dialogueCooldown: 3
   combatDialogueCooldown: 5
   knockbackSystem:
-    knockbackForce: 3
+    knockbackForce: 1
     knockbackDuration: 0.2
     enableKnockback: 1
   player: {fileID: 0}

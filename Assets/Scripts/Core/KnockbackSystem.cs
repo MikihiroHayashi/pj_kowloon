@@ -95,6 +95,11 @@ namespace KowloonBreak.Core
             {
                 targetRigidbody.isKinematic = false;
                 targetRigidbody.freezeRotation = true;
+
+                // 既存の速度をリセットして一貫したノックバック距離を保証
+                targetRigidbody.velocity = Vector3.zero;
+                targetRigidbody.angularVelocity = Vector3.zero;
+
                 targetRigidbody.AddForce(knockbackDirection * finalKnockbackForce, ForceMode.Impulse);
             }
 

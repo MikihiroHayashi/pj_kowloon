@@ -454,7 +454,7 @@ namespace KowloonBreak.Characters
             }
             else
             {
-                if (navAgent.hasPath && navAgent.remainingDistance < 0.5f)
+                if (navAgent != null && navAgent.isActiveAndEnabled && navAgent.isOnNavMesh && navAgent.hasPath && navAgent.remainingDistance < 0.5f)
                 {
                     navAgent.ResetPath();
                 }
@@ -686,7 +686,11 @@ namespace KowloonBreak.Characters
             // 3メートル以内なら攻撃
             if (distanceToTarget <= 3f)
             {
-                navAgent.ResetPath();
+                // NavMeshAgentが有効かつアクティブな場合のみResetPathを呼び出す
+                if (navAgent != null && navAgent.isActiveAndEnabled && navAgent.isOnNavMesh)
+                {
+                    navAgent.ResetPath();
+                }
                 // 攻撃範囲内では継続的に敵を向く（滑らかな回転）
                 LookAtTarget(currentTarget.transform.position);
                 PerformAttack();
@@ -705,7 +709,7 @@ namespace KowloonBreak.Characters
         {
             // Stay命令中：その場に留まる
             // NavMeshAgentのパスをリセットして移動を停止
-            if (navAgent != null && navAgent.isActiveAndEnabled && navAgent.hasPath)
+            if (navAgent != null && navAgent.isActiveAndEnabled && navAgent.isOnNavMesh && navAgent.hasPath)
             {
                 navAgent.ResetPath();
             }
@@ -1493,7 +1497,7 @@ namespace KowloonBreak.Characters
                 switch (newState)
                 {
                     case AIState.Idle:
-                        if (navAgent != null && navAgent.isActiveAndEnabled)
+                        if (navAgent != null && navAgent.isActiveAndEnabled && navAgent.isOnNavMesh)
                         {
                             navAgent.ResetPath();
                         }
@@ -2467,14 +2471,24 @@ namespace KowloonBreak.Characters
         /// </summary>
         private void OnKnockbackEnd()
         {
+            // Rigidbodyがkinematicに戻ってから少し遅れてNavMeshAgentを再有効化
+            StartCoroutine(ReenableNavMeshAgentAfterKnockback());
+        }
+
+        private System.Collections.IEnumerator ReenableNavMeshAgentAfterKnockback()
+        {
+            // 物理演算が完全に終了するまで少し待機
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForSeconds(0.1f);
+
             // NavMeshAgentを再有効化
             if (navAgent != null)
             {
                 navAgent.enabled = true;
 
-                // NavMesh上にワープして位置を修正
+                // NavMesh上にワープして位置を修正（より安全に）
                 UnityEngine.AI.NavMeshHit hit;
-                if (UnityEngine.AI.NavMesh.SamplePosition(transform.position, out hit, 2f, UnityEngine.AI.NavMesh.AllAreas))
+                if (UnityEngine.AI.NavMesh.SamplePosition(transform.position, out hit, 5f, UnityEngine.AI.NavMesh.AllAreas))
                 {
                     navAgent.Warp(hit.position);
                 }

@@ -18405,11 +18405,6 @@ PrefabInstance:
       propertyPath: patrolRoute
       value: 
       objectReference: {fileID: 993567721}
-    - target: {fileID: 2737826673035677185, guid: 7e1302126786f0242b54fc2ac23851d5,
-        type: 3}
-      propertyPath: infectionDamageSettings.punchInfectionDamage
-      value: 50
-      objectReference: {fileID: 0}
     - target: {fileID: 2786388048806447244, guid: 7e1302126786f0242b54fc2ac23851d5,
         type: 3}
       propertyPath: m_Name
@@ -21006,7 +21001,7 @@ PrefabInstance:
     - target: {fileID: 5104767785950813820, guid: f7c463aca678add42b99cfd6782e9189,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 33.8
+      value: 129.6
       objectReference: {fileID: 0}
     - target: {fileID: 5104767785950813820, guid: f7c463aca678add42b99cfd6782e9189,
         type: 3}
@@ -21016,7 +21011,7 @@ PrefabInstance:
     - target: {fileID: 5104767785950813820, guid: f7c463aca678add42b99cfd6782e9189,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 138.4
+      value: 160.3
       objectReference: {fileID: 0}
     - target: {fileID: 5104767785950813820, guid: f7c463aca678add42b99cfd6782e9189,
         type: 3}
@@ -21052,11 +21047,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8846536509335284193, guid: f7c463aca678add42b99cfd6782e9189,
-        type: 3}
-      propertyPath: m_StoppingDistance
-      value: 1.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

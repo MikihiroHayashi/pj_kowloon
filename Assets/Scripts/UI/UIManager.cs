@@ -156,21 +156,8 @@ namespace KowloonBreak.UI
 
         private void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-                // Managerオブジェクトをルートに移動してからDontDestroyOnLoadを適用
-                if (transform.parent != null)
-                {
-                    transform.SetParent(null);
-                }
-                DontDestroyOnLoad(gameObject);
-                InitializeUI();
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
+            Instance = this;
+            InitializeUI();
         }
 
         private void Start()
@@ -178,19 +165,20 @@ namespace KowloonBreak.UI
             gameManager = GameManager.Instance;
             resourceManager = EnhancedResourceManager.Instance;
             inputManager = KowloonBreak.Core.InputManager.Instance;
-            
+
             enhancedPlayerController = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
-            
+
             // Find player transform
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
             if (playerObj != null)
             {
                 player = playerObj.transform;
             }
-            
+
+
             // EventSystemの存在を確認・作成
             EnsureEventSystemExists();
-            
+
             SubscribeToEvents();
             UpdateUI();
             InitializeCompanionCommandSystem();
@@ -515,11 +503,49 @@ namespace KowloonBreak.UI
 
         public void CloseAllPanels()
         {
+            Debug.Log($"[UIManager] CloseAllPanels called - {activePanels.Count} panels to close");
+
+            // アクティブなパネルをすべて閉じる
             var panelNames = new List<string>(activePanels.Keys);
             foreach (var panelName in panelNames)
             {
+                Debug.Log($"[UIManager] Closing panel: {panelName}");
                 ClosePanel(panelName);
             }
+
+            // 念のため、各パネルを直接非アクティブにする
+            var allPanels = new[]
+            {
+                inventoryPanel,
+                companionPanel,
+                companionCommandPanel,
+                baseManagementPanel,
+                mapPanel,
+                dialoguePanel,
+                craftingPanel,
+                tacticalPanel,
+                pauseMenu
+            };
+
+            foreach (var panel in allPanels)
+            {
+                if (panel != null && panel.activeInHierarchy)
+                {
+                    panel.SetActive(false);
+                    Debug.Log($"[UIManager] Force disabled panel: {panel.name}");
+                }
+            }
+
+            // アクティブパネル辞書をクリア
+            activePanels.Clear();
+
+            // ゲームの一時停止状態を解除
+            if (gameManager != null)
+            {
+                gameManager.ResumeGame();
+            }
+
+            Debug.Log("[UIManager] All panels closed successfully");
         }
 
         private GameObject GetPanelByName(string panelName)
@@ -2104,17 +2130,35 @@ namespace KowloonBreak.UI
         /// </summary>
         private void InitializeGameOverSystem()
         {
+            // GameOverUIが見つからない場合は検索
+            if (gameOverUI == null)
+            {
+                Debug.Log("[UIManager] GameOverUI not assigned, searching in scene...");
+                gameOverUI = FindObjectOfType<GameOverUI>();
+            }
+
             if (gameOverUI != null)
             {
+                // 既存のイベント購読を一度解除（重複防止）
+                try
+                {
+                    gameOverUI.OnRetryRequested -= HandleRetryRequested;
+                    gameOverUI.OnMainMenuRequested -= HandleMainMenuRequested;
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[UIManager] Error unsubscribing Game Over events: {ex.Message}");
+                }
+
                 // Game Over UIのイベントを購読
                 gameOverUI.OnRetryRequested += HandleRetryRequested;
                 gameOverUI.OnMainMenuRequested += HandleMainMenuRequested;
 
-                Debug.Log("[UIManager] Game Over system initialized");
+                Debug.Log("[UIManager] Game Over system initialized successfully");
             }
             else
             {
-                Debug.LogWarning("[UIManager] GameOverUI component not assigned");
+                Debug.LogWarning("[UIManager] GameOverUI component not found in scene - fallback mode will be used");
             }
         }
 
@@ -2123,6 +2167,21 @@ namespace KowloonBreak.UI
         /// </summary>
         public void ShowGameOver()
         {
+            // ゲームオーバー時にすべてのUIパネルを強制的に閉じる
+            Debug.Log("[UIManager] Forcing all panels to close before showing Game Over");
+            CloseAllPanels();
+
+            // コンパニオン関連の状態もリセット
+            selectedCompanion = null;
+            currentNearbyCompanion = null;
+
+            // GameOverUIが設定されていない場合は検索
+            if (gameOverUI == null)
+            {
+                gameOverUI = FindObjectOfType<GameOverUI>();
+            }
+
+            // ゲームオーバーUIを表示
             if (gameOverUI != null)
             {
                 Debug.Log("[UIManager] Showing Game Over screen");
@@ -2130,7 +2189,10 @@ namespace KowloonBreak.UI
             }
             else
             {
-                Debug.LogError("[UIManager] Cannot show Game Over - GameOverUI not assigned");
+                Debug.LogWarning("[UIManager] GameOverUI not found - using fallback mode");
+
+                // フォールバック: シンプルなゲームオーバー処理
+                ShowFallbackGameOver();
             }
         }
 
@@ -2150,11 +2212,22 @@ namespace KowloonBreak.UI
         /// </summary>
         private void HandleRetryRequested()
         {
-            Debug.Log("[UIManager] Retry requested - initiating game restart");
+            Debug.Log("[UIManager] Retry requested - restarting game");
 
-            // リトライ処理を開始
-            StartCoroutine(RestartGame());
+            // GameManagerのRestartGame()を呼び出してシーンをリロード
+            if (gameManager != null)
+            {
+                gameManager.RestartGame();
+            }
+            else
+            {
+                Debug.LogWarning("[UIManager] GameManager not found - direct scene reload");
+                Time.timeScale = 1f;
+                UnityEngine.SceneManagement.SceneManager.LoadScene(
+                    UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+            }
         }
+
 
         /// <summary>
         /// メインメニューが要求された時の処理
@@ -2168,200 +2241,255 @@ namespace KowloonBreak.UI
             ShowNotification("メインメニュー機能は準備中です", NotificationType.Info);
         }
 
+
+
+
+
+
+
+
+
+
+
         /// <summary>
-        /// ゲーム再開始処理
+        /// UI要素（スライダー、テキストなど）の参照を再取得
         /// </summary>
-        private System.Collections.IEnumerator RestartGame()
+        private void RefindUIElements()
         {
-            // プレイヤーを復活・リセット
-            yield return StartCoroutine(RespawnPlayer());
+            Debug.Log("[UIManager] Re-finding UI elements in new scene");
 
-            // コンパニオンをプレイヤーの近くにワープ
-            RespawnCompanions();
+            // MainHUD再検索（名前検索も試行）
+            RefindMainHUD();
 
-            // その他のゲーム状態をリセット
-            ResetGameState();
+            // スライダー要素を再検索
+            RefindSliders();
 
-            Debug.Log("[UIManager] Game restart completed");
+            // テキスト要素を再検索
+            RefindTextElements();
+
+            // コンテナ要素を再検索
+            RefindContainers();
+
+            Debug.Log("[UIManager] UI elements refinding completed");
         }
 
         /// <summary>
-        /// プレイヤーを復活させる
+        /// MainHUDを再検索
         /// </summary>
-        private System.Collections.IEnumerator RespawnPlayer()
+        private void RefindMainHUD()
         {
-            bool respawnSuccessful = false;
-
-            try
+            if (mainHUD == null)
             {
-                // プレイヤーコントローラーを確保
-                if (enhancedPlayerController == null)
-                {
-                    enhancedPlayerController = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
-                }
-
-                if (enhancedPlayerController != null)
-                {
-                    Debug.Log("[UIManager] Respawning player");
-
-                    // プレイヤーを開始位置に移動
-                    Vector3 spawnPosition = GetPlayerSpawnPosition();
-                    enhancedPlayerController.transform.position = spawnPosition;
-
-                    // HP、スタミナ、感染レベルを全快・リセット
-                    try
-                    {
-                        enhancedPlayerController.RestoreFullHealth();
-                        enhancedPlayerController.RestoreFullStamina();
-                        enhancedPlayerController.ResetInfection();
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogError($"[UIManager] Error restoring player stats: {ex.Message}");
-                    }
-
-
-                    // プレイヤーを生存状態に復活
-                    try
-                    {
-                        enhancedPlayerController.Revive();
-                        respawnSuccessful = true;
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogError($"[UIManager] Error reviving player: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    Debug.LogError("[UIManager] Cannot respawn player - EnhancedPlayerController not found");
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[UIManager] Critical error during player respawn: {ex.Message}");
+                mainHUD = GameObject.Find("MainHUD");
             }
 
-            // try-catchブロックの外でyield returnを実行
-            if (respawnSuccessful)
+            if (mainHUD == null)
             {
-                yield return new WaitForSeconds(0.1f); // 少し待機
-            }
-        }
-
-        /// <summary>
-        /// コンパニオンをプレイヤーの近くに復活させる
-        /// </summary>
-        private void RespawnCompanions()
-        {
-            if (enhancedPlayerController == null) return;
-
-            // すべてのコンパニオンを検索
-            var companions = FindObjectsOfType<KowloonBreak.Characters.CompanionAI>();
-
-            Vector3 playerPosition = enhancedPlayerController.transform.position;
-
-            for (int i = 0; i < companions.Length; i++)
-            {
-                var companion = companions[i];
-                if (companion != null)
+                // HUD関連の名前で検索
+                var hudNames = new[] { "HUD", "MainUI", "PlayerHUD", "UI_Main", "Canvas_HUD" };
+                foreach (var hudName in hudNames)
                 {
-                    // プレイヤーの周りにランダムに配置
-                    Vector3 offset = new Vector3(
-                        UnityEngine.Random.Range(-3f, 3f),  // X軸方向のランダムオフセット
-                        0f,
-                        UnityEngine.Random.Range(-3f, 3f)   // Z軸方向のランダムオフセット
-                    );
+                    mainHUD = GameObject.Find(hudName);
+                    if (mainHUD != null)
+                    {
+                        Debug.Log($"[UIManager] Found MainHUD by alternative name: {hudName}");
+                        break;
+                    }
+                }
+            }
 
-                    Vector3 companionSpawnPosition = playerPosition + offset;
-                    companion.transform.position = companionSpawnPosition;
-
-                    // コンパニオンのHPを全快
-                    companion.RestoreFullHealth();
-
-                    Debug.Log($"[UIManager] Respawned companion {companion.name} at {companionSpawnPosition}");
+            if (mainHUD == null)
+            {
+                // Canvas内でHUD関連オブジェクトを検索
+                var canvases = FindObjectsOfType<Canvas>();
+                foreach (var canvas in canvases)
+                {
+                    var hudObj = canvas.transform.Find("MainHUD") ??
+                                canvas.transform.Find("HUD") ??
+                                canvas.transform.Find("PlayerHUD");
+                    if (hudObj != null)
+                    {
+                        mainHUD = hudObj.gameObject;
+                        Debug.Log($"[UIManager] Found MainHUD in Canvas: {canvas.name}");
+                        break;
+                    }
                 }
             }
         }
 
         /// <summary>
-        /// プレイヤーのスポーン位置を取得
+        /// スライダー要素を再検索
         /// </summary>
-        private Vector3 GetPlayerSpawnPosition()
+        private void RefindSliders()
         {
-            // まずEnhancedPlayerControllerを直接探す（確実性が高い）
-            if (enhancedPlayerController != null)
-            {
-                Debug.Log("[UIManager] Using current EnhancedPlayerController position as spawn point");
-                return enhancedPlayerController.transform.position;
-            }
+            Debug.Log("[UIManager] Re-finding sliders");
 
-            // EnhancedPlayerControllerが見つからない場合は検索
-            var playerController = UnityEngine.Object.FindObjectOfType<Player.EnhancedPlayerController>();
-            if (playerController != null)
+            // MainHUDから検索
+            if (mainHUD != null)
             {
-                Debug.Log("[UIManager] Found EnhancedPlayerController via search, using its position as spawn point");
-                return playerController.transform.position;
-            }
-
-            // PlayerSpawnタグを安全に検索
-            GameObject[] allObjects = GameObject.FindGameObjectsWithTag("Untagged");
-            foreach (var obj in allObjects)
-            {
-                if (obj.name.Contains("PlayerSpawn") || obj.name.Contains("Spawn"))
+                var sliders = mainHUD.GetComponentsInChildren<Slider>();
+                foreach (var slider in sliders)
                 {
-                    Debug.Log($"[UIManager] Found spawn point by name: {obj.name}");
-                    return obj.transform.position;
+                    if (slider.name.Contains("Health") || slider.name.Contains("HP"))
+                        healthSlider = slider;
+                    else if (slider.name.Contains("Stamina") || slider.name.Contains("SP"))
+                        staminaSlider = slider;
+                    else if (slider.name.Contains("Infection") || slider.name.Contains("Virus"))
+                        infectionSlider = slider;
+                    else if (slider.name.Contains("Stealth") || slider.name.Contains("Hide"))
+                        stealthSlider = slider;
                 }
+
+                // インデックスベースのフォールバック
+                if (sliders.Length >= 1 && healthSlider == null) healthSlider = sliders[0];
+                if (sliders.Length >= 2 && staminaSlider == null) staminaSlider = sliders[1];
+                if (sliders.Length >= 3 && infectionSlider == null) infectionSlider = sliders[2];
+                if (sliders.Length >= 4 && stealthSlider == null) stealthSlider = sliders[3];
             }
 
-            // "Player"タグを安全に検索
-            try
+            // MainHUDで見つからない場合は全Canvas検索
+            if (healthSlider == null || infectionSlider == null)
             {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    Debug.Log("[UIManager] Using Player tag position as spawn point");
-                    return player.transform.position;
-                }
-            }
-            catch (UnityException ex)
-            {
-                Debug.LogWarning($"[UIManager] Player tag search failed: {ex.Message}");
+                Debug.Log("[UIManager] Sliders not found in MainHUD, searching all Canvases");
+                SearchSlidersInAllCanvases();
             }
 
-            // 最終フォールバック：シーン中のプレイヤーらしきオブジェクトを検索
-            var allComponents = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
-            foreach (var component in allComponents)
-            {
-                if (component.GetType().Name.Contains("Player") && component.transform.position != Vector3.zero)
-                {
-                    Debug.Log($"[UIManager] Found player-like component: {component.GetType().Name}");
-                    return component.transform.position;
-                }
-            }
-
-            // 最終フォールバック：安全な位置
-            Debug.LogWarning("[UIManager] No spawn point found, using safe default position (0, 1, 0)");
-            return new Vector3(0f, 1f, 0f);
+            // 重要なスライダーのみ確認
+            if (healthSlider == null) Debug.LogWarning("[UIManager] Health Slider not found");
+            if (infectionSlider == null) Debug.LogWarning("[UIManager] Infection Slider not found");
         }
 
         /// <summary>
-        /// ゲーム状態をリセット
+        /// 全Canvas内でスライダーを検索
         /// </summary>
-        private void ResetGameState()
+        private void SearchSlidersInAllCanvases()
         {
-            // 時間スケールを元に戻す
-            Time.timeScale = 1f;
+            var canvases = FindObjectsOfType<Canvas>();
+            foreach (var canvas in canvases)
+            {
+                var allSliders = canvas.GetComponentsInChildren<Slider>();
+                foreach (var slider in allSliders)
+                {
+                    if (healthSlider == null && (slider.name.Contains("Health") || slider.name.Contains("HP")))
+                        healthSlider = slider;
+                    else if (infectionSlider == null && (slider.name.Contains("Infection") || slider.name.Contains("Virus")))
+                        infectionSlider = slider;
+                    else if (staminaSlider == null && (slider.name.Contains("Stamina") || slider.name.Contains("SP")))
+                        staminaSlider = slider;
+                    else if (stealthSlider == null && (slider.name.Contains("Stealth") || slider.name.Contains("Hide")))
+                        stealthSlider = slider;
+                }
+            }
+        }
 
-            // カーソルを元の状態に戻す
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+        /// <summary>
+        /// テキスト要素を再検索
+        /// </summary>
+        private void RefindTextElements()
+        {
+            if (mainHUD != null)
+            {
+                var texts = mainHUD.GetComponentsInChildren<TMPro.TextMeshProUGUI>();
+                foreach (var text in texts)
+                {
+                    if (text.name.Contains("Day")) dayText = text;
+                    else if (text.name.Contains("Phase")) phaseText = text;
+                    else if (text.name.Contains("Time")) timeText = text;
+                    else if (text.name.Contains("Food")) foodText = text;
+                    else if (text.name.Contains("Water")) waterText = text;
+                    else if (text.name.Contains("Medicine")) medicineText = text;
+                    else if (text.name.Contains("Materials")) materialsText = text;
+                }
+            }
+        }
 
-            // その他のゲーム状態リセット
-            // 必要に応じて追加
+        /// <summary>
+        /// コンテナ要素を再検索
+        /// </summary>
+        private void RefindContainers()
+        {
+            // Notification関連の要素を再検索
+            if (notificationContainer == null)
+            {
+                var canvases = FindObjectsOfType<Canvas>();
+                foreach (var canvas in canvases)
+                {
+                    var container = canvas.transform.Find("NotificationContainer") ??
+                                   canvas.transform.Find("Notifications") ??
+                                   canvas.transform.Find("NotificationPanel");
+                    if (container != null)
+                    {
+                        notificationContainer = container;
+                        Debug.Log($"[UIManager] Found NotificationContainer in Canvas: {canvas.name}");
+                        break;
+                    }
+                }
+            }
 
-            Debug.Log("[UIManager] Game state reset completed");
+            // DamageContainer再検索
+            if (damageContainer == null)
+            {
+                var canvases = FindObjectsOfType<Canvas>();
+                foreach (var canvas in canvases)
+                {
+                    var container = canvas.transform.Find("DamageContainer") ??
+                                   canvas.transform.Find("DamageNumbers") ??
+                                   canvas.transform.Find("FloatingText");
+                    if (container != null)
+                    {
+                        damageContainer = container;
+                        Debug.Log($"[UIManager] Found DamageContainer in Canvas: {canvas.name}");
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// フォールバック用のシンプルなゲームオーバー処理
+        /// </summary>
+        private void ShowFallbackGameOver()
+        {
+            Debug.Log("[UIManager] Using fallback Game Over handling");
+
+            // 時間を停止
+            Time.timeScale = 0f;
+
+            // カーソルを表示
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            // 通知でリトライ方法を表示
+            ShowNotification("ゲームオーバー！ Rキーでリトライ", NotificationType.Error);
+
+            // キーボード入力でリトライを受け付ける
+            StartCoroutine(HandleFallbackRetryInput());
+        }
+
+        /// <summary>
+        /// フォールバック時のリトライ入力処理
+        /// </summary>
+        private System.Collections.IEnumerator HandleFallbackRetryInput()
+        {
+            while (true)
+            {
+                if (Input.GetKeyDown(KeyCode.R))
+                {
+                    Debug.Log("[UIManager] Fallback retry triggered by R key");
+                    HandleRetryRequested();
+                    yield break;
+                }
+
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    Debug.Log("[UIManager] Fallback quit triggered by ESC key");
+                    Application.Quit();
+                    yield break;
+                }
+
+                yield return null;
+            }
         }
 
         /// <summary>

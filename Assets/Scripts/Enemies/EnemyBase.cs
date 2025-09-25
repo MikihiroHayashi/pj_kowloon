@@ -14,7 +14,7 @@ namespace KowloonBreak.Enemies
         Return     // 復帰
     }
     
-    public class EnemyBase : MonoBehaviour, IDestructible
+    public class EnemyBase : MonoBehaviour, IDestructible, IKnockbackable
     {
         // 視覚状態の色定数
         private static readonly Color ORANGE_COLOR = new Color(1f, 0.5f, 0f, 1f);
@@ -65,10 +65,8 @@ namespace KowloonBreak.Enemies
         [SerializeField] protected float chaseSpeedMultiplier = 1.2f;    // 追跡時の速度倍率 (Move Speed × この値)
         [SerializeField] protected float returnSpeedMultiplier = 1.0f;   // 復帰時の速度倍率 (Move Speed × この値)
 
-        [Header("Knockback Settings")]
-        [SerializeField] protected float knockbackForce = 5f;
-        [SerializeField] protected float knockbackDuration = 0.8f;
-        [SerializeField] protected bool enableKnockback = true;
+        [Header("Knockback System")]
+        [SerializeField] protected KnockbackSystem knockbackSystem = new KnockbackSystem();
 
         [Header("Drop Items")]
         [SerializeField] protected ItemData[] dropItems;
@@ -95,9 +93,7 @@ namespace KowloonBreak.Enemies
         protected bool isAttacking = false;  // 攻撃アニメーション中かどうか
         private Coroutine attackTimeoutCoroutine;  // 攻撃タイムアウトコルーチンの参照
 
-        // ノックバック関連
-        protected bool isKnockedBack = false;
-        protected float knockbackEndTime = 0f;
+        // Rigidbody参照
         protected Rigidbody enemyRigidbody;
         
         // Target System
@@ -191,6 +187,9 @@ namespace KowloonBreak.Enemies
                 enemyRigidbody.freezeRotation = true;
             }
 
+            // 統一されたKnockbackSystemの初期化
+            InitializeKnockbackSystem();
+
             // UIヘルスバーの初期化（Startで行う）
         }
 
@@ -250,11 +249,11 @@ namespace KowloonBreak.Enemies
         {
             if (isDead || player == null) return;
 
-            // ノックバック状態のチェック
-            UpdateKnockbackState();
+            // 統一されたノックバック状態のチェック
+            knockbackSystem.UpdateKnockbackState();
 
             // ノックバック中は移動やターゲット検知を停止
-            if (isKnockedBack) return;
+            if (knockbackSystem.IsKnockedBack) return;
 
             // 新しいターゲットシステム
             UpdateTargetDetection();
@@ -615,7 +614,7 @@ namespace KowloonBreak.Enemies
 
             // アニメーション状態もチェック
             bool isAnimatorAttacking = IsPlayingAttackAnimation();
-            bool canAttack = timeSinceLastAttack >= attackCooldown && !isAttacking && !isDead && !isKnockedBack && !isAnimatorAttacking;
+            bool canAttack = timeSinceLastAttack >= attackCooldown && !isAttacking && !isDead && !knockbackSystem.IsKnockedBack && !isAnimatorAttacking;
 
             if (canAttack)
             {
@@ -829,18 +828,18 @@ namespace KowloonBreak.Enemies
                 StartCoroutine(DamageEffect());
             }
 
-            // ノックバック処理（死亡しない場合のみ）
-            if (enableKnockback && attacker != null && currentHealth > 0)
+            // 統一されたノックバック処理（死亡しない場合のみ）
+            if (attacker != null && currentHealth > 0)
             {
-                StartKnockback(attacker.position, toolType);
+                knockbackSystem.StartKnockback(attacker.position, toolType);
             }
 
             if (currentHealth <= 0)
             {
                 // ノックバック中の場合は即座に終了
-                if (isKnockedBack)
+                if (knockbackSystem.IsKnockedBack)
                 {
-                    isKnockedBack = false;
+                    knockbackSystem.ForceEndKnockback();
                 }
                 Die();
             }
@@ -1183,28 +1182,24 @@ namespace KowloonBreak.Enemies
         #region Knockback System
 
         /// <summary>
-        /// ノックバック状態の更新
+        /// 統一されたKnockbackSystemの初期化
         /// </summary>
-        protected virtual void UpdateKnockbackState()
+        private void InitializeKnockbackSystem()
         {
-            if (isKnockedBack && Time.time >= knockbackEndTime)
-            {
-                EndKnockback();
-            }
+            knockbackSystem.Initialize(this, enemyRigidbody, animator);
         }
 
         /// <summary>
-        /// ノックバックを開始
+        /// ノックバックを開始（IKnockbackableインターフェース実装）
         /// </summary>
         /// <param name="attackerPosition">攻撃者の位置</param>
         /// <param name="toolType">使用された武器のタイプ</param>
-        protected virtual void StartKnockback(Vector3 attackerPosition, ToolType toolType = ToolType.IronPipe)
+        public void StartKnockback(Vector3 attackerPosition, ToolType toolType = ToolType.IronPipe)
         {
             if (isDead) return;
 
-            isKnockedBack = true;
-            isAttacking = false;  // ノックバック時は攻撃状態をリセット
-            knockbackEndTime = Time.time + knockbackDuration;
+            // 攻撃状態をリセット
+            isAttacking = false;
 
             // NavMeshAgentを一時的に停止
             if (navAgent != null && navAgent.isActiveAndEnabled)
@@ -1212,51 +1207,18 @@ namespace KowloonBreak.Enemies
                 navAgent.enabled = false;
             }
 
-            // ダメージアニメーションを再生
-            if (animator != null)
-            {
-                animator.SetTrigger(ANIM_DAMAGE);
-            }
-
-            // ノックバック方向の計算
-            Vector3 knockbackDirection = (transform.position - attackerPosition).normalized;
-            knockbackDirection.y = 0f; // Y軸方向の力を除去
-
-            // 武器による乗算値を取得
-            float weaponKnockbackMultiplier = GetWeaponKnockbackMultiplier(toolType);
-            float finalKnockbackForce = knockbackForce * weaponKnockbackMultiplier;
-
-            // Rigidbodyを使用してノックバック
-            if (enemyRigidbody != null)
-            {
-                enemyRigidbody.isKinematic = false;
-                // 回転を防ぐためにConstraintsを設定
-                enemyRigidbody.freezeRotation = true;
-                enemyRigidbody.AddForce(knockbackDirection * finalKnockbackForce, ForceMode.Impulse);
-            }
+            // 統一されたKnockbackSystemでノックバック開始
+            knockbackSystem.StartKnockback(attackerPosition, toolType,
+                onKnockbackStart: null,
+                onKnockbackEnd: OnKnockbackEnd,
+                isEnemyAttack: false);
         }
 
         /// <summary>
-        /// ノックバックを終了
+        /// ノックバック終了時のコールバック
         /// </summary>
-        protected virtual void EndKnockback()
+        private void OnKnockbackEnd()
         {
-            isKnockedBack = false;
-
-            // Rigidbodyを停止
-            if (enemyRigidbody != null)
-            {
-                // kinematicに設定する前にvelocityをリセット
-                if (!enemyRigidbody.isKinematic)
-                {
-                    enemyRigidbody.velocity = Vector3.zero;
-                    enemyRigidbody.angularVelocity = Vector3.zero;
-                }
-                enemyRigidbody.isKinematic = true;
-                // 回転制約を維持
-                enemyRigidbody.freezeRotation = true;
-            }
-
             // NavMeshAgentを再有効化
             if (navAgent != null)
             {
@@ -1270,12 +1232,6 @@ namespace KowloonBreak.Enemies
                 }
             }
 
-            // リセットアニメーションを再生
-            if (animator != null)
-            {
-                animator.SetTrigger(ANIM_RESET);
-            }
-
             // 戦闘状態に復帰
             if (hasTarget && !isDead)
             {
@@ -1287,69 +1243,29 @@ namespace KowloonBreak.Enemies
         }
 
         /// <summary>
-        /// ノックバック設定を変更
+        /// ノックバック中かどうか（IKnockbackableインターフェース実装）
+        /// </summary>
+        public bool IsKnockedBack => knockbackSystem.IsKnockedBack;
+
+        /// <summary>
+        /// ノックバック設定を変更（IKnockbackableインターフェース実装）
         /// </summary>
         /// <param name="force">ノックバック力</param>
         /// <param name="duration">ノックバック持続時間</param>
-        public virtual void SetKnockbackSettings(float force, float duration)
+        public void SetKnockbackSettings(float force, float duration)
         {
-            knockbackForce = force;
-            knockbackDuration = duration;
+            knockbackSystem.SetKnockbackSettings(force, duration);
         }
 
         /// <summary>
-        /// ノックバック機能の有効/無効を切り替え
+        /// ノックバック機能の有効/無効を切り替え（IKnockbackableインターフェース実装）
         /// </summary>
         /// <param name="enabled">有効かどうか</param>
-        public virtual void SetKnockbackEnabled(bool enabled)
+        public void SetKnockbackEnabled(bool enabled)
         {
-            enableKnockback = enabled;
+            knockbackSystem.SetKnockbackEnabled(enabled);
         }
 
-        /// <summary>
-        /// 武器タイプに基づいてノックバック乗算値を取得
-        /// </summary>
-        /// <param name="toolType">武器タイプ</param>
-        /// <returns>ノックバック乗算値</returns>
-        protected virtual float GetWeaponKnockbackMultiplier(ToolType toolType)
-        {
-            // ItemDataが存在する場合はそちらを優先
-            ItemData weaponData = GetWeaponItemData(toolType);
-            if (weaponData != null)
-            {
-                return weaponData.knockbackMultiplier;
-            }
-
-            // フォールバック：デフォルトの武器別ノックバック乗算値
-            switch (toolType)
-            {
-                case ToolType.Pickaxe:
-                    return 1.5f;  // つるはしは強力なノックバック
-                case ToolType.IronPipe:
-                    return 1.0f;  // 鉄パイプは通常のノックバック
-                default:
-                    return 1.0f;  // デフォルト
-            }
-        }
-
-        /// <summary>
-        /// 指定された武器タイプのItemDataを取得
-        /// </summary>
-        /// <param name="toolType">武器タイプ</param>
-        /// <returns>対応するItemData、見つからない場合はnull</returns>
-        protected virtual ItemData GetWeaponItemData(ToolType toolType)
-        {
-            // すべてのItemDataアセットを検索（実際のプロジェクトではより効率的な方法を推奨）
-            ItemData[] allItems = Resources.FindObjectsOfTypeAll<ItemData>();
-            foreach (var item in allItems)
-            {
-                if (item.IsTool() && item.toolType == toolType)
-                {
-                    return item;
-                }
-            }
-            return null;
-        }
 
         /// <summary>
         /// 敵の攻撃タイプに基づいてノックバック乗算値を取得
