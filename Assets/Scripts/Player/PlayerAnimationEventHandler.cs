@@ -108,8 +108,7 @@ namespace KowloonBreak.Player
         public void OnDigEnd()
         {
             if (!enableToolUsageEvents || playerController == null) return;
-            
-            Debug.Log("[PlayerAnimationEventHandler] OnDigEnd - Dig animation ended");
+
             playerController.OnToolUsageAnimationEnd();
         }
         

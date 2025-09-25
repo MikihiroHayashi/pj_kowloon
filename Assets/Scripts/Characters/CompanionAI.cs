@@ -109,6 +109,7 @@ namespace KowloonBreak.Characters
         private ToolType pendingToolType;
         private float pendingDamage;
         private float lastAttackTime;
+        private bool isUsingTool = false; // 攻撃モーション中の移動制限用
         
         // Health System
         protected bool isDead = false;
@@ -853,7 +854,12 @@ namespace KowloonBreak.Characters
 
         private void MoveToPosition(Vector3 targetPosition)
         {
-            
+            // 攻撃モーション中は移動を制限
+            if (isUsingTool)
+            {
+                return;
+            }
+
             if (navAgent == null)
             {
                 if (debugNavMeshAgent)
@@ -923,8 +929,21 @@ namespace KowloonBreak.Characters
                 // 統合された攻撃準備
                 bool attackPrepared = PrepareAttack(currentTarget);
 
-                // アニメーション開始
-                animatorController.TriggerAttack();
+                // 攻撃開始フラグを設定（移動制限のため）
+                isUsingTool = true;
+                Debug.Log("[CompanionAI] Tool usage started - Movement restricted during animation");
+
+                // 武器タイプに応じたアニメーション開始
+                if (weaponType == ToolType.Pickaxe)
+                {
+                    animatorController.TriggerDig();
+                    Debug.Log("[CompanionAI] Triggered dig animation for Pickaxe");
+                }
+                else
+                {
+                    animatorController.TriggerAttack();
+                    Debug.Log("[CompanionAI] Triggered attack animation for other weapons");
+                }
 
                 // 最後の攻撃時間を更新
                 lastAttackTime = Time.time;
@@ -946,6 +965,22 @@ namespace KowloonBreak.Characters
             {
                 // フォールバック：既存の統合システム
                 ExecuteAttack();
+            }
+        }
+
+        /// <summary>
+        /// 道具使用アニメーション終了時の処理（プレイヤーと同様）
+        /// </summary>
+        public void OnToolUsageAnimationEnd()
+        {
+            isUsingTool = false;
+
+            Debug.Log("[CompanionAI] Tool usage animation ended - Movement restriction lifted");
+
+            // 統合ツールシステムの保留状態をクリア
+            if (toolSystem != null)
+            {
+                toolSystem.ClearPendingAction();
             }
         }
 

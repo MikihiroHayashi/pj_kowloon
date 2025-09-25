@@ -347,6 +347,14 @@ namespace KowloonBreak.Player
                 return;
             }
 
+            // 攻撃モーション中は移動とダッジ以外の入力を制限
+            if (isUsingTool)
+            {
+                // 攻撃モーション中でも道具選択は可能にする（次の攻撃準備のため）
+                HandleToolSelection();
+                return;
+            }
+
             if (InputManagerInstance.IsInteractionPressed())
             {
                 TryInteract();
@@ -406,6 +414,13 @@ namespace KowloonBreak.Player
         
         private Vector3 CalculateNormalMovement()
         {
+            // 攻撃モーション中は移動を制限
+            if (isUsingTool)
+            {
+                moveDirection = Vector3.zero;
+                return Vector3.zero;
+            }
+
             Vector2 inputVector = InputManagerInstance?.GetMovementInput() ?? Vector2.zero;
 
             // ワールド空間での移動方向を計算
@@ -512,9 +527,16 @@ namespace KowloonBreak.Player
                 baseSpeed = walkSpeed;
             }
 
-            // 健康状態とインフェクションによるペナルティ
+            // 健康状態によるペナルティ
             float healthPenalty = currentHealth < maxHealth * 0.5f ? 0.7f : 1f;
-            float infectionPenalty = isInfected ? (1f - (infectionLevel / 100f * 0.5f)) : 1f;
+
+            // 感染によるペナルティ - 完全感染（100%）まで走行を許可
+            float infectionPenalty = 1f;
+            if (isInfected && infectionLevel >= 100f)
+            {
+                // 完全感染時のみ移動速度を大幅に低下
+                infectionPenalty = 0.3f;
+            }
 
             float finalSpeed = baseSpeed * healthPenalty * infectionPenalty;
 
@@ -527,10 +549,7 @@ namespace KowloonBreak.Player
             // スタミナ消費条件：走行モードが有効 かつ 実際に移動している
             bool shouldConsumeStamina = runModeEnabled && IsMoving;
 
-            // インフェクション状態でも追加消費
-            bool infectionConsumption = isInfected && infectionLevel > 50f;
-
-            if (shouldConsumeStamina || infectionConsumption)
+            if (shouldConsumeStamina)
             {
                 float totalConsumption = 0f;
 
@@ -538,13 +557,7 @@ namespace KowloonBreak.Player
                 if (shouldConsumeStamina)
                 {
                     totalConsumption += runStaminaCost;
-                }
 
-                // インフェクションによる追加消費
-                if (infectionConsumption)
-                {
-                    float infectionCost = runStaminaCost * 0.5f;
-                    totalConsumption += infectionCost;
                 }
 
                 // スタミナを消費
@@ -571,17 +584,12 @@ namespace KowloonBreak.Player
                 // スタミナ回復処理
                 float regenRate = staminaRegenRate;
 
-                // インフェクション状態では回復速度が半減
-                if (isInfected)
-                {
-                    regenRate *= 0.5f;
-                }
-
                 // しゃがみ中は回復速度が向上
                 if (crouchModeEnabled && !IsMoving)
                 {
                     regenRate *= 1.5f;
                 }
+
 
                 float previousStamina = currentStamina;
                 currentStamina += regenRate * Time.deltaTime;
@@ -822,6 +830,16 @@ namespace KowloonBreak.Player
                     if (UIManager.Instance != null)
                     {
                         UIManager.Instance.ShowNotification("しゃがみ中は走行できません", NotificationType.Warning);
+                    }
+                    return;
+                }
+
+                // 完全感染時は走行不可
+                if (isInfected && infectionLevel >= 100f)
+                {
+                    if (UIManager.Instance != null)
+                    {
+                        UIManager.Instance.ShowNotification("感染が進行しすぎて走行できません", NotificationType.Warning);
                     }
                     return;
                 }
@@ -1539,6 +1557,16 @@ namespace KowloonBreak.Player
                     // 感染レベルを100に固定して無限増加を防ぐ
                     infectionLevel = 100f;
 
+                    // 完全感染時は走行モードを無効化
+                    if (runModeEnabled)
+                    {
+                        SetRunMode(false);
+                        if (UIManager.Instance != null)
+                        {
+                            UIManager.Instance.ShowNotification("完全感染により走行能力を失いました", NotificationType.Error);
+                        }
+                    }
+
                     // 継続ダメージは1秒間隔で実行（毎フレームではない）
                     if (Time.time - lastInfectionDamageTime >= 1f)
                     {
@@ -1982,6 +2010,12 @@ namespace KowloonBreak.Player
         /// </summary>
         public bool CanRun()
         {
+            // 完全感染（100%）の場合は走行不可
+            if (isInfected && infectionLevel >= 100f)
+            {
+                return false;
+            }
+
             return currentStamina > 5f && IsAlive && !crouchModeEnabled;
         }
 
@@ -2082,7 +2116,8 @@ namespace KowloonBreak.Player
         {
             isUsingTool = false;
             currentUsedTool = null;
-            
+
+
             // 統合ツールシステムの保留状態をクリア
             if (toolInteractionSystem != null)
             {

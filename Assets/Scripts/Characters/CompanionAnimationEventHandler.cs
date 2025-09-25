@@ -61,13 +61,26 @@ namespace KowloonBreak.Characters
         public void OnAttackEnd()
         {
             if (!enableCombatEvents || companionAI == null) return;
-            
+
             Debug.Log($"[CompanionAnimationEventHandler] OnAttackEnd - {gameObject.name} attack animation ended");
-            
-            // 攻撃終了後の処理があれば実装
-            // 例：クールタイムの設定、次の行動の決定など
+
+            // 攻撃終了処理：移動制限を解除
+            companionAI.OnToolUsageAnimationEnd();
         }
-        
+
+        /// <summary>
+        /// 掘削アニメーション終了時（Dig用）
+        /// </summary>
+        public void OnDigEnd()
+        {
+            if (!enableCombatEvents || companionAI == null) return;
+
+            Debug.Log($"[CompanionAnimationEventHandler] OnDigEnd - {gameObject.name} dig animation ended");
+
+            // 掘削終了処理：移動制限を解除
+            companionAI.OnToolUsageAnimationEnd();
+        }
+
         /// <summary>
         /// 足音イベント（アニメーションイベントから呼ばれる）
         /// </summary>

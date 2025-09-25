@@ -251,6 +251,12 @@ namespace KowloonBreak.Characters
                 case CompanionActivity.Resting:
                     stats.RestoreStamina(20);
                     health.Heal(0.1f);
+
+                    // デバッグログ（感染状態でもスタミナ回復することを確認）
+                    if (infection.IsInfected)
+                    {
+                        Debug.Log($"[CompanionCharacter] {characterName} resting while infected - Stamina restored (Infection: {infection.InfectionPercentage:P0})");
+                    }
                     break;
                 case CompanionActivity.Training:
                     GainSkillExperience(GetPrimarySkill(), 10f);

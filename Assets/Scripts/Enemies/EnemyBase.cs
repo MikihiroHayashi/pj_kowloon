@@ -560,6 +560,12 @@ namespace KowloonBreak.Enemies
         /// </summary>
         protected virtual void MoveToTarget(Vector3 targetPosition)
         {
+            // 攻撃モーション中は移動を制限
+            if (isAttacking)
+            {
+                return;
+            }
+
             if (navAgent != null && navAgent.isActiveAndEnabled)
             {
                 // 障害物回避が有効な場合
@@ -641,6 +647,7 @@ namespace KowloonBreak.Enemies
             if (animator != null)
             {
                 isAttacking = true;  // 攻撃開始
+                Debug.Log("[EnemyBase] Attack started - Movement restricted during animation");
                 animator.SetTrigger(ANIM_ATTACK);
 
                 // フォールバック：一定時間後に強制的に攻撃状態をリセット
@@ -1133,6 +1140,7 @@ namespace KowloonBreak.Enemies
         public virtual void OnAttackAnimationEnd()
         {
             isAttacking = false;  // 攻撃終了
+            Debug.Log("[EnemyBase] Attack animation ended - Movement restriction lifted");
 
             // タイムアウトコルーチンを停止
             if (attackTimeoutCoroutine != null)
