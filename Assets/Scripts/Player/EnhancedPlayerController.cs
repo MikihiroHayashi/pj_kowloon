@@ -347,6 +347,12 @@ namespace KowloonBreak.Player
                 return;
             }
 
+            // UI表示中はプレイヤー入力を無効化
+            if (UI.UIManager.Instance != null && UI.UIManager.Instance.IsPlayerInputBlocked())
+            {
+                return;
+            }
+
             // 攻撃モーション中は移動とダッジ以外の入力を制限
             if (isUsingTool)
             {
@@ -416,6 +422,13 @@ namespace KowloonBreak.Player
         {
             // 攻撃モーション中は移動を制限
             if (isUsingTool)
+            {
+                moveDirection = Vector3.zero;
+                return Vector3.zero;
+            }
+
+            // UI表示中は移動入力を無効化
+            if (UI.UIManager.Instance != null && UI.UIManager.Instance.IsPlayerInputBlocked())
             {
                 moveDirection = Vector3.zero;
                 return Vector3.zero;
@@ -1541,38 +1554,13 @@ namespace KowloonBreak.Player
 
         private void HandleInfection()
         {
-            if (isInfected && IsAlive)
+            if (isInfected && IsAlive && infectionLevel >= 100f)
             {
-                float previousLevel = infectionLevel;
-                infectionLevel += 0.1f * Time.deltaTime;
-
-                // 感染レベル変更をUIに通知
-                if (Mathf.Abs(infectionLevel - previousLevel) > 0.01f)
+                // 完全感染時（100%）の継続ダメージのみ処理
+                if (Time.time - lastInfectionDamageTime >= 1f)
                 {
-                    OnInfectionLevelChanged?.Invoke(infectionLevel / 100f); // 0-1の範囲で送信
-                }
-
-                if (infectionLevel >= 100f)
-                {
-                    // 感染レベルを100に固定して無限増加を防ぐ
-                    infectionLevel = 100f;
-
-                    // 完全感染時は走行モードを無効化
-                    if (runModeEnabled)
-                    {
-                        SetRunMode(false);
-                        if (UIManager.Instance != null)
-                        {
-                            UIManager.Instance.ShowNotification("完全感染により走行能力を失いました", NotificationType.Error);
-                        }
-                    }
-
-                    // 継続ダメージは1秒間隔で実行（毎フレームではない）
-                    if (Time.time - lastInfectionDamageTime >= 1f)
-                    {
-                        TakeDamage(10f); // 固定ダメージに変更
-                        lastInfectionDamageTime = Time.time;
-                    }
+                    TakeDamage(10f);
+                    lastInfectionDamageTime = Time.time;
                 }
             }
         }

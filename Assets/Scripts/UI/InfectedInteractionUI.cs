@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using TMPro;
 using KowloonBreak.Characters;
 using KowloonBreak.Core;
 
@@ -10,16 +12,16 @@ namespace KowloonBreak.UI
     {
         [Header("UI References")]
         [SerializeField] private GameObject interactionPanel;
-        [SerializeField] private Text characterNameText;
+        [SerializeField] private TextMeshProUGUI characterNameText;
         [SerializeField] private Button vaccineButton;
         [SerializeField] private Button amputateButton;
         [SerializeField] private Button carryButton;
         [SerializeField] private Button cancelButton;
 
         [Header("Button Texts")]
-        [SerializeField] private Text vaccineButtonText;
-        [SerializeField] private Text amputateButtonText;
-        [SerializeField] private Text carryButtonText;
+        [SerializeField] private TextMeshProUGUI vaccineButtonText;
+        [SerializeField] private TextMeshProUGUI amputateButtonText;
+        [SerializeField] private TextMeshProUGUI carryButtonText;
 
         private CompanionCharacter currentInfectedCharacter;
         private bool isUIActive = false;
@@ -92,6 +94,9 @@ namespace KowloonBreak.UI
             // カーソルを有効にしてUIを操作できるようにする
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            // 最初のボタンにフォーカスを設定
+            SetDefaultFocus();
 
             Debug.Log($"Showing infection interaction UI for {infectedCharacter.Name}");
         }
@@ -192,12 +197,32 @@ namespace KowloonBreak.UI
             HideUI();
         }
 
+        private void SetDefaultFocus()
+        {
+            // 利用可能な最初のボタンにフォーカスを設定
+            Button firstAvailableButton = null;
+
+            if (vaccineButton != null && vaccineButton.interactable)
+                firstAvailableButton = vaccineButton;
+            else if (amputateButton != null && amputateButton.interactable)
+                firstAvailableButton = amputateButton;
+            else if (carryButton != null && carryButton.interactable)
+                firstAvailableButton = carryButton;
+            else if (cancelButton != null && cancelButton.interactable)
+                firstAvailableButton = cancelButton;
+
+            if (firstAvailableButton != null)
+            {
+                EventSystem.current.SetSelectedGameObject(firstAvailableButton.gameObject);
+            }
+        }
+
         private void Update()
         {
-            // ESCキーでUIを閉じる
-            if (isUIActive && Input.GetKeyDown(KeyCode.Escape))
+            // UIがアクティブな間、選択されたオブジェクトがない場合は再設定
+            if (isUIActive && EventSystem.current.currentSelectedGameObject == null)
             {
-                HideUI();
+                SetDefaultFocus();
             }
         }
 

@@ -98,6 +98,9 @@ namespace KowloonBreak.UI
         [SerializeField] private string attackCommandText = "攻撃しろ";
         [SerializeField] private string defendCommandText = "守備しろ";
         [SerializeField] private string supportCommandText = "援護しろ";
+
+        [Header("Infection Interaction System")]
+        [SerializeField] private InfectedInteractionUI infectedInteractionUI;
         [SerializeField] private string retreatCommandText = "撤退しろ";
         [SerializeField] private string advancedCommandText = "戦術行動";
         
@@ -190,6 +193,7 @@ namespace KowloonBreak.UI
             UpdateHUD();
             HandleInput();
             UpdateCompanionCommandSystem();
+            UpdateUIState();
         }
 
         private void InitializeUI()
@@ -347,6 +351,9 @@ namespace KowloonBreak.UI
             {
                 HandleCompanionCommandInput();
             }
+
+            // キャンセル入力でアクティブなダイアログを閉じる
+            HandleDialogCancelInput(inputManager);
         }
 
         private void UpdateTimeDisplay()
@@ -1241,18 +1248,35 @@ namespace KowloonBreak.UI
 
         private void HandleCompanionCommandInput()
         {
-            // シンプルなトグル処理
+            // アクティブなUIを閉じる処理
             if (IsPanelOpen("CompanionCommand"))
             {
                 ClosePanel("CompanionCommand");
+                return;
             }
-            else if (currentNearbyCompanion != null)
+
+            if (IsInfectedInteractionUIActive())
             {
-                OpenCompanionCommandUI(currentNearbyCompanion);
+                HideInfectedInteractionUI();
+                return;
+            }
+
+            // 近くにコンパニオンがいない場合
+            if (currentNearbyCompanion == null)
+            {
+                ShowNotification("近くにコンパニオンがいません", NotificationType.Warning);
+                return;
+            }
+
+            // コンパニオンの感染状態をチェック
+            var companionCharacter = currentNearbyCompanion.GetComponent<KowloonBreak.Characters.CompanionCharacter>();
+            if (companionCharacter != null && companionCharacter.Infection.IsInfected)
+            {
+                ShowInfectedInteractionUI(companionCharacter);
             }
             else
             {
-                ShowNotification("近くにコンパニオンがいません", NotificationType.Warning);
+                OpenCompanionCommandUI(currentNearbyCompanion);
             }
         }
 
@@ -2499,9 +2523,128 @@ namespace KowloonBreak.UI
 
         #endregion
 
+        #region Infected Interaction System
+
+        /// <summary>
+        /// 感染インタラクションUIを表示
+        /// </summary>
+        /// <param name="infectedCharacter">感染したコンパニオン</param>
+        public void ShowInfectedInteractionUI(KowloonBreak.Characters.CompanionCharacter infectedCharacter)
+        {
+            if (infectedInteractionUI != null)
+            {
+                infectedInteractionUI.ShowInteractionUI(infectedCharacter);
+            }
+            else
+            {
+                Debug.LogError("[UIManager] InfectedInteractionUI not assigned!");
+            }
+        }
+
+        /// <summary>
+        /// 感染インタラクションUIを非表示
+        /// </summary>
+        public void HideInfectedInteractionUI()
+        {
+            if (infectedInteractionUI != null)
+            {
+                infectedInteractionUI.HideUI();
+            }
+        }
+
+        /// <summary>
+        /// 感染インタラクションUIが表示されているかチェック
+        /// </summary>
+        /// <returns>UIが表示されている場合true</returns>
+        public bool IsInfectedInteractionUIActive()
+        {
+            return infectedInteractionUI != null && infectedInteractionUI.gameObject.activeInHierarchy;
+        }
+
+        /// <summary>
+        /// InfectedInteractionUIコンポーネントへの参照を取得
+        /// </summary>
+        public InfectedInteractionUI InfectedInteractionUI => infectedInteractionUI;
+
+        /// <summary>
+        /// プレイヤー操作をブロックするUIが開いているかチェック
+        /// </summary>
+        /// <returns>操作ブロック用UIが開いている場合true</returns>
+        public bool IsPlayerInputBlocked()
+        {
+            return IsPanelOpen("Inventory") ||
+                   IsPanelOpen("CompanionCommand") ||
+                   IsInfectedInteractionUIActive();
+        }
+
+        /// <summary>
+        /// UI表示に応じてカーソルとTimeScaleを制御
+        /// </summary>
+        private void UpdateUIState()
+        {
+            bool isUIOpen = IsPlayerInputBlocked();
+
+            if (isUIOpen)
+            {
+                // UI表示時: カーソル表示
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+
+                // InfectedInteractionUI以外は時間停止
+                if (!IsInfectedInteractionUIActive())
+                {
+                    Time.timeScale = 0f;
+                }
+            }
+            else
+            {
+                // UI非表示時: カーソル非表示、時間再開
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                Time.timeScale = 1f;
+            }
+        }
+
+        #endregion
+
+        #region Dialog Cancel Input Management
+
+        /// <summary>
+        /// 統一的なダイアログキャンセル入力処理
+        /// </summary>
+        /// <param name="inputManager">InputManagerインスタンス</param>
+        private void HandleDialogCancelInput(KowloonBreak.Core.InputManager inputManager)
+        {
+            if (inputManager == null || !inputManager.IsCancelPressed()) return;
+
+            // キャンセル可能なパネルの優先順位順で処理
+            var cancelableDialogs = new[]
+            {
+                "CompanionCommand",
+                "Inventory"
+            };
+
+            foreach (var panelName in cancelableDialogs)
+            {
+                if (IsPanelOpen(panelName))
+                {
+                    ClosePanel(panelName);
+                    return; // 最初に見つかったダイアログのみ閉じる
+                }
+            }
+
+            // 感染インタラクションUIが開いている場合
+            if (IsInfectedInteractionUIActive())
+            {
+                HideInfectedInteractionUI();
+            }
+        }
+
+        #endregion
+
         #region Debug and Diagnostics
-        
-        
+
+
         #endregion
     }
 

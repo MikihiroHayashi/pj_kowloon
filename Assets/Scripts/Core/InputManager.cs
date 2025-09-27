@@ -232,6 +232,11 @@ namespace KowloonBreak.Core
         public bool IsDodgePressed() => GetButtonDown("dodge");
         public bool IsMenuPressed() => GetButtonDown("menu");
         public bool IsInventoryPressed() => GetButtonDown("inventory");
+
+        /// <summary>
+        /// キャンセル入力（ESCキーまたはダッジロールボタン）を検出
+        /// </summary>
+        public bool IsCancelPressed() => IsMenuPressed() || IsDodgePressed();
         public bool IsCompanionCommandPressed() 
         {
             // InputBinding.IsDown()を直接呼び出す（より確実）

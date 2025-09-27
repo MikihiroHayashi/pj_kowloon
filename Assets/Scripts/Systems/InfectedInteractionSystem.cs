@@ -11,15 +11,9 @@ namespace KowloonBreak.Systems
     {
         public static InfectedInteractionSystem Instance { get; private set; }
 
-        [Header("Interaction Settings")]
-        [SerializeField] private float interactionRange = 3f;
-        [SerializeField] private LayerMask characterLayerMask = -1;
-
         [Header("UI References")]
         [SerializeField] private InfectedInteractionUI interactionUI;
 
-        private Transform playerTransform;
-        private List<CompanionCharacter> nearbyInfectedCharacters = new List<CompanionCharacter>();
         private CompanionCharacter selectedCharacter;
 
         private void Awake()
@@ -47,13 +41,19 @@ namespace KowloonBreak.Systems
 
         private void InitializeSystem()
         {
-            // プレイヤーを見つける
-            FindPlayer();
-
-            // UIが設定されていない場合は検索
+            // UIが設定されていない場合はUIManagerから取得
             if (interactionUI == null)
             {
-                interactionUI = FindObjectOfType<InfectedInteractionUI>();
+                if (UI.UIManager.Instance != null)
+                {
+                    interactionUI = UI.UIManager.Instance.InfectedInteractionUI;
+                }
+
+                // UIManagerから取得できない場合は従来の検索
+                if (interactionUI == null)
+                {
+                    interactionUI = FindObjectOfType<InfectedInteractionUI>();
+                }
             }
 
             // UIイベントをバインド
@@ -64,102 +64,7 @@ namespace KowloonBreak.Systems
             }
         }
 
-        private void FindPlayer()
-        {
-            // プレイヤーを検索
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null)
-            {
-                playerTransform = playerObj.transform;
-            }
-            else
-            {
-                // 代替検索
-                var playerController = FindObjectOfType<Player.EnhancedPlayerController>();
-                if (playerController != null)
-                {
-                    playerTransform = playerController.transform;
-                }
-            }
-        }
-
-        private void Update()
-        {
-            if (playerTransform == null) return;
-
-            UpdateNearbyInfectedCharacters();
-            HandleInteractionInput();
-        }
-
-        private void UpdateNearbyInfectedCharacters()
-        {
-            nearbyInfectedCharacters.Clear();
-
-            // 周囲のキャラクターを検索
-            CompanionCharacter[] allCharacters = FindObjectsOfType<CompanionCharacter>();
-
-            foreach (var character in allCharacters)
-            {
-                if (character.Infection.IsInfected)
-                {
-                    float distance = Vector3.Distance(playerTransform.position, character.transform.position);
-                    if (distance <= interactionRange)
-                    {
-                        nearbyInfectedCharacters.Add(character);
-                    }
-                }
-            }
-        }
-
-        private void HandleInteractionInput()
-        {
-            // Eキーでインタラクション
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                if (nearbyInfectedCharacters.Count > 0)
-                {
-                    // 最も近い感染者を選択
-                    CompanionCharacter closestCharacter = GetClosestInfectedCharacter();
-                    if (closestCharacter != null)
-                    {
-                        ShowInteractionUI(closestCharacter);
-                    }
-                }
-            }
-        }
-
-        private CompanionCharacter GetClosestInfectedCharacter()
-        {
-            if (nearbyInfectedCharacters.Count == 0) return null;
-
-            CompanionCharacter closest = null;
-            float closestDistance = float.MaxValue;
-
-            foreach (var character in nearbyInfectedCharacters)
-            {
-                float distance = Vector3.Distance(playerTransform.position, character.transform.position);
-                if (distance < closestDistance)
-                {
-                    closestDistance = distance;
-                    closest = character;
-                }
-            }
-
-            return closest;
-        }
-
-        private void ShowInteractionUI(CompanionCharacter character)
-        {
-            if (interactionUI != null)
-            {
-                selectedCharacter = character;
-                interactionUI.ShowInteractionUI(character);
-            }
-            else
-            {
-                Debug.LogError("InfectedInteractionUI not found!");
-            }
-        }
+        // Note: インタラクション処理はUIManagerで統合管理
 
         private void HandleTreatmentSelected(CompanionCharacter character, InfectionTreatmentType treatmentType)
         {
@@ -274,16 +179,6 @@ namespace KowloonBreak.Systems
             }
         }
 
-        public bool HasNearbyInfectedCharacters()
-        {
-            return nearbyInfectedCharacters.Count > 0;
-        }
-
-        public List<CompanionCharacter> GetNearbyInfectedCharacters()
-        {
-            return new List<CompanionCharacter>(nearbyInfectedCharacters);
-        }
-
         private void OnDestroy()
         {
             if (interactionUI != null)
@@ -293,13 +188,5 @@ namespace KowloonBreak.Systems
             }
         }
 
-        private void OnDrawGizmosSelected()
-        {
-            if (playerTransform != null)
-            {
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawWireSphere(playerTransform.position, interactionRange);
-            }
-        }
     }
 }

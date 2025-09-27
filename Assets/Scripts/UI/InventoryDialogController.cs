@@ -16,10 +16,6 @@ namespace KowloonBreak.UI
         [SerializeField] private Button closeButton;
         [SerializeField] private GameObject slotPrefab;
         
-        [Header("Settings")]
-        [SerializeField] private bool closeOnEscape = true;
-        [SerializeField] private KeyCode toggleKey = KeyCode.I;
-        [SerializeField] private bool useUIManager = true;
         
         private List<ItemSlotUI> toolSlots = new List<ItemSlotUI>();
         private List<ItemSlotUI> materialSlots = new List<ItemSlotUI>();
@@ -70,25 +66,7 @@ namespace KowloonBreak.UI
                 inventoryPanel.SetActive(false);
             }
         }
-        
-        private void Update()
-        {
-            HandleInput();
-        }
-        
-        private void HandleInput()
-        {
-            if (!useUIManager && Input.GetKeyDown(toggleKey))
-            {
-                ToggleInventory();
-            }
-            
-            if (closeOnEscape && Input.GetKeyDown(KeyCode.Escape) && isOpen)
-            {
-                CloseInventory();
-            }
-        }
-        
+
         private void InitializeSlots()
         {
             if (resourceManager == null) return;
@@ -302,22 +280,11 @@ namespace KowloonBreak.UI
             {
                 inventoryPanel.SetActive(true);
                 isOpen = true;
-                
-                if (useUIManager && UIManager.Instance != null)
+
+                if (UIManager.Instance != null)
                 {
                     UIManager.Instance.OpenPanel("Inventory");
                 }
-                else
-                {
-                    // カーソルを表示
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                    
-                    // 時間を停止
-                    Time.timeScale = 0f;
-                }
-                
-                Debug.Log("Inventory opened");
             }
         }
         
@@ -327,22 +294,11 @@ namespace KowloonBreak.UI
             {
                 inventoryPanel.SetActive(false);
                 isOpen = false;
-                
-                if (useUIManager && UIManager.Instance != null)
+
+                if (UIManager.Instance != null)
                 {
                     UIManager.Instance.ClosePanel("Inventory");
                 }
-                else
-                {
-                    // カーソルを隠す
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                    
-                    // 時間を再開
-                    Time.timeScale = 1f;
-                }
-                
-                Debug.Log("Inventory closed");
             }
         }
         
@@ -355,12 +311,7 @@ namespace KowloonBreak.UI
         {
             slotPrefab = prefab;
         }
-        
-        public void SetToggleKey(KeyCode key)
-        {
-            toggleKey = key;
-        }
-        
+
         public List<ItemSlotUI> GetToolSlots()
         {
             return new List<ItemSlotUI>(toolSlots);
