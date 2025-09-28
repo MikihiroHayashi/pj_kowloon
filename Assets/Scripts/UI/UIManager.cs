@@ -2363,20 +2363,52 @@ namespace KowloonBreak.UI
                 foreach (var slider in sliders)
                 {
                     if (slider.name.Contains("Health") || slider.name.Contains("HP"))
+                    {
                         healthSlider = slider;
+                        // ヘルススライダーの入力を無効化してコントローラー操作を防ぐ
+                        healthSlider.interactable = false;
+                    }
                     else if (slider.name.Contains("Stamina") || slider.name.Contains("SP"))
+                    {
                         staminaSlider = slider;
+                        // スタミナスライダーの入力を無効化
+                        staminaSlider.interactable = false;
+                    }
                     else if (slider.name.Contains("Infection") || slider.name.Contains("Virus"))
+                    {
                         infectionSlider = slider;
+                        // 感染スライダーの入力を無効化
+                        infectionSlider.interactable = false;
+                    }
                     else if (slider.name.Contains("Stealth") || slider.name.Contains("Hide"))
+                    {
                         stealthSlider = slider;
+                        // ステルススライダーの入力を無効化
+                        stealthSlider.interactable = false;
+                    }
                 }
 
                 // インデックスベースのフォールバック
-                if (sliders.Length >= 1 && healthSlider == null) healthSlider = sliders[0];
-                if (sliders.Length >= 2 && staminaSlider == null) staminaSlider = sliders[1];
-                if (sliders.Length >= 3 && infectionSlider == null) infectionSlider = sliders[2];
-                if (sliders.Length >= 4 && stealthSlider == null) stealthSlider = sliders[3];
+                if (sliders.Length >= 1 && healthSlider == null)
+                {
+                    healthSlider = sliders[0];
+                    healthSlider.interactable = false;
+                }
+                if (sliders.Length >= 2 && staminaSlider == null)
+                {
+                    staminaSlider = sliders[1];
+                    staminaSlider.interactable = false;
+                }
+                if (sliders.Length >= 3 && infectionSlider == null)
+                {
+                    infectionSlider = sliders[2];
+                    infectionSlider.interactable = false;
+                }
+                if (sliders.Length >= 4 && stealthSlider == null)
+                {
+                    stealthSlider = sliders[3];
+                    stealthSlider.interactable = false;
+                }
             }
 
             // MainHUDで見つからない場合は全Canvas検索
@@ -2403,13 +2435,25 @@ namespace KowloonBreak.UI
                 foreach (var slider in allSliders)
                 {
                     if (healthSlider == null && (slider.name.Contains("Health") || slider.name.Contains("HP")))
+                    {
                         healthSlider = slider;
+                        healthSlider.interactable = false;
+                    }
                     else if (infectionSlider == null && (slider.name.Contains("Infection") || slider.name.Contains("Virus")))
+                    {
                         infectionSlider = slider;
+                        infectionSlider.interactable = false;
+                    }
                     else if (staminaSlider == null && (slider.name.Contains("Stamina") || slider.name.Contains("SP")))
+                    {
                         staminaSlider = slider;
+                        staminaSlider.interactable = false;
+                    }
                     else if (stealthSlider == null && (slider.name.Contains("Stealth") || slider.name.Contains("Hide")))
+                    {
                         stealthSlider = slider;
+                        stealthSlider.interactable = false;
+                    }
                 }
             }
         }

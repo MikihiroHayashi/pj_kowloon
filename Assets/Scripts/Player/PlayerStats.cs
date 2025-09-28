@@ -92,10 +92,13 @@ namespace KowloonBreak.Player
             if (isInfected)
             {
                 infectionLevel += 0.1f * Time.deltaTime;
-                
+
+                // 感染が100%に達した場合は、EnhancedPlayerControllerの感染システムに処理を委譲
+                // PlayerStatsでは継続ダメージを与えずに状態管理のみ行う
                 if (infectionLevel >= 100f)
                 {
-                    TakeDamage(1f * Time.deltaTime);
+                    infectionLevel = 100f; // 上限を設定
+                    // 継続ダメージは削除 - EnhancedPlayerControllerで管理
                 }
             }
         }
