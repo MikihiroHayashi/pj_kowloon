@@ -226,6 +226,10 @@ namespace KowloonBreak.UI
             if (resourceManager != null)
             {
                 resourceManager.OnResourceChanged += UpdateResourceDisplay;
+                resourceManager.OnToolSlotChanged += UpdateToolInventoryUI;
+                resourceManager.OnMaterialSlotChanged += UpdateMaterialInventoryUI;
+                resourceManager.OnItemAdded += OnInventoryItemAdded;
+                resourceManager.OnItemRemoved += OnInventoryItemRemoved;
             }
 
             
@@ -1002,6 +1006,10 @@ namespace KowloonBreak.UI
             if (resourceManager != null)
             {
                 resourceManager.OnResourceChanged -= UpdateResourceDisplay;
+                resourceManager.OnToolSlotChanged -= UpdateToolInventoryUI;
+                resourceManager.OnMaterialSlotChanged -= UpdateMaterialInventoryUI;
+                resourceManager.OnItemAdded -= OnInventoryItemAdded;
+                resourceManager.OnItemRemoved -= OnInventoryItemRemoved;
             }
 
             
@@ -2638,6 +2646,52 @@ namespace KowloonBreak.UI
             {
                 HideInfectedInteractionUI();
             }
+        }
+
+        #endregion
+
+        #region Inventory UI Updates
+
+        /// <summary>
+        /// ツールインベントリスロットの表示を更新
+        /// </summary>
+        private void UpdateToolInventoryUI(int slotIndex, InventorySlot slot)
+        {
+            Debug.Log($"[UIManager] Tool inventory slot {slotIndex} updated: {(slot.IsEmpty ? "Empty" : $"{slot.ItemData.itemName} x{slot.Quantity}")}");
+
+            // TODO: 実際のツールインベントリUIコンポーネントを取得して更新
+            // Example: toolInventoryUI?.UpdateSlot(slotIndex, slot);
+        }
+
+        /// <summary>
+        /// マテリアルインベントリスロットの表示を更新
+        /// </summary>
+        private void UpdateMaterialInventoryUI(int slotIndex, InventorySlot slot)
+        {
+            Debug.Log($"[UIManager] Material inventory slot {slotIndex} updated: {(slot.IsEmpty ? "Empty" : $"{slot.ItemData.itemName} x{slot.Quantity}")}");
+
+            // TODO: 実際のマテリアルインベントリUIコンポーネントを取得して更新
+            // Example: materialInventoryUI?.UpdateSlot(slotIndex, slot);
+        }
+
+        /// <summary>
+        /// アイテム追加時の通知表示
+        /// </summary>
+        private void OnInventoryItemAdded(ItemData itemData, int quantity)
+        {
+            string message = $"{itemData.itemName} x{quantity} を獲得しました";
+            ShowNotification(message, NotificationType.Success);
+            Debug.Log($"[UIManager] Item added: {message}");
+        }
+
+        /// <summary>
+        /// アイテム削除時の通知表示
+        /// </summary>
+        private void OnInventoryItemRemoved(ItemData itemData, int quantity)
+        {
+            string message = $"{itemData.itemName} x{quantity} を消費しました";
+            ShowNotification(message, NotificationType.Info);
+            Debug.Log($"[UIManager] Item removed: {message}");
         }
 
         #endregion

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KowloonBreak.Core;
+using KowloonBreak.Managers;
 
 namespace KowloonBreak.Characters
 {
@@ -30,6 +31,11 @@ namespace KowloonBreak.Characters
         [Header("Animation")]
         [SerializeField] private Animator animator;
 
+        [Header("Resource Effects")]
+        [SerializeField] private float resourceEfficiencyBonus = 1.0f;
+        [SerializeField] private float dailyResourceConsumption = 1.0f;
+        [SerializeField] private float resourceProductionRate = 0.0f;
+
         public string Name => characterName;
         public CharacterRole Role => role;
         public int TrustLevel => trustLevel;
@@ -45,6 +51,8 @@ namespace KowloonBreak.Characters
         public event Action<CompanionActivity> OnActivityChanged;
         public event Action<CompanionCharacter> OnCharacterDied;
         public event Action<CompanionCharacter> OnCharacterTurned;
+        public event Action<ResourceType, int> OnResourceProduced;
+        public event Action<ResourceType, int> OnResourceConsumed;
 
         private void Awake()
         {
@@ -264,7 +272,19 @@ namespace KowloonBreak.Characters
                 case CompanionActivity.Socializing:
                     ChangeTrustLevel(1);
                     break;
+                case CompanionActivity.Working:
+                    ApplyRoleBasedResourceEffects();
+                    break;
+                case CompanionActivity.Crafting:
+                    ApplyCraftingEffects();
+                    break;
+                case CompanionActivity.Healing:
+                    ApplyHealingEffects();
+                    break;
             }
+
+            // 日次リソース消費
+            ConsumeResourcesForMaintenance();
 
             currentActivity = CompanionActivity.Idle;
             isAvailable = true;
@@ -369,11 +389,247 @@ namespace KowloonBreak.Characters
             InitializeSkills();
         }
 
+        #region Resource Effects
+
+        /// <summary>
+        /// 役割に応じたリソース効果を適用
+        /// </summary>
+        private void ApplyRoleBasedResourceEffects()
+        {
+            var resourceManager = EnhancedResourceManager.Instance;
+            if (resourceManager == null) return;
+
+            float efficiencyMultiplier = GetRoleEfficiencyMultiplier();
+
+            switch (role)
+            {
+                case CharacterRole.Fighter:
+                    // 防衛力向上・材料消費で武器メンテナンス
+                    if (resourceManager.HasEnoughResources(ResourceType.Materials, 2))
+                    {
+                        resourceManager.ConsumeResources(ResourceType.Materials, 2);
+                        OnResourceConsumed?.Invoke(ResourceType.Materials, 2);
+                        Debug.Log($"{characterName} (Fighter) used materials for weapon maintenance");
+                    }
+                    break;
+
+                case CharacterRole.Scout:
+                    // 探索により情報・素材発見
+                    int materialsFound = Mathf.RoundToInt(2 * efficiencyMultiplier);
+                    resourceManager.AddResources(ResourceType.Materials, materialsFound);
+                    resourceManager.AddResources(ResourceType.Information, 1);
+                    OnResourceProduced?.Invoke(ResourceType.Materials, materialsFound);
+                    OnResourceProduced?.Invoke(ResourceType.Information, 1);
+                    Debug.Log($"{characterName} (Scout) found {materialsFound} materials and 1 information");
+                    break;
+
+                case CharacterRole.Medic:
+                    // 薬品製造・チーム回復
+                    if (resourceManager.HasEnoughResources(ResourceType.Materials, 3))
+                    {
+                        resourceManager.ConsumeResources(ResourceType.Materials, 3);
+                        int medicineProduced = Mathf.RoundToInt(2 * efficiencyMultiplier);
+                        resourceManager.AddResources(ResourceType.Medicine, medicineProduced);
+                        OnResourceConsumed?.Invoke(ResourceType.Materials, 3);
+                        OnResourceProduced?.Invoke(ResourceType.Medicine, medicineProduced);
+                        Debug.Log($"{characterName} (Medic) produced {medicineProduced} medicine");
+                    }
+                    break;
+
+                case CharacterRole.Engineer:
+                    // 設備修理・改良
+                    if (resourceManager.HasEnoughResources(ResourceType.Materials, 4))
+                    {
+                        resourceManager.ConsumeResources(ResourceType.Materials, 4);
+                        int toolsProduced = Mathf.RoundToInt(1 * efficiencyMultiplier);
+                        resourceManager.AddResources(ResourceType.Tools, toolsProduced);
+                        OnResourceConsumed?.Invoke(ResourceType.Materials, 4);
+                        OnResourceProduced?.Invoke(ResourceType.Tools, toolsProduced);
+                        Debug.Log($"{characterName} (Engineer) produced {toolsProduced} tools");
+                    }
+                    break;
+
+                case CharacterRole.Negotiator:
+                    // 交渉による外部リソース確保
+                    if (AttemptNegotiation("resource_trade", 3))
+                    {
+                        int foodGained = Mathf.RoundToInt(3 * efficiencyMultiplier);
+                        int waterGained = Mathf.RoundToInt(2 * efficiencyMultiplier);
+                        resourceManager.AddResources(ResourceType.Food, foodGained);
+                        resourceManager.AddResources(ResourceType.Water, waterGained);
+                        OnResourceProduced?.Invoke(ResourceType.Food, foodGained);
+                        OnResourceProduced?.Invoke(ResourceType.Water, waterGained);
+                        Debug.Log($"{characterName} (Negotiator) negotiated for {foodGained} food and {waterGained} water");
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// クラフト効果を適用
+        /// </summary>
+        private void ApplyCraftingEffects()
+        {
+            var resourceManager = EnhancedResourceManager.Instance;
+            if (resourceManager == null) return;
+
+            // 役割に応じたクラフト効率
+            switch (role)
+            {
+                case CharacterRole.Medic:
+                    // 薬品クラフト
+                    if (resourceManager.HasEnoughResources(ResourceType.Materials, 2))
+                    {
+                        resourceManager.ConsumeResources(ResourceType.Materials, 2);
+                        resourceManager.AddResources(ResourceType.Medicine, 3);
+                        OnResourceConsumed?.Invoke(ResourceType.Materials, 2);
+                        OnResourceProduced?.Invoke(ResourceType.Medicine, 3);
+                    }
+                    break;
+
+                case CharacterRole.Engineer:
+                    // ツールクラフト
+                    if (resourceManager.HasEnoughResources(ResourceType.Materials, 3))
+                    {
+                        resourceManager.ConsumeResources(ResourceType.Materials, 3);
+                        resourceManager.AddResources(ResourceType.Tools, 2);
+                        OnResourceConsumed?.Invoke(ResourceType.Materials, 3);
+                        OnResourceProduced?.Invoke(ResourceType.Tools, 2);
+                    }
+                    break;
+
+                default:
+                    // 基本クラフト
+                    if (resourceManager.HasEnoughResources(ResourceType.Materials, 4))
+                    {
+                        resourceManager.ConsumeResources(ResourceType.Materials, 4);
+                        resourceManager.AddResources(ResourceType.Tools, 1);
+                        OnResourceConsumed?.Invoke(ResourceType.Materials, 4);
+                        OnResourceProduced?.Invoke(ResourceType.Tools, 1);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 治療効果を適用
+        /// </summary>
+        private void ApplyHealingEffects()
+        {
+            var resourceManager = EnhancedResourceManager.Instance;
+            if (resourceManager == null) return;
+
+            if (role == CharacterRole.Medic)
+            {
+                // メディック: 効率的な治療
+                if (resourceManager.HasEnoughResources(ResourceType.Medicine, 1))
+                {
+                    resourceManager.ConsumeResources(ResourceType.Medicine, 1);
+                    OnResourceConsumed?.Invoke(ResourceType.Medicine, 1);
+                    // チーム全体の健康回復効果
+                    Debug.Log($"{characterName} (Medic) provided efficient healing to the team");
+                }
+            }
+            else
+            {
+                // 他の役割: 基本的な治療
+                if (resourceManager.HasEnoughResources(ResourceType.Medicine, 2))
+                {
+                    resourceManager.ConsumeResources(ResourceType.Medicine, 2);
+                    OnResourceConsumed?.Invoke(ResourceType.Medicine, 2);
+                    Debug.Log($"{characterName} provided basic healing");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 日次メンテナンスリソース消費
+        /// </summary>
+        private void ConsumeResourcesForMaintenance()
+        {
+            var resourceManager = EnhancedResourceManager.Instance;
+            if (resourceManager == null) return;
+
+            // 基本生存需要
+            int foodConsumption = Mathf.RoundToInt(dailyResourceConsumption);
+            int waterConsumption = Mathf.RoundToInt(dailyResourceConsumption);
+
+            if (resourceManager.HasEnoughResources(ResourceType.Food, foodConsumption))
+            {
+                resourceManager.ConsumeResources(ResourceType.Food, foodConsumption);
+                OnResourceConsumed?.Invoke(ResourceType.Food, foodConsumption);
+            }
+            else
+            {
+                // 食料不足時の健康ペナルティ
+                health.Worsen(0.1f);
+                if (health.Condition == Core.HealthCondition.Healthy)
+                {
+                    health.SetCondition(Core.HealthCondition.Sick, 0.1f);
+                }
+                Debug.LogWarning($"{characterName} is suffering from lack of food");
+            }
+
+            if (resourceManager.HasEnoughResources(ResourceType.Water, waterConsumption))
+            {
+                resourceManager.ConsumeResources(ResourceType.Water, waterConsumption);
+                OnResourceConsumed?.Invoke(ResourceType.Water, waterConsumption);
+            }
+            else
+            {
+                // 水不足時の健康ペナルティ
+                health.Worsen(0.15f);
+                if (health.Condition == Core.HealthCondition.Healthy)
+                {
+                    health.SetCondition(Core.HealthCondition.Sick, 0.15f);
+                }
+                Debug.LogWarning($"{characterName} is suffering from dehydration");
+            }
+        }
+
+        /// <summary>
+        /// 役割に基づく効率倍率を取得
+        /// </summary>
+        private float GetRoleEfficiencyMultiplier()
+        {
+            float baseEfficiency = resourceEfficiencyBonus;
+            float trustBonus = (trustLevel - 50) * 0.01f; // 信頼度50を基準とした効率ボーナス
+            float healthPenalty = health.GetMovementPenalty(); // 健康状態による効率ペナルティ
+
+            return Mathf.Max(0.1f, baseEfficiency + trustBonus - healthPenalty);
+        }
+
+        /// <summary>
+        /// 特定リソースの生産能力を取得
+        /// </summary>
+        public float GetResourceProductionRate(ResourceType resourceType)
+        {
+            switch (role)
+            {
+                case CharacterRole.Scout:
+                    return resourceType == ResourceType.Materials || resourceType == ResourceType.Information
+                        ? resourceProductionRate * GetRoleEfficiencyMultiplier() : 0f;
+                case CharacterRole.Medic:
+                    return resourceType == ResourceType.Medicine
+                        ? resourceProductionRate * GetRoleEfficiencyMultiplier() : 0f;
+                case CharacterRole.Engineer:
+                    return resourceType == ResourceType.Tools
+                        ? resourceProductionRate * GetRoleEfficiencyMultiplier() : 0f;
+                case CharacterRole.Negotiator:
+                    return resourceType == ResourceType.Food || resourceType == ResourceType.Water
+                        ? resourceProductionRate * GetRoleEfficiencyMultiplier() : 0f;
+                default:
+                    return 0f;
+            }
+        }
+
+        #endregion
+
         private void OnDestroy()
         {
             if (stats != null)
                 stats.OnDeath -= HandleCharacterDeath;
-            
+
             if (infection != null)
                 infection.OnBecameInfected -= HandleCharacterTurned;
         }
