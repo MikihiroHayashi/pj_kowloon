@@ -898,23 +898,8 @@ namespace KowloonBreak.UI
         /// <returns>作成されたDialogueText GameObject</returns>
         public GameObject CreateDialogueTextForCompanion(KowloonBreak.Characters.CompanionAI companion, string dialogue)
         {
-            Debug.Log($"[UIManager] CreateDialogueTextForCompanion called for {companion?.gameObject.name} with dialogue: '{dialogue}'");
-
-            if (string.IsNullOrEmpty(dialogue))
+            if (string.IsNullOrEmpty(dialogue) || dialogueTextPrefab == null || damageContainer == null)
             {
-                Debug.LogError("[UIManager] Dialogue is null or empty!");
-                return null;
-            }
-
-            if (dialogueTextPrefab == null)
-            {
-                Debug.LogError("[UIManager] dialogueTextPrefab is null!");
-                return null;
-            }
-
-            if (damageContainer == null)
-            {
-                Debug.LogError("[UIManager] damageContainer is null!");
                 return null;
             }
 
@@ -929,18 +914,13 @@ namespace KowloonBreak.UI
                 activeDialogueTexts.Remove(companion);
             }
 
-            Debug.Log("[UIManager] Instantiating DialogueText prefab...");
-
             // DialogueTextオブジェクトを生成
             GameObject dialogueObj = Instantiate(dialogueTextPrefab, damageContainer);
-
-            Debug.Log($"[UIManager] DialogueText object created: {dialogueObj.name}");
 
             // DialogueTextコンポーネントを初期化（コンパニオン追従モード）
             DialogueText dialogueComponent = dialogueObj.GetComponent<DialogueText>();
             if (dialogueComponent != null)
             {
-                Debug.Log("[UIManager] Initializing DialogueText component...");
                 dialogueComponent.InitializeForCompanion(companion, dialogue, dialogueDuration);
 
                 // 削除時のコールバックを設定
@@ -950,12 +930,6 @@ namespace KowloonBreak.UI
 
                 // 辞書に追加
                 activeDialogueTexts[companion] = dialogueComponent;
-
-                Debug.Log("[UIManager] DialogueText successfully initialized and registered");
-            }
-            else
-            {
-                Debug.LogError("[UIManager] DialogueText component not found on instantiated prefab!");
             }
 
             return dialogueObj;

@@ -91,27 +91,17 @@ namespace KowloonBreak.Core
         /// </summary>
         public string GetInfectionDialogue(InfectionDialogueType type)
         {
-            Debug.Log($"[CompanionDialogue] GetInfectionDialogue called for type: {type}");
-            Debug.Log($"[CompanionDialogue] infectionDialogues count: {(infectionDialogues != null ? infectionDialogues.Length : 0)}");
-
             if (infectionDialogues == null)
-            {
-                Debug.LogWarning("[CompanionDialogue] infectionDialogues is null!");
                 return string.Empty;
-            }
 
             foreach (var group in infectionDialogues)
             {
-                Debug.Log($"[CompanionDialogue] Checking group type: {group.type}, dialogues count: {group.dialogues?.Length ?? 0}");
                 if (group.type == type && group.dialogues != null && group.dialogues.Length > 0)
                 {
-                    string selectedDialogue = group.dialogues[UnityEngine.Random.Range(0, group.dialogues.Length)];
-                    Debug.Log($"[CompanionDialogue] Selected dialogue: '{selectedDialogue}'");
-                    return selectedDialogue;
+                    return group.dialogues[UnityEngine.Random.Range(0, group.dialogues.Length)];
                 }
             }
 
-            Debug.LogWarning($"[CompanionDialogue] No dialogue found for infection type: {type}");
             return string.Empty;
         }
     }

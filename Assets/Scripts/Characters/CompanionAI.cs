@@ -98,8 +98,7 @@ namespace KowloonBreak.Characters
         // 感染ダイアログ管理
         private Dictionary<InfectionDialogueType, float> infectionDialogueTimers = new Dictionary<InfectionDialogueType, float>();
         private float lastInfectionDialogueTime = 0f;
-        private float infectionDialogueCooldown = 3f; // 感染中ダイアログのクールダウン（3秒に短縮）
-        private float lastInfectionStatusLogTime = 0f; // 感染状態ログ出力のタイマー
+        private float infectionDialogueCooldown = 8f; // 感染中ダイアログのクールダウン（適度な頻度に調整）
         
         private NavMeshAgent navAgent;
         private CompanionCharacter companionCharacter;
@@ -219,7 +218,6 @@ namespace KowloonBreak.Characters
             {
                 // 感染ダイアログイベントを購読
                 companionCharacter.Infection.OnInfectionDialogueTriggered += HandleInfectionDialogue;
-                Debug.Log($"[CompanionAI] Subscribed to infection events for {gameObject.name}");
             }
         }
 
@@ -228,7 +226,6 @@ namespace KowloonBreak.Characters
         /// </summary>
         private void HandleInfectionDialogue(InfectionDialogueType dialogueType)
         {
-            Debug.Log($"[CompanionAI] HandleInfectionDialogue called with type: {dialogueType}");
             if (enableDialogueSystem)
             {
                 ShowInfectionDialogue(dialogueType);
@@ -291,20 +288,9 @@ namespace KowloonBreak.Characters
                 yield return new WaitForSeconds(currentUpdateRate);
 
                 // 感染ダイアログは感染状態でも実行する必要があるため、先に処理
-                if (companionCharacter != null)
+                if (companionCharacter != null && companionCharacter.Infection.IsInfected)
                 {
-                    // 感染状態を定期的にログ出力（5秒に1回）
-                    if (Time.time - lastInfectionStatusLogTime > 5f)
-                    {
-                        Debug.Log($"[CompanionAI] {gameObject.name} - IsInfected: {companionCharacter.Infection.IsInfected}, InfectionLevel: {companionCharacter.Infection.CurrentInfection}/{companionCharacter.Infection.MaxInfectionValue}, IsAvailable: {companionCharacter.IsAvailable}");
-                        lastInfectionStatusLogTime = Time.time;
-                    }
-
-                    if (companionCharacter.Infection.IsInfected)
-                    {
-                        Debug.Log($"[CompanionAI] Calling UpdateInfectionDialogue() from AILoop for {gameObject.name} (infected)");
-                        UpdateInfectionDialogue();
-                    }
+                    UpdateInfectionDialogue();
                 }
 
                 if (!companionCharacter.IsAvailable)
@@ -2380,8 +2366,6 @@ namespace KowloonBreak.Characters
         /// <param name="dialogue">表示するセリフ</param>
         private void ShowDialogueTextAboveHead(string dialogue)
         {
-            Debug.Log($"[CompanionAI] ShowDialogueTextAboveHead called for {gameObject.name} with dialogue: '{dialogue}'");
-
             // 既存のDialogueTextがある場合は削除
             if (currentDialogueText != null)
             {
@@ -2394,31 +2378,10 @@ namespace KowloonBreak.Characters
             }
 
             // UIManagerが利用可能かチェック
-            if (UI.UIManager.Instance == null)
-            {
-                Debug.LogError("[CompanionAI] UIManager.Instance is null!");
-                return;
-            }
-
-            if (UI.UIManager.Instance.DialogueTextPrefab == null)
-            {
-                Debug.LogError("[CompanionAI] DialogueTextPrefab is null!");
-                return;
-            }
-
-            Debug.Log("[CompanionAI] Creating DialogueText through UIManager...");
+            if (UI.UIManager.Instance?.DialogueTextPrefab == null) return;
 
             // 新しいDialogueTextを作成（UIManagerが自動的にコールバックを管理）
             currentDialogueText = UI.UIManager.Instance.CreateDialogueTextForCompanion(this, dialogue);
-
-            if (currentDialogueText != null)
-            {
-                Debug.Log($"[CompanionAI] DialogueText created successfully: {currentDialogueText.name}");
-            }
-            else
-            {
-                Debug.LogError("[CompanionAI] Failed to create DialogueText!");
-            }
         }
         
         /// <summary>
@@ -2449,31 +2412,12 @@ namespace KowloonBreak.Characters
         /// </summary>
         public void ShowInfectionDialogue(InfectionDialogueType dialogueType)
         {
-            Debug.Log($"[CompanionAI] ShowInfectionDialogue called with type: {dialogueType}");
-
-            if (!enableDialogueSystem)
-            {
-                Debug.LogWarning("[CompanionAI] Dialogue system is disabled!");
-                return;
-            }
-
-            if (dialogueData == null)
-            {
-                Debug.LogError("[CompanionAI] dialogueData is null!");
-                return;
-            }
+            if (!enableDialogueSystem || dialogueData == null) return;
 
             string dialogue = dialogueData.GetInfectionDialogue(dialogueType);
-            Debug.Log($"[CompanionAI] Retrieved dialogue: '{dialogue}'");
-
             if (!string.IsNullOrEmpty(dialogue))
             {
-                Debug.Log($"[CompanionAI] Calling ShowDialogueTextAboveHead with dialogue: '{dialogue}'");
                 ShowDialogueTextAboveHead(dialogue);
-            }
-            else
-            {
-                Debug.LogWarning($"[CompanionAI] No dialogue found for infection type: {dialogueType}");
             }
         }
 
@@ -2514,7 +2458,6 @@ namespace KowloonBreak.Characters
             {
                 // 強制的に感染状態にする
                 companionCharacter.Infection.SetInfectionForTesting(100f);
-                Debug.Log($"[CompanionAI] After SetInfectionForTesting - IsInfected: {companionCharacter.Infection.IsInfected}, InfectionLevel: {companionCharacter.Infection.CurrentInfection}");
 
                 // 感染ダイアログを表示
                 ShowInfectionDialogue(InfectionDialogueType.JustInfected);
@@ -2546,26 +2489,18 @@ namespace KowloonBreak.Characters
         /// </summary>
         private void UpdateInfectionDialogue()
         {
-            // 詳細なデバッグログ
-            Debug.Log($"[CompanionAI] UpdateInfectionDialogue - enableDialogueSystem: {enableDialogueSystem}, dialogueData: {(dialogueData != null ? "OK" : "NULL")}, companionCharacter: {(companionCharacter != null ? "OK" : "NULL")}");
-
             if (!enableDialogueSystem || dialogueData == null || companionCharacter == null) return;
 
             // 感染状態でない場合は処理しない
-            Debug.Log($"[CompanionAI] UpdateInfectionDialogue - IsInfected: {companionCharacter.Infection.IsInfected}");
             if (!companionCharacter.Infection.IsInfected) return;
 
             float currentTime = Time.time;
 
             // クールダウン中は処理しない
-            Debug.Log($"[CompanionAI] UpdateInfectionDialogue - currentTime: {currentTime:F1}, lastInfectionDialogueTime: {lastInfectionDialogueTime:F1}, cooldown: {infectionDialogueCooldown}");
             if (currentTime - lastInfectionDialogueTime < infectionDialogueCooldown)
             {
-                Debug.Log($"[CompanionAI] Infection dialogue cooldown: {(infectionDialogueCooldown - (currentTime - lastInfectionDialogueTime)):F1}s remaining");
                 return;
             }
-
-            Debug.Log($"[CompanionAI] UpdateInfectionDialogue executing for {gameObject.name} - attempting dialogue...");
 
             // ランダムで感染中のセリフを選択
             InfectionDialogueType[] randomDialogueTypes = {
@@ -2583,26 +2518,16 @@ namespace KowloonBreak.Characters
             // 同じダイアログタイプのクールダウンをチェック
             if (infectionDialogueTimers.TryGetValue(selectedType, out float lastTime))
             {
-                if (currentTime - lastTime < infectionDialogueCooldown * 1.0f) // 個別ダイアログタイプは等倍のクールダウン
+                if (currentTime - lastTime < infectionDialogueCooldown * 1.5f) // 個別ダイアログタイプは1.5倍のクールダウン
                     return;
             }
 
             // 確率でダイアログを表示（感染中は定期的だが頻繁すぎないように）
-            float randomValue = UnityEngine.Random.Range(0f, 1f);
-            Debug.Log($"[CompanionAI] UpdateInfectionDialogue - random value: {randomValue:F2}, threshold: 0.8");
-
-            if (randomValue < 0.8f) // 80%の確率に上昇
+            if (UnityEngine.Random.Range(0f, 1f) < 0.4f) // 40%の確率に調整
             {
-                Debug.Log($"[CompanionAI] Probability check passed, showing infection dialogue: {selectedType}");
                 ShowInfectionDialogue(selectedType);
                 lastInfectionDialogueTime = currentTime;
                 infectionDialogueTimers[selectedType] = currentTime;
-
-                Debug.Log($"[CompanionAI] Showing infection dialogue: {selectedType} for {gameObject.name}");
-            }
-            else
-            {
-                Debug.Log($"[CompanionAI] Probability check failed - no dialogue this time");
             }
         }
 
