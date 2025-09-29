@@ -125,6 +125,7 @@ namespace KowloonBreak.Characters
         {
             stats.OnDeath += HandleCharacterDeath;
             infection.OnBecameInfected += HandleCharacterTurned;
+            infection.OnInfectionDialogueTriggered += HandleInfectionDialogue;
         }
 
         private void UpdateCharacter()
@@ -355,6 +356,16 @@ namespace KowloonBreak.Characters
             }
 
             OnCharacterTurned?.Invoke(this);
+        }
+
+        private void HandleInfectionDialogue(InfectionDialogueType dialogueType)
+        {
+            // CompanionAIからダイアログ表示メソッドを呼び出す
+            var companionAI = GetComponent<CompanionAI>();
+            if (companionAI != null)
+            {
+                companionAI.ShowInfectionDialogue(dialogueType);
+            }
         }
 
         /// <summary>
@@ -631,7 +642,10 @@ namespace KowloonBreak.Characters
                 stats.OnDeath -= HandleCharacterDeath;
 
             if (infection != null)
+            {
                 infection.OnBecameInfected -= HandleCharacterTurned;
+                infection.OnInfectionDialogueTriggered -= HandleInfectionDialogue;
+            }
         }
     }
 

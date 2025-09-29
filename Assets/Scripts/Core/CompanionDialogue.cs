@@ -23,6 +23,9 @@ namespace KowloonBreak.Core
         [Header("一般的なセリフ")]
         [SerializeField] private GeneralDialogueGroup[] generalDialogues;
 
+        [Header("感染関連のセリフ")]
+        [SerializeField] private InfectionDialogueGroup[] infectionDialogues;
+
         /// <summary>
         /// 指定されたAIステートに対応するセリフをランダムで取得
         /// </summary>
@@ -82,6 +85,35 @@ namespace KowloonBreak.Core
             }
             return string.Empty;
         }
+
+        /// <summary>
+        /// 感染関連のセリフを取得
+        /// </summary>
+        public string GetInfectionDialogue(InfectionDialogueType type)
+        {
+            Debug.Log($"[CompanionDialogue] GetInfectionDialogue called for type: {type}");
+            Debug.Log($"[CompanionDialogue] infectionDialogues count: {(infectionDialogues != null ? infectionDialogues.Length : 0)}");
+
+            if (infectionDialogues == null)
+            {
+                Debug.LogWarning("[CompanionDialogue] infectionDialogues is null!");
+                return string.Empty;
+            }
+
+            foreach (var group in infectionDialogues)
+            {
+                Debug.Log($"[CompanionDialogue] Checking group type: {group.type}, dialogues count: {group.dialogues?.Length ?? 0}");
+                if (group.type == type && group.dialogues != null && group.dialogues.Length > 0)
+                {
+                    string selectedDialogue = group.dialogues[UnityEngine.Random.Range(0, group.dialogues.Length)];
+                    Debug.Log($"[CompanionDialogue] Selected dialogue: '{selectedDialogue}'");
+                    return selectedDialogue;
+                }
+            }
+
+            Debug.LogWarning($"[CompanionDialogue] No dialogue found for infection type: {type}");
+            return string.Empty;
+        }
     }
 
     [Serializable]
@@ -122,7 +154,18 @@ namespace KowloonBreak.Core
     {
         [Header("一般状況")]
         public GeneralDialogueType type;
-        
+
+        [Header("セリフリスト")]
+        [TextArea(2, 4)]
+        public string[] dialogues;
+    }
+
+    [Serializable]
+    public class InfectionDialogueGroup
+    {
+        [Header("感染状況")]
+        public InfectionDialogueType type;
+
         [Header("セリフリスト")]
         [TextArea(2, 4)]
         public string[] dialogues;
@@ -147,5 +190,20 @@ namespace KowloonBreak.Core
         ItemFound,         // アイテム発見
         RestComplete,      // 休憩完了
         LevelUp            // レベルアップ
+    }
+
+    public enum InfectionDialogueType
+    {
+        JustInfected,      // 感染直後
+        InfectionPain,     // 感染による痛み
+        FeelingSick,       // 体調不良
+        FearOfInfection,   // 感染への恐怖
+        PleaForHelp,       // 助けを求める
+        BeforeAmputation,  // 切断前
+        AfterAmputation,   // 切断後
+        AfterVaccine,      // ワクチン治療後
+        InfectionSpread,   // 感染拡大への懸念
+        LastWords,         // 最後の言葉（重篤時）
+        RecoveryHope       // 回復への希望
     }
 }

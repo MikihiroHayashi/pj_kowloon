@@ -29,6 +29,7 @@ namespace KowloonBreak.Core
         public event Action OnBecameInfected;
         public event Action OnCured;
         public event Action OnArmAmputated;
+        public event Action<InfectionDialogueType> OnInfectionDialogueTriggered;
 
         public void IncreaseInfection(float amount)
         {
@@ -50,12 +51,15 @@ namespace KowloonBreak.Core
         {
             isInfected = true;
             OnBecameInfected?.Invoke();
+            OnInfectionDialogueTriggered?.Invoke(InfectionDialogueType.JustInfected);
             Debug.Log("Character became infected!");
         }
 
         public void CureWithVaccine()
         {
             if (!isInfected) return;
+
+            OnInfectionDialogueTriggered?.Invoke(InfectionDialogueType.AfterVaccine);
 
             currentInfection = 0f;
             isInfected = false;
@@ -68,6 +72,8 @@ namespace KowloonBreak.Core
         {
             if (!isInfected) return;
 
+            OnInfectionDialogueTriggered?.Invoke(InfectionDialogueType.BeforeAmputation);
+
             currentInfection = 0f;
             isInfected = false;
             hasArmAmputated = true;
@@ -77,6 +83,7 @@ namespace KowloonBreak.Core
             OnInfectionChanged?.Invoke(currentInfection);
             OnCured?.Invoke();
             OnArmAmputated?.Invoke();
+            OnInfectionDialogueTriggered?.Invoke(InfectionDialogueType.AfterAmputation);
             Debug.Log("Character cured with arm amputation - can no longer run or attack!");
         }
 

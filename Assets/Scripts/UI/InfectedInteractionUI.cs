@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 using TMPro;
 using KowloonBreak.Characters;
 using KowloonBreak.Core;
+using KowloonBreak.Managers;
 
 namespace KowloonBreak.UI
 {
@@ -95,6 +96,9 @@ namespace KowloonBreak.UI
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
+            // 感染者専用カメラに切り替え
+            SwitchToInfectedCamera();
+
             // 最初のボタンにフォーカスを設定
             SetDefaultFocus();
 
@@ -110,6 +114,9 @@ namespace KowloonBreak.UI
 
             isUIActive = false;
             currentInfectedCharacter = null;
+
+            // 元のカメラに戻す
+            ReturnToPreviousCamera();
 
             // カーソルをゲームモードに戻す
             Cursor.lockState = CursorLockMode.Locked;
@@ -224,6 +231,39 @@ namespace KowloonBreak.UI
             {
                 SetDefaultFocus();
             }
+        }
+
+        private void SwitchToInfectedCamera()
+        {
+            var cameraManager = CameraManager.Instance;
+            if (cameraManager == null)
+            {
+                Debug.LogWarning("[InfectedInteractionUI] CameraManager not found - cannot switch to infected camera");
+                return;
+            }
+
+            if (currentInfectedCharacter != null)
+            {
+                // 感染者の位置をターゲットとして感染者カメラに切り替え
+                cameraManager.SwitchToInfectedCamera(currentInfectedCharacter.transform);
+            }
+            else
+            {
+                // 感染者キャラクターがない場合は通常の感染者カメラに切り替え
+                cameraManager.SwitchToCamera(Managers.GameCameraType.Infected);
+            }
+        }
+
+        private void ReturnToPreviousCamera()
+        {
+            var cameraManager = CameraManager.Instance;
+            if (cameraManager == null)
+            {
+                Debug.LogWarning("[InfectedInteractionUI] CameraManager not found - cannot return to previous camera");
+                return;
+            }
+
+            cameraManager.ReturnToPreviousCamera();
         }
 
         private void OnDestroy()

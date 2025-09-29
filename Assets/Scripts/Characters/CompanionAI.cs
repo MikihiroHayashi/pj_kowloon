@@ -94,6 +94,12 @@ namespace KowloonBreak.Characters
         private Dictionary<CompanionCommand, float> commandDialogueTimers = new Dictionary<CompanionCommand, float>();
         private Dictionary<AIState, float> stateDialogueTimers = new Dictionary<AIState, float>();
         private float lastGeneralDialogueTime = 0f;
+
+        // 感染ダイアログ管理
+        private Dictionary<InfectionDialogueType, float> infectionDialogueTimers = new Dictionary<InfectionDialogueType, float>();
+        private float lastInfectionDialogueTime = 0f;
+        private float infectionDialogueCooldown = 3f; // 感染中ダイアログのクールダウン（3秒に短縮）
+        private float lastInfectionStatusLogTime = 0f; // 感染状態ログ出力のタイマー
         
         private NavMeshAgent navAgent;
         private CompanionCharacter companionCharacter;
@@ -160,7 +166,6 @@ namespace KowloonBreak.Characters
             if (companionCharacter == null)
             {
                 if (debugCommandExecution)
-                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - CompanionCharacter component not found, creating one");
                 companionCharacter = gameObject.AddComponent<CompanionCharacter>();
             }
 
@@ -188,6 +193,7 @@ namespace KowloonBreak.Characters
             FindPlayerCamera();
             InitializeKnockbackSystem();
             InitializeInfectionBar();
+            InitializeInfectionEvents();
             SetState(AIState.Follow);
             StartCoroutine(UpdateAILoop());
         }
@@ -201,10 +207,34 @@ namespace KowloonBreak.Characters
             if (UI.UIManager.Instance != null && !UI.UIManager.Instance.HasInfectionBarForCompanion(this))
             {
                 UI.UIManager.Instance.CreateInfectionBarForCompanion(this);
-                Debug.Log($"[CompanionAI] Created infection bar for {gameObject.name}");
             }
         }
-        
+
+        /// <summary>
+        /// 感染イベントを初期化
+        /// </summary>
+        private void InitializeInfectionEvents()
+        {
+            if (companionCharacter != null && companionCharacter.Infection != null)
+            {
+                // 感染ダイアログイベントを購読
+                companionCharacter.Infection.OnInfectionDialogueTriggered += HandleInfectionDialogue;
+                Debug.Log($"[CompanionAI] Subscribed to infection events for {gameObject.name}");
+            }
+        }
+
+        /// <summary>
+        /// 感染ダイアログを処理
+        /// </summary>
+        private void HandleInfectionDialogue(InfectionDialogueType dialogueType)
+        {
+            Debug.Log($"[CompanionAI] HandleInfectionDialogue called with type: {dialogueType}");
+            if (enableDialogueSystem)
+            {
+                ShowInfectionDialogue(dialogueType);
+            }
+        }
+
         private void FindPlayerCamera()
         {
             if (player != null)
@@ -220,7 +250,6 @@ namespace KowloonBreak.Characters
                 
                 if (playerCamera == null)
                 {
-                    Debug.LogWarning("[CompanionAI] Player camera not found! Smart teleport may not work properly.");
                 }
             }
         }
@@ -250,7 +279,6 @@ namespace KowloonBreak.Characters
                 }
                 else
                 {
-                    Debug.LogWarning($"Player not found for companion {gameObject.name}");
                 }
             }
         }
@@ -261,10 +289,27 @@ namespace KowloonBreak.Characters
             {
                 float currentUpdateRate = GetCurrentUpdateRate();
                 yield return new WaitForSeconds(currentUpdateRate);
-                
+
+                // 感染ダイアログは感染状態でも実行する必要があるため、先に処理
+                if (companionCharacter != null)
+                {
+                    // 感染状態を定期的にログ出力（5秒に1回）
+                    if (Time.time - lastInfectionStatusLogTime > 5f)
+                    {
+                        Debug.Log($"[CompanionAI] {gameObject.name} - IsInfected: {companionCharacter.Infection.IsInfected}, InfectionLevel: {companionCharacter.Infection.CurrentInfection}/{companionCharacter.Infection.MaxInfectionValue}, IsAvailable: {companionCharacter.IsAvailable}");
+                        lastInfectionStatusLogTime = Time.time;
+                    }
+
+                    if (companionCharacter.Infection.IsInfected)
+                    {
+                        Debug.Log($"[CompanionAI] Calling UpdateInfectionDialogue() from AILoop for {gameObject.name} (infected)");
+                        UpdateInfectionDialogue();
+                    }
+                }
+
                 if (!companionCharacter.IsAvailable)
                     continue;
-                
+
                 UpdateAI();
             }
         }
@@ -302,6 +347,7 @@ namespace KowloonBreak.Characters
 
             // 意思決定システムの実行
             UpdateDecisionSystem();
+
 
             // High-level AI: Monitor player danger and provide proactive support
             if (GetIntelligenceLevelFromTrust() >= 4)
@@ -863,21 +909,18 @@ namespace KowloonBreak.Characters
             if (navAgent == null)
             {
                 if (debugNavMeshAgent)
-                    Debug.LogError($"[CompanionAI] {gameObject.name} - NavMeshAgent is null!");
                 return;
             }
             
             if (!navAgent.isActiveAndEnabled)
             {
                 if (debugNavMeshAgent)
-                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - NavMeshAgent is not active or enabled!");
                 return;
             }
             
             if (!navAgent.isOnNavMesh)
             {
                 if (debugNavMeshAgent)
-                    Debug.LogWarning($"[CompanionAI] {gameObject.name} - NavMeshAgent is not on NavMesh!");
                 return;
             }
             
@@ -931,18 +974,15 @@ namespace KowloonBreak.Characters
 
                 // 攻撃開始フラグを設定（移動制限のため）
                 isUsingTool = true;
-                Debug.Log("[CompanionAI] Tool usage started - Movement restricted during animation");
 
                 // 武器タイプに応じたアニメーション開始
                 if (weaponType == ToolType.Pickaxe)
                 {
                     animatorController.TriggerDig();
-                    Debug.Log("[CompanionAI] Triggered dig animation for Pickaxe");
                 }
                 else
                 {
                     animatorController.TriggerAttack();
-                    Debug.Log("[CompanionAI] Triggered attack animation for other weapons");
                 }
 
                 // 最後の攻撃時間を更新
@@ -975,7 +1015,6 @@ namespace KowloonBreak.Characters
         {
             isUsingTool = false;
 
-            Debug.Log("[CompanionAI] Tool usage animation ended - Movement restriction lifted");
 
             // 統合ツールシステムの保留状態をクリア
             if (toolSystem != null)
@@ -993,7 +1032,6 @@ namespace KowloonBreak.Characters
         {
             if (target == null) 
             {
-                Debug.LogWarning("[CompanionAI] PrepareAttack: target is null");
                 return false;
             }
             
@@ -1017,7 +1055,6 @@ namespace KowloonBreak.Characters
             
             if (destructible == null) 
             {
-                Debug.LogWarning($"[CompanionAI] PrepareAttack: {target.name} and its parents do not have IDestructible component");
                 return false;
             }
             
@@ -1354,7 +1391,6 @@ namespace KowloonBreak.Characters
                 if (companionCharacter == null)
                 {
                     if (debugCommandExecution)
-                        Debug.LogWarning($"[CompanionAI] {gameObject.name} - CompanionCharacter component is missing");
                     return false;
                 }
             }
@@ -1713,7 +1749,6 @@ namespace KowloonBreak.Characters
         {
             if (player == null)
             {
-                Debug.LogWarning($"[CompanionAI] {gameObject.name} - Cannot warp: Player reference is null");
                 return;
             }
 
@@ -1865,17 +1900,14 @@ namespace KowloonBreak.Characters
             // 設定チェック
             if (enemyLayerMask == 0)
             {
-                Debug.LogWarning($"[CompanionAI] {gameObject.name} - EnemyLayerMask is not set! Enemy detection may not work properly.");
             }
             
             if (destructibleLayers == 0)
             {
-                Debug.LogWarning($"[CompanionAI] {gameObject.name} - DestructibleLayers is not set! Attacks will not work properly.");
             }
             
             if (attackRange <= 0)
             {
-                Debug.LogWarning($"[CompanionAI] {gameObject.name} - AttackRange must be greater than 0!");
             }
         }
         
@@ -1918,7 +1950,6 @@ namespace KowloonBreak.Characters
             }
             else
             {
-                Debug.LogWarning($"[CompanionAI] {gameObject.name} - Failed to create UI health bar: UIManager not found");
             }
         }
 
@@ -2175,7 +2206,6 @@ namespace KowloonBreak.Characters
             }
             else
             {
-                Debug.LogWarning("[CompanionAI] CompanionAnimatorController not found on companion");
             }
 
             // コンパニオンキャラクターに死亡を通知
@@ -2350,6 +2380,8 @@ namespace KowloonBreak.Characters
         /// <param name="dialogue">表示するセリフ</param>
         private void ShowDialogueTextAboveHead(string dialogue)
         {
+            Debug.Log($"[CompanionAI] ShowDialogueTextAboveHead called for {gameObject.name} with dialogue: '{dialogue}'");
+
             // 既存のDialogueTextがある場合は削除
             if (currentDialogueText != null)
             {
@@ -2362,11 +2394,31 @@ namespace KowloonBreak.Characters
             }
 
             // UIManagerが利用可能かチェック
-            if (UI.UIManager.Instance == null || UI.UIManager.Instance.DialogueTextPrefab == null)
+            if (UI.UIManager.Instance == null)
+            {
+                Debug.LogError("[CompanionAI] UIManager.Instance is null!");
                 return;
+            }
+
+            if (UI.UIManager.Instance.DialogueTextPrefab == null)
+            {
+                Debug.LogError("[CompanionAI] DialogueTextPrefab is null!");
+                return;
+            }
+
+            Debug.Log("[CompanionAI] Creating DialogueText through UIManager...");
 
             // 新しいDialogueTextを作成（UIManagerが自動的にコールバックを管理）
             currentDialogueText = UI.UIManager.Instance.CreateDialogueTextForCompanion(this, dialogue);
+
+            if (currentDialogueText != null)
+            {
+                Debug.Log($"[CompanionAI] DialogueText created successfully: {currentDialogueText.name}");
+            }
+            else
+            {
+                Debug.LogError("[CompanionAI] Failed to create DialogueText!");
+            }
         }
         
         /// <summary>
@@ -2393,6 +2445,168 @@ namespace KowloonBreak.Characters
         }
         
         /// <summary>
+        /// 感染中のセリフを表示
+        /// </summary>
+        public void ShowInfectionDialogue(InfectionDialogueType dialogueType)
+        {
+            Debug.Log($"[CompanionAI] ShowInfectionDialogue called with type: {dialogueType}");
+
+            if (!enableDialogueSystem)
+            {
+                Debug.LogWarning("[CompanionAI] Dialogue system is disabled!");
+                return;
+            }
+
+            if (dialogueData == null)
+            {
+                Debug.LogError("[CompanionAI] dialogueData is null!");
+                return;
+            }
+
+            string dialogue = dialogueData.GetInfectionDialogue(dialogueType);
+            Debug.Log($"[CompanionAI] Retrieved dialogue: '{dialogue}'");
+
+            if (!string.IsNullOrEmpty(dialogue))
+            {
+                Debug.Log($"[CompanionAI] Calling ShowDialogueTextAboveHead with dialogue: '{dialogue}'");
+                ShowDialogueTextAboveHead(dialogue);
+            }
+            else
+            {
+                Debug.LogWarning($"[CompanionAI] No dialogue found for infection type: {dialogueType}");
+            }
+        }
+
+        /// <summary>
+        /// テスト用：感染ダイアログを強制表示
+        /// </summary>
+        [ContextMenu("Test Infection Dialogue")]
+        public void TestInfectionDialogue()
+        {
+            // テスト用のダイアログを表示
+            ShowInfectionDialogue(InfectionDialogueType.InfectionPain);
+        }
+
+        /// <summary>
+        /// テスト用：通常のダイアログを表示
+        /// </summary>
+        [ContextMenu("Test Normal Dialogue")]
+        public void TestNormalDialogue()
+        {
+            // テスト用の通常ダイアログを表示
+            if (dialogueData != null)
+            {
+                string dialogue = dialogueData.GetGeneralDialogue(GeneralDialogueType.Greeting);
+                if (!string.IsNullOrEmpty(dialogue))
+                {
+                    ShowDialogueTextAboveHead(dialogue);
+                }
+            }
+        }
+
+        /// <summary>
+        /// テスト用：感染状態を設定してダイアログをテスト
+        /// </summary>
+        [ContextMenu("Test Force Infection and Dialogue")]
+        public void TestForceInfectionAndDialogue()
+        {
+            if (companionCharacter != null)
+            {
+                // 強制的に感染状態にする
+                companionCharacter.Infection.SetInfectionForTesting(100f);
+                Debug.Log($"[CompanionAI] After SetInfectionForTesting - IsInfected: {companionCharacter.Infection.IsInfected}, InfectionLevel: {companionCharacter.Infection.CurrentInfection}");
+
+                // 感染ダイアログを表示
+                ShowInfectionDialogue(InfectionDialogueType.JustInfected);
+            }
+        }
+
+        /// <summary>
+        /// テスト用：ダイアログデータの状態をチェック
+        /// </summary>
+        [ContextMenu("Debug Dialogue Data")]
+        public void DebugDialogueData()
+        {
+
+            if (dialogueData != null)
+            {
+                // 各タイプのダイアログをテスト
+                string testDialogue = dialogueData.GetInfectionDialogue(InfectionDialogueType.InfectionPain);
+
+                testDialogue = dialogueData.GetGeneralDialogue(GeneralDialogueType.Greeting);
+            }
+
+            if (companionCharacter != null)
+            {
+            }
+        }
+
+        /// <summary>
+        /// 感染中のダイアログ更新処理
+        /// </summary>
+        private void UpdateInfectionDialogue()
+        {
+            // 詳細なデバッグログ
+            Debug.Log($"[CompanionAI] UpdateInfectionDialogue - enableDialogueSystem: {enableDialogueSystem}, dialogueData: {(dialogueData != null ? "OK" : "NULL")}, companionCharacter: {(companionCharacter != null ? "OK" : "NULL")}");
+
+            if (!enableDialogueSystem || dialogueData == null || companionCharacter == null) return;
+
+            // 感染状態でない場合は処理しない
+            Debug.Log($"[CompanionAI] UpdateInfectionDialogue - IsInfected: {companionCharacter.Infection.IsInfected}");
+            if (!companionCharacter.Infection.IsInfected) return;
+
+            float currentTime = Time.time;
+
+            // クールダウン中は処理しない
+            Debug.Log($"[CompanionAI] UpdateInfectionDialogue - currentTime: {currentTime:F1}, lastInfectionDialogueTime: {lastInfectionDialogueTime:F1}, cooldown: {infectionDialogueCooldown}");
+            if (currentTime - lastInfectionDialogueTime < infectionDialogueCooldown)
+            {
+                Debug.Log($"[CompanionAI] Infection dialogue cooldown: {(infectionDialogueCooldown - (currentTime - lastInfectionDialogueTime)):F1}s remaining");
+                return;
+            }
+
+            Debug.Log($"[CompanionAI] UpdateInfectionDialogue executing for {gameObject.name} - attempting dialogue...");
+
+            // ランダムで感染中のセリフを選択
+            InfectionDialogueType[] randomDialogueTypes = {
+                InfectionDialogueType.InfectionPain,
+                InfectionDialogueType.FeelingSick,
+                InfectionDialogueType.FearOfInfection,
+                InfectionDialogueType.PleaForHelp,
+                InfectionDialogueType.InfectionSpread,
+                InfectionDialogueType.RecoveryHope
+            };
+
+            // ランダムでダイアログタイプを選択
+            InfectionDialogueType selectedType = randomDialogueTypes[UnityEngine.Random.Range(0, randomDialogueTypes.Length)];
+
+            // 同じダイアログタイプのクールダウンをチェック
+            if (infectionDialogueTimers.TryGetValue(selectedType, out float lastTime))
+            {
+                if (currentTime - lastTime < infectionDialogueCooldown * 1.0f) // 個別ダイアログタイプは等倍のクールダウン
+                    return;
+            }
+
+            // 確率でダイアログを表示（感染中は定期的だが頻繁すぎないように）
+            float randomValue = UnityEngine.Random.Range(0f, 1f);
+            Debug.Log($"[CompanionAI] UpdateInfectionDialogue - random value: {randomValue:F2}, threshold: 0.8");
+
+            if (randomValue < 0.8f) // 80%の確率に上昇
+            {
+                Debug.Log($"[CompanionAI] Probability check passed, showing infection dialogue: {selectedType}");
+                ShowInfectionDialogue(selectedType);
+                lastInfectionDialogueTime = currentTime;
+                infectionDialogueTimers[selectedType] = currentTime;
+
+                Debug.Log($"[CompanionAI] Showing infection dialogue: {selectedType} for {gameObject.name}");
+            }
+            else
+            {
+                Debug.Log($"[CompanionAI] Probability check failed - no dialogue this time");
+            }
+        }
+
+        /// <summary>
         /// 死亡時のセリフを表示（クールダウン無視）
         /// </summary>
         private void ShowDeathDialogue()
@@ -2416,6 +2630,12 @@ namespace KowloonBreak.Characters
         /// </summary>
         private void OnDestroy()
         {
+            // 感染イベントの購読解除
+            if (companionCharacter != null && companionCharacter.Infection != null)
+            {
+                companionCharacter.Infection.OnInfectionDialogueTriggered -= HandleInfectionDialogue;
+            }
+
             // ヘルスバーのクリーンアップ
             if (UI.UIManager.Instance != null)
             {

@@ -303,7 +303,6 @@ namespace KowloonBreak.UI
             if (inputManager == null) 
             {
                 if (debugCommandExecution)
-                    Debug.LogWarning("[UIManager] HandleInput: inputManager is null");
                 return;
             }
 
@@ -317,19 +316,16 @@ namespace KowloonBreak.UI
             if (inputManager.IsMenuPressed() && IsAnyPanelOpen)
             {
                 if (debugPanelControls)
-                    Debug.Log("[UIManager] Menu button pressed - closing panels");
                 
                 // CompanionCommandパネルが開いている場合は個別に処理
                 if (IsPanelOpen("CompanionCommand"))
                 {
                     if (debugPanelControls)
-                        Debug.Log("[UIManager] Closing CompanionCommand panel with B button");
                     ClosePanel("CompanionCommand");
                 }
                 else
                 {
                     if (debugPanelControls)
-                        Debug.Log("[UIManager] Closing all panels with B button");
                     CloseAllPanels();
                 }
             }
@@ -514,13 +510,11 @@ namespace KowloonBreak.UI
 
         public void CloseAllPanels()
         {
-            Debug.Log($"[UIManager] CloseAllPanels called - {activePanels.Count} panels to close");
 
             // アクティブなパネルをすべて閉じる
             var panelNames = new List<string>(activePanels.Keys);
             foreach (var panelName in panelNames)
             {
-                Debug.Log($"[UIManager] Closing panel: {panelName}");
                 ClosePanel(panelName);
             }
 
@@ -543,7 +537,6 @@ namespace KowloonBreak.UI
                 if (panel != null && panel.activeInHierarchy)
                 {
                     panel.SetActive(false);
-                    Debug.Log($"[UIManager] Force disabled panel: {panel.name}");
                 }
             }
 
@@ -556,7 +549,6 @@ namespace KowloonBreak.UI
                 gameManager.ResumeGame();
             }
 
-            Debug.Log("[UIManager] All panels closed successfully");
         }
 
         private GameObject GetPanelByName(string panelName)
@@ -833,7 +825,6 @@ namespace KowloonBreak.UI
             // 感染ダメージの場合は追加処理（必要に応じて）
             if (damageType == DamageType.Infection)
             {
-                Debug.Log($"Showing infection damage: {damage}");
             }
         }
 
@@ -907,8 +898,25 @@ namespace KowloonBreak.UI
         /// <returns>作成されたDialogueText GameObject</returns>
         public GameObject CreateDialogueTextForCompanion(KowloonBreak.Characters.CompanionAI companion, string dialogue)
         {
-            if (string.IsNullOrEmpty(dialogue) || dialogueTextPrefab == null || damageContainer == null)
+            Debug.Log($"[UIManager] CreateDialogueTextForCompanion called for {companion?.gameObject.name} with dialogue: '{dialogue}'");
+
+            if (string.IsNullOrEmpty(dialogue))
+            {
+                Debug.LogError("[UIManager] Dialogue is null or empty!");
                 return null;
+            }
+
+            if (dialogueTextPrefab == null)
+            {
+                Debug.LogError("[UIManager] dialogueTextPrefab is null!");
+                return null;
+            }
+
+            if (damageContainer == null)
+            {
+                Debug.LogError("[UIManager] damageContainer is null!");
+                return null;
+            }
 
             // 既存のDialogueTextがある場合は削除
             if (activeDialogueTexts.ContainsKey(companion))
@@ -921,24 +929,35 @@ namespace KowloonBreak.UI
                 activeDialogueTexts.Remove(companion);
             }
 
+            Debug.Log("[UIManager] Instantiating DialogueText prefab...");
+
             // DialogueTextオブジェクトを生成
             GameObject dialogueObj = Instantiate(dialogueTextPrefab, damageContainer);
+
+            Debug.Log($"[UIManager] DialogueText object created: {dialogueObj.name}");
 
             // DialogueTextコンポーネントを初期化（コンパニオン追従モード）
             DialogueText dialogueComponent = dialogueObj.GetComponent<DialogueText>();
             if (dialogueComponent != null)
             {
+                Debug.Log("[UIManager] Initializing DialogueText component...");
                 dialogueComponent.InitializeForCompanion(companion, dialogue, dialogueDuration);
-                
+
                 // 削除時のコールバックを設定
                 dialogueComponent.OnDialogueDestroyed += () => {
                     OnDialogueTextDestroyed(companion);
                 };
-                
+
                 // 辞書に追加
                 activeDialogueTexts[companion] = dialogueComponent;
+
+                Debug.Log("[UIManager] DialogueText successfully initialized and registered");
             }
-            
+            else
+            {
+                Debug.LogError("[UIManager] DialogueText component not found on instantiated prefab!");
+            }
+
             return dialogueObj;
         }
         
@@ -1211,10 +1230,11 @@ namespace KowloonBreak.UI
             // DialogueTextが表示されているかチェック
             UpdateDialogueTextStatus();
 
-            // コンパニオンが近くにいて、かつCompanionCommandパネルが開いていなく、かつDialogueTextが表示されていない場合のみ表示
-            bool shouldShowPrompt = currentNearbyCompanion != null && 
-                                   !IsPanelOpen("CompanionCommand") && 
-                                   !hasActiveDialogueForNearbyCompanion;
+            // コンパニオンが近くにいて、かつCompanionCommandパネルが開いていなく、かつDialogueTextが表示されていない、かつInfectedInteractionUIが表示されていない場合のみ表示
+            bool shouldShowPrompt = currentNearbyCompanion != null &&
+                                   !IsPanelOpen("CompanionCommand") &&
+                                   !hasActiveDialogueForNearbyCompanion &&
+                                   !IsInfectedInteractionUIActive();
             
             if (shouldShowPrompt)
             {
@@ -2585,6 +2605,12 @@ namespace KowloonBreak.UI
         {
             if (infectedInteractionUI != null)
             {
+                // 感染インタラクションUI表示時は通常のインタラクトプロンプトを非表示
+                if (interactionPrompt != null)
+                {
+                    interactionPrompt.SetActive(false);
+                }
+
                 infectedInteractionUI.ShowInteractionUI(infectedCharacter);
             }
             else
@@ -2601,6 +2627,9 @@ namespace KowloonBreak.UI
             if (infectedInteractionUI != null)
             {
                 infectedInteractionUI.HideUI();
+
+                // 感染インタラクションUI非表示時はインタラクトプロンプトの状態を再評価
+                // Update()で自動的に更新されるので、ここでは特別な処理は不要
             }
         }
 
