@@ -194,6 +194,16 @@ namespace KowloonBreak.Core
         AfterVaccine,      // ワクチン治療後
         InfectionSpread,   // 感染拡大への懸念
         LastWords,         // 最後の言葉（重篤時）
-        RecoveryHope       // 回復への希望
+        RecoveryHope,      // 回復への希望
+
+        // ボタンフォーカス時のセリフ
+        VaccineFocused,    // ワクチンボタンにフォーカス時
+        CarryFocused,      // 運搬ボタンにフォーカス時
+        AmputateFocused,   // 切断ボタンにフォーカス時
+
+        // ボタン決定時のセリフ
+        VaccineSelected,   // ワクチン選択時
+        CarrySelected,     // 運搬選択時
+        AmputateSelected   // 切断選択時
     }
 }

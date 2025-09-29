@@ -27,6 +27,11 @@ namespace KowloonBreak.UI
         private CompanionCharacter currentInfectedCharacter;
         private bool isUIActive = false;
 
+        // フォーカス管理用
+        private bool vaccineFocused = false;
+        private bool carryFocused = false;
+        private bool amputateFocused = false;
+
         public event Action<CompanionCharacter, InfectionTreatmentType> OnTreatmentSelected;
         public event Action<CompanionCharacter> OnCarrySelected;
 
@@ -61,22 +66,97 @@ namespace KowloonBreak.UI
             if (vaccineButton != null)
             {
                 vaccineButton.onClick.AddListener(() => SelectTreatment(InfectionTreatmentType.Vaccine));
+                SetupButtonFocusEvents(vaccineButton, InfectionDialogueType.VaccineFocused);
             }
 
             if (amputateButton != null)
             {
                 amputateButton.onClick.AddListener(() => SelectTreatment(InfectionTreatmentType.Amputation));
+                SetupButtonFocusEvents(amputateButton, InfectionDialogueType.AmputateFocused);
             }
 
             if (carryButton != null)
             {
                 carryButton.onClick.AddListener(SelectCarry);
+                SetupButtonFocusEvents(carryButton, InfectionDialogueType.CarryFocused);
             }
 
             if (cancelButton != null)
             {
                 cancelButton.onClick.AddListener(HideUI);
             }
+        }
+
+        private void SetupButtonFocusEvents(Button button, InfectionDialogueType focusDialogueType)
+        {
+            var eventTrigger = button.gameObject.GetComponent<EventTrigger>();
+            if (eventTrigger == null)
+                eventTrigger = button.gameObject.AddComponent<EventTrigger>();
+
+            // フォーカス取得時
+            var pointerEnter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            pointerEnter.callback.AddListener((data) => OnButtonFocused(focusDialogueType));
+            eventTrigger.triggers.Add(pointerEnter);
+
+            // Select時（キーボード操作）
+            var select = new EventTrigger.Entry { eventID = EventTriggerType.Select };
+            select.callback.AddListener((data) => OnButtonFocused(focusDialogueType));
+            eventTrigger.triggers.Add(select);
+        }
+
+        private void OnButtonFocused(InfectionDialogueType focusDialogueType)
+        {
+            // 各ボタンのフォーカス状態をチェック
+            bool shouldTrigger = false;
+
+            switch (focusDialogueType)
+            {
+                case InfectionDialogueType.VaccineFocused:
+                    if (!vaccineFocused)
+                    {
+                        vaccineFocused = true;
+                        shouldTrigger = true;
+                    }
+                    break;
+                case InfectionDialogueType.CarryFocused:
+                    if (!carryFocused)
+                    {
+                        carryFocused = true;
+                        shouldTrigger = true;
+                    }
+                    break;
+                case InfectionDialogueType.AmputateFocused:
+                    if (!amputateFocused)
+                    {
+                        amputateFocused = true;
+                        shouldTrigger = true;
+                    }
+                    break;
+            }
+
+            if (shouldTrigger)
+            {
+                TriggerFocusDialogue(focusDialogueType);
+            }
+        }
+
+        private void TriggerFocusDialogue(InfectionDialogueType dialogueType)
+        {
+            if (currentInfectedCharacter != null)
+            {
+                var companionAI = currentInfectedCharacter.GetComponent<CompanionAI>();
+                if (companionAI != null)
+                {
+                    companionAI.ShowInfectionDialogue(dialogueType);
+                }
+            }
+        }
+
+        private void ResetFocusFlags()
+        {
+            vaccineFocused = false;
+            carryFocused = false;
+            amputateFocused = false;
         }
 
         public void ShowInteractionUI(CompanionCharacter infectedCharacter)
@@ -88,6 +168,10 @@ namespace KowloonBreak.UI
             }
 
             currentInfectedCharacter = infectedCharacter;
+
+            // フォーカスフラグをリセット
+            ResetFocusFlags();
+
             UpdateUI();
             interactionPanel.SetActive(true);
             isUIActive = true;
@@ -192,6 +276,19 @@ namespace KowloonBreak.UI
         {
             if (currentInfectedCharacter == null) return;
 
+            // 決定時のダイアログを表示
+            var companionAI = currentInfectedCharacter.GetComponent<CompanionAI>();
+            if (companionAI != null)
+            {
+                InfectionDialogueType selectedDialogueType = treatmentType switch
+                {
+                    InfectionTreatmentType.Vaccine => InfectionDialogueType.VaccineSelected,
+                    InfectionTreatmentType.Amputation => InfectionDialogueType.AmputateSelected,
+                    _ => InfectionDialogueType.VaccineSelected
+                };
+                companionAI.ShowInfectionDialogue(selectedDialogueType);
+            }
+
             OnTreatmentSelected?.Invoke(currentInfectedCharacter, treatmentType);
             HideUI();
         }
@@ -199,6 +296,13 @@ namespace KowloonBreak.UI
         private void SelectCarry()
         {
             if (currentInfectedCharacter == null) return;
+
+            // 決定時のダイアログを表示
+            var companionAI = currentInfectedCharacter.GetComponent<CompanionAI>();
+            if (companionAI != null)
+            {
+                companionAI.ShowInfectionDialogue(InfectionDialogueType.CarrySelected);
+            }
 
             OnCarrySelected?.Invoke(currentInfectedCharacter);
             HideUI();

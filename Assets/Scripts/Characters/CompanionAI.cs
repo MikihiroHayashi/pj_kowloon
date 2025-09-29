@@ -2431,6 +2431,20 @@ namespace KowloonBreak.Characters
             ShowInfectionDialogue(InfectionDialogueType.InfectionPain);
         }
 
+        [ContextMenu("Test Button Focus Dialogues")]
+        public void TestButtonFocusDialogues()
+        {
+            // フォーカス時のテストダイアログ
+            ShowInfectionDialogue(InfectionDialogueType.VaccineFocused);
+        }
+
+        [ContextMenu("Test Button Selection Dialogues")]
+        public void TestButtonSelectionDialogues()
+        {
+            // 決定時のテストダイアログ
+            ShowInfectionDialogue(InfectionDialogueType.VaccineSelected);
+        }
+
         /// <summary>
         /// テスト用：通常のダイアログを表示
         /// </summary>
