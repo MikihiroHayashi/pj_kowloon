@@ -24,6 +24,11 @@ namespace KowloonBreak.Managers
         [SerializeField] private ItemData ironPipeItem;
         [SerializeField] private ItemData scrapItem;
 
+        [Header("Consumable Items (ScriptableObject Assets)")]
+        [SerializeField] private ItemData vaccineItem;
+        [SerializeField] private ItemData cannedFoodItem;
+        [SerializeField] private ItemData bandageItem;
+
         [Header("Initial Items")]
         [SerializeField] private InitialItemData[] initialItems;
 
@@ -335,55 +340,96 @@ namespace KowloonBreak.Managers
         private void CreateDefaultItems()
         {
             var itemList = new List<ItemData>();
-            
-            // ScriptableObjectアセットから読み込み
+
+            // ScriptableObjectアセットから読み込み（基本アイテム）
             if (pickaxeItem != null) itemList.Add(pickaxeItem);
             if (ironPipeItem != null) itemList.Add(ironPipeItem);
             if (scrapItem != null) itemList.Add(scrapItem);
-            
+
+            // ScriptableObjectアセットから読み込み（消耗品アイテム）
+            if (vaccineItem != null) itemList.Add(vaccineItem);
+            if (cannedFoodItem != null) itemList.Add(cannedFoodItem);
+            if (bandageItem != null) itemList.Add(bandageItem);
+
             // 追加のアイテムがある場合
             if (availableItems != null && availableItems.Length > 0)
             {
                 itemList.AddRange(availableItems);
             }
-            
+
             // フォールバック：アセットが設定されていない場合はランタイムで作成
             if (itemList.Count == 0)
             {
                 Debug.LogWarning("ScriptableObject assets not assigned. Creating default items at runtime.");
-                
-                var pickaxe = ScriptableObject.CreateInstance<ItemData>();
-                pickaxe.itemName = "つるはし";
-                pickaxe.itemType = ItemType.Tool;
-                pickaxe.description = "鉄塊を破壊するための道具";
-                pickaxe.toolType = ToolType.Pickaxe;
-                pickaxe.durability = 100;
-                pickaxe.attackDamage = 2f;
-                pickaxe.attackRange = 1.5f;
-                pickaxe.maxStackSize = 1;
-
-                var ironPipe = ScriptableObject.CreateInstance<ItemData>();
-                ironPipe.itemName = "鉄パイプ";
-                ironPipe.itemType = ItemType.Tool;
-                ironPipe.description = "汎用的な武器として使用可能";
-                ironPipe.toolType = ToolType.IronPipe;
-                ironPipe.durability = 80;
-                ironPipe.attackDamage = 1.5f;
-                ironPipe.attackRange = 1.2f;
-                ironPipe.maxStackSize = 1;
-
-                var scrap = ScriptableObject.CreateInstance<ItemData>();
-                scrap.itemName = "ガラクタ";
-                scrap.itemType = ItemType.Material;
-                scrap.description = "鉄塊から採取された金属片";
-                scrap.materialType = MaterialType.Scrap;
-                scrap.value = 1f;
-                scrap.maxStackSize = 99;
-
-                itemList.AddRange(new ItemData[] { pickaxe, ironPipe, scrap });
+                CreateRuntimeFallbackItems(itemList);
             }
-            
+
             availableItems = itemList.ToArray();
+        }
+
+        private void CreateRuntimeFallbackItems(List<ItemData> itemList)
+        {
+            // 基本ツール
+            var pickaxe = ScriptableObject.CreateInstance<ItemData>();
+            pickaxe.itemName = "つるはし";
+            pickaxe.itemType = ItemType.Tool;
+            pickaxe.description = "鉄塊を破壊するための道具";
+            pickaxe.toolType = ToolType.Pickaxe;
+            pickaxe.durability = 100;
+            pickaxe.attackDamage = 2f;
+            pickaxe.attackRange = 1.5f;
+            pickaxe.maxStackSize = 1;
+
+            var ironPipe = ScriptableObject.CreateInstance<ItemData>();
+            ironPipe.itemName = "鉄パイプ";
+            ironPipe.itemType = ItemType.Tool;
+            ironPipe.description = "汎用的な武器として使用可能";
+            ironPipe.toolType = ToolType.IronPipe;
+            ironPipe.durability = 80;
+            ironPipe.attackDamage = 1.5f;
+            ironPipe.attackRange = 1.2f;
+            ironPipe.maxStackSize = 1;
+
+            var scrap = ScriptableObject.CreateInstance<ItemData>();
+            scrap.itemName = "ガラクタ";
+            scrap.itemType = ItemType.Material;
+            scrap.description = "鉄塊から採取された金属片";
+            scrap.materialType = MaterialType.Scrap;
+            scrap.value = 1f;
+            scrap.maxStackSize = 99;
+
+            // 回復アイテム
+            var vaccine = ScriptableObject.CreateInstance<ItemData>();
+            vaccine.itemName = "ワクチン";
+            vaccine.description = "感染を完全に治療する薬剤";
+            vaccine.itemType = ItemType.Consumable;
+            vaccine.maxStackSize = 5;
+            vaccine.consumableEffect = new ConsumableEffect();
+            vaccine.consumableEffect.effectType = ConsumableType.InfectionCure;
+            vaccine.consumableEffect.infectionTreatment = 100f;
+            vaccine.consumableEffect.useMessage = "ワクチンを使用しました。感染が完全に治癒されました。";
+
+            var cannedFood = ScriptableObject.CreateInstance<ItemData>();
+            cannedFood.itemName = "缶詰";
+            cannedFood.description = "栄養豊富な保存食品";
+            cannedFood.itemType = ItemType.Consumable;
+            cannedFood.maxStackSize = 10;
+            cannedFood.consumableEffect = new ConsumableEffect();
+            cannedFood.consumableEffect.effectType = ConsumableType.HealthRestore;
+            cannedFood.consumableEffect.healthRestore = 50f;
+            cannedFood.consumableEffect.useMessage = "缶詰を食べました。体力が回復しました。";
+
+            var bandage = ScriptableObject.CreateInstance<ItemData>();
+            bandage.itemName = "包帯";
+            bandage.description = "応急処置用の医療用品";
+            bandage.itemType = ItemType.Consumable;
+            bandage.maxStackSize = 20;
+            bandage.consumableEffect = new ConsumableEffect();
+            bandage.consumableEffect.effectType = ConsumableType.HealthRestore;
+            bandage.consumableEffect.healthRestore = 25f;
+            bandage.consumableEffect.useMessage = "包帯を使用しました。傷が手当てされました。";
+
+            itemList.AddRange(new ItemData[] { pickaxe, ironPipe, scrap, vaccine, cannedFood, bandage });
         }
 
         private void AddInitialItems()
@@ -393,6 +439,11 @@ namespace KowloonBreak.Managers
                 // デフォルトの初期アイテム
                 AddItem("つるはし", 1);
                 AddItem("鉄パイプ", 1);
+
+                // テスト用の回復アイテム
+                AddItem("ワクチン", 3);
+                AddItem("缶詰", 5);
+                AddItem("包帯", 10);
             }
             else
             {
@@ -423,7 +474,7 @@ namespace KowloonBreak.Managers
         {
             if (itemData == null || quantity <= 0) return false;
 
-            InventorySlot[] targetInventory = itemData.IsTool() ? toolInventory : materialInventory;
+            InventorySlot[] targetInventory = GetTargetInventory(itemData);
             int remainingQuantity = quantity;
 
             // まず既存のスロットにスタック可能かチェック
@@ -465,7 +516,7 @@ namespace KowloonBreak.Managers
         {
             if (itemData == null || quantity <= 0) return false;
 
-            InventorySlot[] targetInventory = itemData.IsTool() ? toolInventory : materialInventory;
+            InventorySlot[] targetInventory = GetTargetInventory(itemData);
             int remainingQuantity = quantity;
 
             // 後ろから削除していく
@@ -502,7 +553,7 @@ namespace KowloonBreak.Managers
         {
             if (itemData == null) return 0;
 
-            InventorySlot[] targetInventory = itemData.IsTool() ? toolInventory : materialInventory;
+            InventorySlot[] targetInventory = GetTargetInventory(itemData);
             int totalCount = 0;
 
             for (int i = 0; i < targetInventory.Length; i++)
@@ -565,18 +616,76 @@ namespace KowloonBreak.Managers
         public int GetEmptySlotCount()
         {
             int emptyCount = 0;
-            
+
             foreach (var slot in toolInventory)
             {
                 if (slot.IsEmpty) emptyCount++;
             }
-            
+
             foreach (var slot in materialInventory)
             {
                 if (slot.IsEmpty) emptyCount++;
             }
-            
+
             return emptyCount;
+        }
+
+        private InventorySlot[] GetTargetInventory(ItemData itemData)
+        {
+            // ツールは専用のツールインベントリに
+            if (itemData.IsTool())
+            {
+                return toolInventory;
+            }
+            // 消耗品とマテリアルは両方とも共通のマテリアルインベントリに
+            else
+            {
+                return materialInventory;
+            }
+        }
+
+        public bool UseConsumableItem(ItemData itemData)
+        {
+            if (itemData == null || !itemData.IsConsumable())
+            {
+                return false;
+            }
+
+            // アイテムを1個持っているかチェック
+            if (!HasItem(itemData, 1))
+            {
+                Debug.LogWarning($"[EnhancedResourceManager] {itemData.itemName}を持っていません");
+                return false;
+            }
+
+            // ConsumableManagerを使用してアイテムを使用
+            var consumableManager = ConsumableManager.Instance;
+            if (consumableManager == null)
+            {
+                Debug.LogWarning("[EnhancedResourceManager] ConsumableManagerが見つかりません");
+                return false;
+            }
+
+            bool used = consumableManager.UseConsumableItem(itemData);
+            if (used)
+            {
+                // アイテムを消費
+                RemoveItem(itemData, 1);
+                Debug.Log($"[EnhancedResourceManager] {itemData.itemName}を使用しました");
+            }
+
+            return used;
+        }
+
+        public bool UseConsumableItemFromSlot(int slotIndex, bool isToolSlot = false)
+        {
+            InventorySlot slot = isToolSlot ? GetToolSlot(slotIndex) : GetMaterialSlot(slotIndex);
+            if (slot == null || slot.IsEmpty)
+            {
+                return false;
+            }
+
+            return slot.UseConsumable();
         }
 
         #endregion

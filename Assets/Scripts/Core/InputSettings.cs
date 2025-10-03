@@ -282,7 +282,22 @@ namespace KowloonBreak.Core
             alternativeKey = KeyCode.Return,
             controllerButton = KeyCode.Joystick1Button3 // Xbox: Y (alternative to interaction)
         };
-        
+
+        [Header("Inventory Actions")]
+        public InputBinding useItemInput = new InputBinding
+        {
+            keyboardKey = KeyCode.Return, // Enter
+            alternativeKey = KeyCode.Space, // Space
+            controllerButton = KeyCode.Joystick1Button0 // Xbox: A
+        };
+
+        public InputBinding discardItemInput = new InputBinding
+        {
+            keyboardKey = KeyCode.Delete,
+            alternativeKey = KeyCode.Backspace,
+            controllerButton = KeyCode.Joystick1Button3 // Xbox: Y
+        };
+
         [Header("Sensitivity")]
         [Range(0.1f, 3.0f)]
         public float mouseSensitivity = 1.0f;

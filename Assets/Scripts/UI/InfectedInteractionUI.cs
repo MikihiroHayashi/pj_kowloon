@@ -27,10 +27,7 @@ namespace KowloonBreak.UI
         private CompanionCharacter currentInfectedCharacter;
         private bool isUIActive = false;
 
-        // フォーカス管理用
-        private bool vaccineFocused = false;
-        private bool carryFocused = false;
-        private bool amputateFocused = false;
+        // フォーカス管理は不要 - 毎回セリフを再生
 
         public event Action<CompanionCharacter, InfectionTreatmentType> OnTreatmentSelected;
         public event Action<CompanionCharacter> OnCarrySelected;
@@ -102,42 +99,27 @@ namespace KowloonBreak.UI
             var select = new EventTrigger.Entry { eventID = EventTriggerType.Select };
             select.callback.AddListener((data) => OnButtonFocused(focusDialogueType));
             eventTrigger.triggers.Add(select);
+
+            // フォーカス喪失時（必要に応じて追加の処理）
+            var pointerExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            pointerExit.callback.AddListener((data) => OnButtonFocusLost());
+            eventTrigger.triggers.Add(pointerExit);
+
+            var deselect = new EventTrigger.Entry { eventID = EventTriggerType.Deselect };
+            deselect.callback.AddListener((data) => OnButtonFocusLost());
+            eventTrigger.triggers.Add(deselect);
         }
 
         private void OnButtonFocused(InfectionDialogueType focusDialogueType)
         {
-            // 各ボタンのフォーカス状態をチェック
-            bool shouldTrigger = false;
+            // フォーカスするたびに常にセリフを再生
+            TriggerFocusDialogue(focusDialogueType);
+        }
 
-            switch (focusDialogueType)
-            {
-                case InfectionDialogueType.VaccineFocused:
-                    if (!vaccineFocused)
-                    {
-                        vaccineFocused = true;
-                        shouldTrigger = true;
-                    }
-                    break;
-                case InfectionDialogueType.CarryFocused:
-                    if (!carryFocused)
-                    {
-                        carryFocused = true;
-                        shouldTrigger = true;
-                    }
-                    break;
-                case InfectionDialogueType.AmputateFocused:
-                    if (!amputateFocused)
-                    {
-                        amputateFocused = true;
-                        shouldTrigger = true;
-                    }
-                    break;
-            }
-
-            if (shouldTrigger)
-            {
-                TriggerFocusDialogue(focusDialogueType);
-            }
+        private void OnButtonFocusLost()
+        {
+            // フォーカスが外れた時の処理（必要に応じて拡張）
+            // 現在は特に何もしないが、将来的に追加の処理が必要になった場合用
         }
 
         private void TriggerFocusDialogue(InfectionDialogueType dialogueType)
@@ -152,12 +134,6 @@ namespace KowloonBreak.UI
             }
         }
 
-        private void ResetFocusFlags()
-        {
-            vaccineFocused = false;
-            carryFocused = false;
-            amputateFocused = false;
-        }
 
         public void ShowInteractionUI(CompanionCharacter infectedCharacter)
         {
@@ -168,9 +144,6 @@ namespace KowloonBreak.UI
             }
 
             currentInfectedCharacter = infectedCharacter;
-
-            // フォーカスフラグをリセット
-            ResetFocusFlags();
 
             UpdateUI();
             interactionPanel.SetActive(true);

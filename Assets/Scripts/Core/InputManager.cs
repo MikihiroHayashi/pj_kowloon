@@ -18,7 +18,14 @@ namespace KowloonBreak.Core
         private float lastInputTime;
         private Dictionary<string, bool> buttonStates = new Dictionary<string, bool>();
         private Dictionary<string, bool> previousButtonStates = new Dictionary<string, bool>();
-        
+
+        // UI状態管理（UIContextManagerと連携）
+        private UIContext currentUIContext = UIContext.Gameplay;
+
+        // 後方互換性のため残す（非推奨）
+        [Obsolete("Use UIContextManager instead")]
+        private bool isInventoryOpen = false;
+
         // イベント
         public event Action<InputDevice> OnDeviceChanged;
         
@@ -64,14 +71,14 @@ namespace KowloonBreak.Core
         
         private void InitializeButtonStates()
         {
-            string[] actions = { "interaction", "useTool", "run", "crouch", "dodge", "menu", "inventory", "toolPrevious", "toolNext", "companionCommand" };
-            
+            string[] actions = { "interaction", "useTool", "run", "crouch", "dodge", "menu", "inventory", "toolPrevious", "toolNext", "companionCommand", "useItem", "discardItem" };
+
             foreach (string action in actions)
             {
                 buttonStates[action] = false;
                 previousButtonStates[action] = false;
             }
-            
+
             for (int i = 0; i < 8; i++)
             {
                 string toolAction = $"tool{i}";
@@ -151,6 +158,8 @@ namespace KowloonBreak.Core
             buttonStates["toolPrevious"] = inputSettings.toolPreviousInput.IsPressed(currentDevice);
             buttonStates["toolNext"] = inputSettings.toolNextInput.IsPressed(currentDevice);
             buttonStates["companionCommand"] = inputSettings.companionCommandInput.IsPressed(currentDevice);
+            buttonStates["useItem"] = inputSettings.useItemInput.IsPressed(currentDevice);
+            buttonStates["discardItem"] = inputSettings.discardItemInput.IsPressed(currentDevice);
             
             // ツール選択
             for (int i = 0; i < 8; i++)
@@ -220,9 +229,78 @@ namespace KowloonBreak.Core
             return sign * normalizedValue;
         }
         
-        // 便利メソッド
-        public bool IsInteractionPressed() => GetButtonDown("interaction");
-        public bool IsUseToolPressed() => GetButtonDown("useTool");
+        // UI状態管理（UIContextManagerから呼ばれる）
+        public void SetUIContext(UIContext context)
+        {
+            currentUIContext = context;
+            isInventoryOpen = (context == UIContext.Inventory); // 後方互換性
+            Debug.Log($"[InputManager] UI Context changed to: {context}");
+        }
+
+        // 後方互換性のため残す（非推奨）
+        [Obsolete("Use UIContextManager.Instance.IsInContext() instead")]
+        public void SetInventoryOpen(bool open)
+        {
+            isInventoryOpen = open;
+            currentUIContext = open ? UIContext.Inventory : UIContext.Gameplay;
+            Debug.Log($"[InputManager] Inventory open state: {isInventoryOpen} (Legacy method)");
+        }
+
+        [Obsolete("Use UIContextManager.Instance.IsInContext() instead")]
+        public bool IsInventoryOpen() => currentUIContext == UIContext.Inventory;
+
+        // 便利メソッド（UIコンテキストに応じてブロック）
+        public bool IsInteractionPressed()
+        {
+            bool pressed = GetButtonDown("interaction");
+            if (!pressed) return false;
+
+            // UIContextManagerで判定
+            var contextManager = UIContextManager.Instance;
+            if (contextManager != null)
+            {
+                bool allowed = contextManager.IsInteractionAllowed();
+                if (!allowed)
+                {
+                    Debug.Log($"[InputManager] Interaction blocked - Context: {currentUIContext}");
+                }
+                return allowed;
+            }
+
+            // フォールバック（後方互換性）
+            if (isInventoryOpen)
+            {
+                Debug.Log("[InputManager] Interaction blocked - Inventory is open (Legacy)");
+                return false;
+            }
+            return true;
+        }
+
+        public bool IsUseToolPressed()
+        {
+            bool pressed = GetButtonDown("useTool");
+            if (!pressed) return false;
+
+            // UIContextManagerで判定
+            var contextManager = UIContextManager.Instance;
+            if (contextManager != null)
+            {
+                bool allowed = contextManager.IsToolUseAllowed();
+                if (!allowed)
+                {
+                    Debug.Log($"[InputManager] Tool use blocked - Context: {currentUIContext}");
+                }
+                return allowed;
+            }
+
+            // フォールバック（後方互換性）
+            if (isInventoryOpen)
+            {
+                Debug.Log("[InputManager] Tool use blocked - Inventory is open (Legacy)");
+                return false;
+            }
+            return true;
+        }
         public bool IsRunPressed() => GetButton("run");
         public bool IsRunDown() => GetButtonDown("run");
         public bool IsRunUp() => GetButtonUp("run");
@@ -232,6 +310,8 @@ namespace KowloonBreak.Core
         public bool IsDodgePressed() => GetButtonDown("dodge");
         public bool IsMenuPressed() => GetButtonDown("menu");
         public bool IsInventoryPressed() => GetButtonDown("inventory");
+        public bool IsUseItemPressed() => GetButtonDown("useItem");
+        public bool IsDiscardItemPressed() => GetButtonDown("discardItem");
 
         /// <summary>
         /// キャンセル入力（ESCキーまたはダッジロールボタン）を検出
@@ -243,12 +323,42 @@ namespace KowloonBreak.Core
             return inputSettings != null && inputSettings.companionCommandInput.IsDown(currentDevice);
         }
         
-        // Tool switching methods
-        public bool IsToolPreviousPressed() => GetButtonDown("toolPrevious");
-        public bool IsToolNextPressed() => GetButtonDown("toolNext");
-        
+        // Tool switching methods（UIコンテキストに応じてブロック）
+        public bool IsToolPreviousPressed()
+        {
+            if (!GetButtonDown("toolPrevious")) return false;
+
+            var contextManager = UIContextManager.Instance;
+            if (contextManager != null)
+            {
+                return contextManager.IsToolSwitchAllowed();
+            }
+            return !isInventoryOpen; // フォールバック
+        }
+
+        public bool IsToolNextPressed()
+        {
+            if (!GetButtonDown("toolNext")) return false;
+
+            var contextManager = UIContextManager.Instance;
+            if (contextManager != null)
+            {
+                return contextManager.IsToolSwitchAllowed();
+            }
+            return !isInventoryOpen; // フォールバック
+        }
+
         public int GetToolSelectionInput()
         {
+            var contextManager = UIContextManager.Instance;
+            if (contextManager != null && !contextManager.IsToolSwitchAllowed())
+            {
+                return -1;
+            }
+
+            // フォールバック
+            if (isInventoryOpen) return -1;
+
             for (int i = 0; i < 8; i++)
             {
                 if (GetButtonDown($"tool{i}"))

@@ -128,5 +128,38 @@ namespace KowloonBreak.Core
         {
             return new InventorySlot(itemData, quantity, durability);
         }
+
+        public bool UseConsumable()
+        {
+            if (itemData == null || !itemData.IsConsumable() || quantity <= 0)
+            {
+                return false;
+            }
+
+            // ConsumableManagerを通じて使用
+            var consumableManager = KowloonBreak.Managers.ConsumableManager.Instance;
+            if (consumableManager == null)
+            {
+                Debug.LogWarning("[InventorySlot] ConsumableManagerが見つかりません");
+                return false;
+            }
+
+            bool canUse = consumableManager.CanUseConsumableItem(itemData);
+            if (!canUse)
+            {
+                Debug.LogWarning($"[InventorySlot] {itemData.itemName}は現在使用できません");
+                return false;
+            }
+
+            bool used = consumableManager.UseConsumableItem(itemData);
+            if (used)
+            {
+                // アイテムを1個消費
+                RemoveItem(1);
+                Debug.Log($"[InventorySlot] {itemData.itemName}を使用しました");
+            }
+
+            return used;
+        }
     }
 }

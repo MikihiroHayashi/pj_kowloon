@@ -10,7 +10,7 @@ namespace KowloonBreak.Debugging
         private void Start()
         {
             playerStats = FindObjectOfType<PlayerStats>();
-            Debug.Log($"[HealthBarDebugger] PlayerStats found: {playerStats != null}");
+            UnityEngine.Debug.Log($"[HealthBarDebugger] PlayerStats found: {playerStats != null}");
         }
         
         private void Update()
@@ -20,7 +20,7 @@ namespace KowloonBreak.Debugging
             {
                 if (playerStats != null)
                 {
-                    Debug.Log("[HealthBarDebugger] Manual damage test - pressing X");
+                    UnityEngine.Debug.Log("[HealthBarDebugger] Manual damage test - pressing X");
                     playerStats.TakeDamage(10f);
                 }
             }
@@ -30,7 +30,7 @@ namespace KowloonBreak.Debugging
             {
                 if (playerStats != null)
                 {
-                    Debug.Log("[HealthBarDebugger] Manual heal test - pressing H");
+                    UnityEngine.Debug.Log("[HealthBarDebugger] Manual heal test - pressing H");
                     playerStats.Heal(10f);
                 }
             }
@@ -47,13 +47,13 @@ namespace KowloonBreak.Debugging
             
             if (GUILayout.Button("Damage -10"))
             {
-                Debug.Log("[HealthBarDebugger] Manual damage button clicked");
+                UnityEngine.Debug.Log("[HealthBarDebugger] Manual damage button clicked");
                 playerStats.TakeDamage(10f);
             }
             
             if (GUILayout.Button("Heal +10"))
             {
-                Debug.Log("[HealthBarDebugger] Manual heal button clicked");
+                UnityEngine.Debug.Log("[HealthBarDebugger] Manual heal button clicked");
                 playerStats.Heal(10f);
             }
             

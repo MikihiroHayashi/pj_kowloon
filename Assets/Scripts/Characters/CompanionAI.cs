@@ -2263,6 +2263,10 @@ namespace KowloonBreak.Characters
                     return;
             }
 
+            // 感染セリフが最近再生された場合もスキップ（フォーカスセリフとの競合を防ぐ）
+            if (Time.time - lastInfectionDialogueTime < dialogueCooldown)
+                return;
+
             string dialogue = dialogueData.GetStateDialogue(newState);
             if (!string.IsNullOrEmpty(dialogue))
             {
@@ -2292,6 +2296,10 @@ namespace KowloonBreak.Characters
                 if (Time.time - commandDialogueTimers[command] < dialogueCooldown)
                     return;
             }
+
+            // 感染セリフが最近再生された場合もスキップ（フォーカスセリフとの競合を防ぐ）
+            if (Time.time - lastInfectionDialogueTime < dialogueCooldown)
+                return;
 
             string dialogue = dialogueData.GetCommandDialogue(command);
             if (!string.IsNullOrEmpty(dialogue))
@@ -2348,6 +2356,10 @@ namespace KowloonBreak.Characters
 
             // 一般セリフのクールダウンチェック
             if (Time.time - lastGeneralDialogueTime < dialogueCooldown)
+                return;
+
+            // 感染セリフが最近再生された場合もスキップ（フォーカスセリフとの競合を防ぐ）
+            if (Time.time - lastInfectionDialogueTime < dialogueCooldown)
                 return;
 
             string dialogue = dialogueData.GetGeneralDialogue(type);
@@ -2414,10 +2426,33 @@ namespace KowloonBreak.Characters
         {
             if (!enableDialogueSystem || dialogueData == null) return;
 
+            // フォーカス系セリフは即座に表示（ユーザーインタラクション優先）
+            bool isFocusDialogue = dialogueType == InfectionDialogueType.VaccineFocused ||
+                                  dialogueType == InfectionDialogueType.CarryFocused ||
+                                  dialogueType == InfectionDialogueType.AmputateFocused;
+
+            if (!isFocusDialogue)
+            {
+                // 通常の感染セリフはクールタイムをチェック
+                if (infectionDialogueTimers.ContainsKey(dialogueType))
+                {
+                    if (Time.time - infectionDialogueTimers[dialogueType] < dialogueCooldown)
+                        return;
+                }
+
+                // 一般的な感染セリフのクールタイムもチェック
+                if (Time.time - lastInfectionDialogueTime < dialogueCooldown)
+                    return;
+            }
+
             string dialogue = dialogueData.GetInfectionDialogue(dialogueType);
             if (!string.IsNullOrEmpty(dialogue))
             {
                 ShowDialogueTextAboveHead(dialogue);
+
+                // タイマーを更新（フォーカスセリフも含めて）
+                infectionDialogueTimers[dialogueType] = Time.time;
+                lastInfectionDialogueTime = Time.time;
             }
         }
 

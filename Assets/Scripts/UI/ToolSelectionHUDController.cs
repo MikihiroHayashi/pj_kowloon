@@ -75,6 +75,12 @@ namespace KowloonBreak.UI
         
         private void HandleToolSelection()
         {
+            // インベントリが開いている場合はツール選択を無効化
+            var inputManager = KowloonBreak.Core.InputManager.Instance;
+            bool inventoryOpen = inputManager != null && inputManager.IsInventoryOpen();
+
+            if (inventoryOpen) return;
+
             // 1-8キーで道具選択
             for (int i = 0; i < displayToolCount; i++)
             {
@@ -84,7 +90,7 @@ namespace KowloonBreak.UI
                     break;
                 }
             }
-            
+
             // 矢印キーでフォーカス移動
             if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
@@ -97,7 +103,7 @@ namespace KowloonBreak.UI
                 int newIndex = (selectedToolIndex + 1) % displayToolCount;
                 SelectTool(newIndex);
             }
-            
+
             // Enterキーまたはスペースキーで選択されたツールを使用
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
             {

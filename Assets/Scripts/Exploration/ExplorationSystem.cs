@@ -331,8 +331,15 @@ namespace KowloonBreak.Exploration
             }
             else
             {
-                // Fallback to direct input
-                if (Input.GetKeyDown(KeyCode.E) && !isSearching)
+                // Fallback to direct input (but still check if inventory is open)
+                if (inputManager != null)
+                {
+                    if (!inputManager.IsInventoryOpen() && Input.GetKeyDown(KeyCode.E) && !isSearching)
+                    {
+                        TryStartSearch();
+                    }
+                }
+                else if (Input.GetKeyDown(KeyCode.E) && !isSearching)
                 {
                     TryStartSearch();
                 }

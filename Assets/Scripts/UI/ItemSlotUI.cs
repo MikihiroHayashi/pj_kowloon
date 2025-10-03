@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using KowloonBreak.Core;
 
@@ -13,22 +14,25 @@ namespace KowloonBreak.UI
         [SerializeField] private Image durabilityBar;
         [SerializeField] private Image slotBackground;
         [SerializeField] private Image selectionFrame;
+        [SerializeField] private Animator slotAnimator;
         
         [Header("Visual Settings")]
-        [SerializeField] private Color normalColor = Color.white;
-        [SerializeField] private Color selectedColor = Color.yellow;
         [SerializeField] private Color emptyColor = Color.gray;
         [SerializeField] private Sprite emptySlotSprite;
         
         private InventorySlot currentSlot;
         private bool isSelected = false;
+        private bool isFocused = false;
         private int slotIndex = -1;
         
         public InventorySlot CurrentSlot => currentSlot;
         public bool IsSelected => isSelected;
+        public bool IsFocused => isFocused;
         public int SlotIndex => slotIndex;
-        
+
         public System.Action<ItemSlotUI> OnSlotClicked;
+        public System.Action<ItemSlotUI> OnSlotHoverEnter;
+        public System.Action<ItemSlotUI> OnSlotHoverExit;
         
         private void Awake()
         {
@@ -47,18 +51,28 @@ namespace KowloonBreak.UI
             
             if (selectionFrame == null)
                 selectionFrame = transform.Find("SelectionFrame")?.GetComponent<Image>();
-            
+
+            if (slotAnimator == null)
+                slotAnimator = GetComponent<Animator>();
+
             // ボタンイベントを設定
             Button button = GetComponent<Button>();
             if (button != null)
             {
                 button.onClick.AddListener(OnClick);
             }
+
+            // フォーカスイベントを設定
+            SetupFocusEvents();
         }
         
         private void Start()
         {
             UpdateVisuals();
+
+            // 初期状態のアニメーション設定
+            UpdateFocusAnimation();
+            UpdateSelectionAnimation();
         }
         
         public void Initialize(int index)
@@ -91,8 +105,80 @@ namespace KowloonBreak.UI
         
         public void SetSelected(bool selected)
         {
+            if (isSelected == selected) return;
+
             isSelected = selected;
             UpdateSelectionVisuals();
+            UpdateSelectionAnimation();
+        }
+
+        public void SetFocused(bool focused)
+        {
+            if (isFocused == focused) return;
+
+            isFocused = focused;
+            UpdateFocusAnimation();
+        }
+
+        private void SetupFocusEvents()
+        {
+            var eventTrigger = GetComponent<EventTrigger>();
+            if (eventTrigger == null)
+                eventTrigger = gameObject.AddComponent<EventTrigger>();
+
+            // フォーカス取得イベント（マウスホバー）
+            var pointerEnter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            pointerEnter.callback.AddListener((data) =>
+            {
+                SetFocused(true);
+                OnSlotHoverEnter?.Invoke(this);
+            });
+            eventTrigger.triggers.Add(pointerEnter);
+
+            // フォーカス喪失イベント（マウス離脱）
+            var pointerExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            pointerExit.callback.AddListener((data) =>
+            {
+                SetFocused(false);
+                OnSlotHoverExit?.Invoke(this);
+            });
+            eventTrigger.triggers.Add(pointerExit);
+
+            // フォーカス取得イベント（キーボード/コントローラー選択）
+            var select = new EventTrigger.Entry { eventID = EventTriggerType.Select };
+            select.callback.AddListener((data) =>
+            {
+                Debug.Log($"[ItemSlotUI] Select event triggered on slot {slotIndex}");
+                SetFocused(true);
+                OnSlotHoverEnter?.Invoke(this);
+            });
+            eventTrigger.triggers.Add(select);
+
+            // フォーカス喪失イベント（キーボード/コントローラー選択解除）
+            var deselect = new EventTrigger.Entry { eventID = EventTriggerType.Deselect };
+            deselect.callback.AddListener((data) =>
+            {
+                Debug.Log($"[ItemSlotUI] Deselect event triggered on slot {slotIndex}");
+                SetFocused(false);
+                OnSlotHoverExit?.Invoke(this);
+            });
+            eventTrigger.triggers.Add(deselect);
+        }
+
+        private void UpdateFocusAnimation()
+        {
+            if (slotAnimator != null)
+            {
+                slotAnimator.SetBool("Focus", isFocused);
+            }
+        }
+
+        private void UpdateSelectionAnimation()
+        {
+            if (slotAnimator != null)
+            {
+                slotAnimator.SetBool("Selected", isSelected);
+            }
         }
         
         private void UpdateVisuals()
@@ -133,7 +219,7 @@ namespace KowloonBreak.UI
             if (itemIcon != null)
             {
                 itemIcon.sprite = currentSlot.ItemData.icon;
-                itemIcon.color = normalColor;
+                itemIcon.color = Color.white;
             }
             
             if (quantityText != null)
@@ -178,11 +264,8 @@ namespace KowloonBreak.UI
             {
                 selectionFrame.gameObject.SetActive(isSelected);
             }
-            
-            if (slotBackground != null)
-            {
-                slotBackground.color = isSelected ? selectedColor : normalColor;
-            }
+
+            // カラー変更はアニメーションで制御するため削除
         }
         
         private void OnClick()

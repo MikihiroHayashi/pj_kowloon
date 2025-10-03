@@ -29,6 +29,9 @@ namespace KowloonBreak.UI
         [SerializeField] private GameObject tacticalPanel;
         [SerializeField] private GameObject pauseMenu;
 
+        [Header("Panel Controllers")]
+        [SerializeField] private InventoryDialogController inventoryDialogController;
+
         [Header("HUD Elements")]
         [SerializeField] private Slider healthSlider;
         [SerializeField] private Slider staminaSlider;
@@ -306,26 +309,35 @@ namespace KowloonBreak.UI
                 return;
             }
 
-            // インベントリ開閉
+            // インベントリ開閉（Tabキー / Viewボタン）
             if (inputManager.IsInventoryPressed())
             {
                 TogglePanel("Inventory");
             }
 
             // Bボタン（メニューキー）でパネルを閉じる
+            // ※Inventoryパネルは自身のUpdate()で処理するのでスキップ
             if (inputManager.IsMenuPressed() && IsAnyPanelOpen)
             {
                 if (debugPanelControls)
-                
+                    Debug.Log("[UIManager] Menu/Cancel button pressed");
+
+                // Inventoryパネルが開いている場合はスキップ（InventoryDialogControllerで処理）
+                if (IsPanelOpen("Inventory"))
+                {
+                    // 何もしない - InventoryDialogController.Update()で処理
+                }
                 // CompanionCommandパネルが開いている場合は個別に処理
-                if (IsPanelOpen("CompanionCommand"))
+                else if (IsPanelOpen("CompanionCommand"))
                 {
                     if (debugPanelControls)
+                        Debug.Log("[UIManager] Closing CompanionCommand panel");
                     ClosePanel("CompanionCommand");
                 }
                 else
                 {
                     if (debugPanelControls)
+                        Debug.Log("[UIManager] Closing all panels");
                     CloseAllPanels();
                 }
             }
@@ -458,16 +470,34 @@ namespace KowloonBreak.UI
             GameObject panel = GetPanelByName(panelName);
             if (panel != null && !activePanels.ContainsKey(panelName))
             {
-                panel.SetActive(true);
-                activePanels[panelName] = panel;
-                OnPanelOpened?.Invoke(panelName);
-                
+                // UIContextManagerに通知
+                var contextManager = KowloonBreak.Core.UIContextManager.Instance;
+                if (contextManager != null)
+                {
+                    var uiContext = GetUIContextFromPanelName(panelName);
+                    contextManager.PushContext(uiContext);
+                }
+
+                // Inventoryパネルの場合は専用コントローラーを使用
+                if (panelName == "Inventory" && inventoryDialogController != null)
+                {
+                    inventoryDialogController.OpenInventory();
+                    activePanels[panelName] = panel;
+                    OnPanelOpened?.Invoke(panelName);
+                }
+                else
+                {
+                    panel.SetActive(true);
+                    activePanels[panelName] = panel;
+                    OnPanelOpened?.Invoke(panelName);
+                }
+
                 // CompanionCommandパネルが開かれた場合、InteractionPromptを即座に非表示
                 if (panelName == "CompanionCommand")
                 {
                     UpdateInteractionPrompt();
                 }
-                
+
                 if (gameManager != null)
                 {
                     gameManager.PauseGame();
@@ -479,16 +509,32 @@ namespace KowloonBreak.UI
         {
             if (activePanels.TryGetValue(panelName, out GameObject panel))
             {
-                panel.SetActive(false);
+                // UIContextManagerに通知
+                var contextManager = KowloonBreak.Core.UIContextManager.Instance;
+                if (contextManager != null)
+                {
+                    contextManager.PopContext();
+                }
+
+                // Inventoryパネルの場合は専用コントローラーを使用
+                if (panelName == "Inventory" && inventoryDialogController != null)
+                {
+                    inventoryDialogController.CloseInventory();
+                }
+                else
+                {
+                    panel.SetActive(false);
+                }
+
                 activePanels.Remove(panelName);
                 OnPanelClosed?.Invoke(panelName);
-                
+
                 // CompanionCommandパネルが閉じられた場合、InteractionPromptを即座に再表示チェック
                 if (panelName == "CompanionCommand")
                 {
                     UpdateInteractionPrompt();
                 }
-                
+
                 if (activePanels.Count == 0 && gameManager != null)
                 {
                     gameManager.ResumeGame();
@@ -565,6 +611,23 @@ namespace KowloonBreak.UI
                 "Tactical" => tacticalPanel,
                 "Pause" => pauseMenu,
                 _ => null
+            };
+        }
+
+        private KowloonBreak.Core.UIContext GetUIContextFromPanelName(string panelName)
+        {
+            return panelName switch
+            {
+                "Inventory" => KowloonBreak.Core.UIContext.Inventory,
+                "Companion" => KowloonBreak.Core.UIContext.Gameplay, // 仲間パネルは移動可能
+                "CompanionCommand" => KowloonBreak.Core.UIContext.CompanionCommand,
+                "BaseManagement" => KowloonBreak.Core.UIContext.BaseManagement,
+                "Map" => KowloonBreak.Core.UIContext.Map,
+                "Dialogue" => KowloonBreak.Core.UIContext.Dialogue,
+                "Crafting" => KowloonBreak.Core.UIContext.Crafting,
+                "Tactical" => KowloonBreak.Core.UIContext.TacticalPause,
+                "Pause" => KowloonBreak.Core.UIContext.PauseMenu,
+                _ => KowloonBreak.Core.UIContext.Gameplay
             };
         }
 

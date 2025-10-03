@@ -78,8 +78,11 @@ namespace KowloonBreak.Systems
 
         private void HandleCarryInput()
         {
-            // Qキーで降ろす
-            if (Input.GetKeyDown(KeyCode.Q) && isCarrying)
+            // Qキーで降ろす（インベントリ開時は無効）
+            var inputManager = KowloonBreak.Core.InputManager.Instance;
+            bool inventoryOpen = inputManager != null && inputManager.IsInventoryOpen();
+
+            if (!inventoryOpen && Input.GetKeyDown(KeyCode.Q) && isCarrying)
             {
                 StopCarrying();
             }

@@ -23,7 +23,10 @@ namespace KowloonBreak.Core
         [Header("Material Specific")]
         public MaterialType materialType;
         public float value = 1f;
-        
+
+        [Header("Consumable Specific")]
+        public ConsumableEffect consumableEffect;
+
         [Header("Drop Settings")]
         public GameObject droppedItemPrefab;  // ドロップ時に生成されるプレハブ
         public float dropWeight = 1f;        // ドロップ重み（確率計算用）
@@ -41,6 +44,11 @@ namespace KowloonBreak.Core
                 attackRange = 1.5f;
                 knockbackMultiplier = 1f;
                 value = 1f;
+
+                if (consumableEffect == null)
+                {
+                    consumableEffect = new ConsumableEffect();
+                }
             }
         }
         
@@ -57,6 +65,11 @@ namespace KowloonBreak.Core
         public bool IsMaterial()
         {
             return itemType == ItemType.Material;
+        }
+
+        public bool IsConsumable()
+        {
+            return itemType == ItemType.Consumable;
         }
     }
 }
