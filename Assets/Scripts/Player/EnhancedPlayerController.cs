@@ -347,7 +347,15 @@ namespace KowloonBreak.Player
                 return;
             }
 
-            // UI表示中はプレイヤー入力を無効化
+            // InputHandlerがアクティブかチェック（新しい入力システム）
+            var currentHandler = InputManagerInstance.GetCurrentInputHandler();
+            if (currentHandler != null && currentHandler.GetType().Name != "GameplayInputHandler")
+            {
+                // GameplayInputHandler以外が有効な場合は、プレイヤー入力を無効化
+                return;
+            }
+
+            // UI表示中はプレイヤー入力を無効化（後方互換性）
             if (UI.UIManager.Instance != null && UI.UIManager.Instance.IsPlayerInputBlocked())
             {
                 return;

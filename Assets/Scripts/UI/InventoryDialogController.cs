@@ -24,36 +24,14 @@ namespace KowloonBreak.UI
         private bool isOpen = false;
         private ItemSlotUI currentSelectedSlot = null;
         private Coroutine focusCoroutine = null;
+        private InventoryInputHandler inventoryInputHandler;
 
         public bool IsOpen => isOpen;
 
         private void Update()
         {
-            // インベントリが開いている時の入力処理
-            // [入力管理の役割分担]
-            // - InventoryDialogController: Bボタン/Escapeでの閉じる処理
-            // - UIManager: Tabキー/Viewボタンでのトグル処理
-            // - ItemDetailPopup: Enter/Space/Aでの使用、Delete/Backspace/Yでの破棄
-            if (isOpen)
-            {
-                var inputManager = KowloonBreak.Core.InputManager.Instance;
-                if (inputManager != null)
-                {
-                    // Bボタン / Escapeキーでインベントリを閉じる
-                    if (inputManager.IsCancelPressed())
-                    {
-                        // 詳細ポップアップが開いている場合は先に閉じる
-                        if (itemDetailPopup != null && itemDetailPopup.gameObject.activeSelf)
-                        {
-                            itemDetailPopup.Hide();
-                        }
-                        else
-                        {
-                            CloseInventory();
-                        }
-                    }
-                }
-            }
+            // 入力処理はInventoryInputHandlerに移譲
+            // （Update()での直接処理は廃止）
         }
         
         private void Awake()
@@ -79,22 +57,47 @@ namespace KowloonBreak.UI
             {
                 closeButton.onClick.AddListener(CloseInventory);
             }
+
+            // InventoryInputHandlerを作成してInputManagerに登録（Awake()で実行）
+            inventoryInputHandler = new InventoryInputHandler(this);
+            var inputManager = KowloonBreak.Core.InputManager.Instance;
+            if (inputManager != null)
+            {
+                inputManager.RegisterInputHandler("Inventory", inventoryInputHandler);
+                Debug.Log("[InventoryDialogController] Registered InventoryInputHandler");
+            }
+            else
+            {
+                Debug.LogWarning("[InventoryDialogController] InputManager not found in Awake, will retry in Start");
+            }
         }
         
         private void Start()
         {
             resourceManager = EnhancedResourceManager.Instance;
-            
+
             if (resourceManager != null)
             {
                 InitializeSlots();
                 UpdateAllSlots();
-                
+
                 // イベント監視
                 resourceManager.OnToolSlotChanged += OnToolSlotChanged;
                 resourceManager.OnMaterialSlotChanged += OnMaterialSlotChanged;
             }
-            
+
+            // Awake()で登録できなかった場合のリトライ
+            if (inventoryInputHandler == null)
+            {
+                inventoryInputHandler = new InventoryInputHandler(this);
+                var inputManager = KowloonBreak.Core.InputManager.Instance;
+                if (inputManager != null)
+                {
+                    inputManager.RegisterInputHandler("Inventory", inventoryInputHandler);
+                    Debug.Log("[InventoryDialogController] Registered InventoryInputHandler in Start (retry)");
+                }
+            }
+
             // 初期状態は非表示
             if (inventoryPanel != null)
             {
@@ -400,10 +403,13 @@ namespace KowloonBreak.UI
                 inventoryPanel.SetActive(true);
                 isOpen = true;
 
-                // InputManagerにインベントリが開いたことを通知（後方互換性）
+                // InputManagerの入力ハンドラーをInventoryに切り替え
                 var inputManager = KowloonBreak.Core.InputManager.Instance;
                 if (inputManager != null)
                 {
+                    inputManager.SwitchInputHandler("Inventory");
+
+                    // 後方互換性のため残す
                     #pragma warning disable CS0618 // 型またはメンバーが旧型式です
                     inputManager.SetInventoryOpen(true);
                     #pragma warning restore CS0618
@@ -508,10 +514,13 @@ namespace KowloonBreak.UI
                 inventoryPanel.SetActive(false);
                 isOpen = false;
 
-                // InputManagerにインベントリが閉じたことを通知（後方互換性）
+                // InputManagerの入力ハンドラーをGameplayに戻す
                 var inputManager = KowloonBreak.Core.InputManager.Instance;
                 if (inputManager != null)
                 {
+                    inputManager.SwitchInputHandler("Gameplay");
+
+                    // 後方互換性のため残す
                     #pragma warning disable CS0618 // 型またはメンバーが旧型式です
                     inputManager.SetInventoryOpen(false);
                     #pragma warning restore CS0618

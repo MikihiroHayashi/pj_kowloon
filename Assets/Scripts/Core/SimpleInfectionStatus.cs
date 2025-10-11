@@ -97,6 +97,30 @@ namespace KowloonBreak.Core
             OnInfectionChanged?.Invoke(currentInfection);
         }
 
+        /// <summary>
+        /// 感染を治療する（アイテムなどで部分的に回復）
+        /// </summary>
+        public void TreatInfection(float amount)
+        {
+            if (amount <= 0) return;
+
+            float previousInfection = currentInfection;
+            currentInfection = Mathf.Max(0f, currentInfection - amount);
+            OnInfectionChanged?.Invoke(currentInfection);
+
+            // 感染状態だったが治療により回復した場合
+            if (isInfected && currentInfection < maxInfectionValue * 0.5f)
+            {
+                isInfected = false;
+                OnCured?.Invoke();
+                Debug.Log($"Character infection treated: {amount} points reduced. Current: {currentInfection}");
+            }
+            else
+            {
+                Debug.Log($"Infection treated: {amount} points reduced. Current: {currentInfection}");
+            }
+        }
+
         public bool CanPerformAction(string actionType)
         {
             switch (actionType.ToLower())

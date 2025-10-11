@@ -303,68 +303,68 @@ namespace KowloonBreak.UI
 
         private void HandleInput()
         {
-            if (inputManager == null) 
+            if (inputManager == null)
             {
                 if (debugCommandExecution)
                 return;
             }
 
-            // インベントリ開閉（Tabキー / Viewボタン）
-            if (inputManager.IsInventoryPressed())
-            {
-                TogglePanel("Inventory");
-            }
+            // 入力処理は各InputHandlerに移譲
+            // GameplayInputHandler: インベントリ開閉、UIショートカット
+            // InventoryInputHandler: インベントリ閉じる
+            // その他のInputHandler: 各UI固有の入力処理
 
-            // Bボタン（メニューキー）でパネルを閉じる
-            // ※Inventoryパネルは自身のUpdate()で処理するのでスキップ
-            if (inputManager.IsMenuPressed() && IsAnyPanelOpen)
-            {
-                if (debugPanelControls)
-                    Debug.Log("[UIManager] Menu/Cancel button pressed");
+            // ここではInputHandlerがアクティブな時のみ処理を実行
+            var currentHandler = inputManager?.GetCurrentInputHandler();
+            if (currentHandler == null) return;
 
-                // Inventoryパネルが開いている場合はスキップ（InventoryDialogControllerで処理）
-                if (IsPanelOpen("Inventory"))
+            string handlerName = currentHandler.GetType().Name;
+
+            // GameplayInputHandler経由でのみUI操作を許可
+            if (handlerName == "GameplayInputHandler")
+            {
+                // インベントリ開閉（Tabキー / Viewボタン）
+                // ※GameplayInputHandlerで処理済みだが、念のため残す
+                if (inputManager.IsInventoryPressed())
                 {
-                    // 何もしない - InventoryDialogController.Update()で処理
+                    TogglePanel("Inventory");
                 }
-                // CompanionCommandパネルが開いている場合は個別に処理
-                else if (IsPanelOpen("CompanionCommand"))
+
+                // その他のUIショートカット (直接Input.GetKeyDownを使用)
+                if (Input.GetKeyDown(KeyCode.M))
                 {
-                    if (debugPanelControls)
-                        Debug.Log("[UIManager] Closing CompanionCommand panel");
-                    ClosePanel("CompanionCommand");
+                    TogglePanel("Map");
                 }
-                else
+
+                if (Input.GetKeyDown(KeyCode.C))
                 {
-                    if (debugPanelControls)
-                        Debug.Log("[UIManager] Closing all panels");
-                    CloseAllPanels();
+                    TogglePanel("Companion");
+                }
+
+                if (Input.GetKeyDown(KeyCode.B))
+                {
+                    TogglePanel("BaseManagement");
+                }
+
+                // Companion command input
+                if (inputManager.IsCompanionCommandPressed())
+                {
+                    HandleCompanionCommandInput();
+                }
+
+                // メニューキーでパネルを閉じる（Inventory以外）
+                if (inputManager.IsMenuPressed() && IsAnyPanelOpen)
+                {
+                    if (!IsPanelOpen("Inventory"))
+                    {
+                        if (debugPanelControls)
+                            Debug.Log("[UIManager] Closing panels via menu key");
+                        CloseAllPanels();
+                    }
                 }
             }
 
-            // その他のUIショートカット (直接Input.GetKeyDownを使用)
-            if (Input.GetKeyDown(KeyCode.M))
-            {
-                TogglePanel("Map");
-            }
-
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                TogglePanel("Companion");
-            }
-
-            if (Input.GetKeyDown(KeyCode.B))
-            {
-                TogglePanel("BaseManagement");
-            }
-            
-            // Companion command input
-            if (inputManager.IsCompanionCommandPressed())
-            {
-                HandleCompanionCommandInput();
-            }
-
-            // キャンセル入力でアクティブなダイアログを閉じる
+            // キャンセル入力でアクティブなダイアログを閉じる（全コンテキストで有効）
             HandleDialogCancelInput(inputManager);
         }
 

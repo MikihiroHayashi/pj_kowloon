@@ -7,13 +7,13 @@ namespace KowloonBreak.Core
     public class InputManager : MonoBehaviour
     {
         public static InputManager Instance { get; private set; }
-        
+
         [Header("Settings")]
         [SerializeField] private InputSettings inputSettings;
-        
+
         [Header("Debug")]
         [SerializeField] private bool showDebugInfo = false;
-        
+
         private InputDevice currentDevice;
         private float lastInputTime;
         private Dictionary<string, bool> buttonStates = new Dictionary<string, bool>();
@@ -25,6 +25,10 @@ namespace KowloonBreak.Core
         // 後方互換性のため残す（非推奨）
         [Obsolete("Use UIContextManager instead")]
         private bool isInventoryOpen = false;
+
+        // 入力ハンドラー管理
+        private IInputHandler currentInputHandler;
+        private Dictionary<string, IInputHandler> inputHandlers = new Dictionary<string, IInputHandler>();
 
         // イベント
         public event Action<InputDevice> OnDeviceChanged;
@@ -90,16 +94,22 @@ namespace KowloonBreak.Core
         private void Update()
         {
             if (inputSettings == null) return;
-            
+
             // デバイス自動検出
             if (inputSettings.autoDetectDevice)
             {
                 DetectActiveDevice();
             }
-            
+
             // ボタン状態の更新
             UpdateButtonStates();
-            
+
+            // 現在のInputHandlerで入力処理を実行
+            if (currentInputHandler != null && currentInputHandler.IsActive)
+            {
+                currentInputHandler.HandleInput();
+            }
+
             // デバッグ情報の表示
             if (showDebugInfo)
             {
@@ -403,11 +413,11 @@ namespace KowloonBreak.Core
         private void OnGUI()
         {
             if (!showDebugInfo) return;
-            
+
             GUILayout.BeginArea(new Rect(10, 10, 300, 400));
             GUILayout.Label($"Current Device: {currentDevice}");
             GUILayout.Label($"Movement: {GetMovementInput()}");
-            
+
             GUILayout.Label("Button States:");
             foreach (var state in buttonStates)
             {
@@ -416,8 +426,51 @@ namespace KowloonBreak.Core
                     GUILayout.Label($"  {state.Key}: {state.Value}");
                 }
             }
-            
+
             GUILayout.EndArea();
         }
+
+        // InputHandler管理メソッド
+        public void RegisterInputHandler(string contextName, IInputHandler handler)
+        {
+            if (!inputHandlers.ContainsKey(contextName))
+            {
+                inputHandlers[contextName] = handler;
+                Debug.Log($"[InputManager] Registered input handler: {contextName}");
+            }
+        }
+
+        public void UnregisterInputHandler(string contextName)
+        {
+            if (inputHandlers.ContainsKey(contextName))
+            {
+                inputHandlers.Remove(contextName);
+                Debug.Log($"[InputManager] Unregistered input handler: {contextName}");
+            }
+        }
+
+        public void SwitchInputHandler(string contextName)
+        {
+            if (inputHandlers.TryGetValue(contextName, out IInputHandler handler))
+            {
+                // 現在のハンドラーを無効化
+                if (currentInputHandler != null)
+                {
+                    currentInputHandler.Deactivate();
+                }
+
+                // 新しいハンドラーを有効化
+                currentInputHandler = handler;
+                currentInputHandler.Activate();
+
+                Debug.Log($"[InputManager] Switched to input handler: {contextName}");
+            }
+            else
+            {
+                Debug.LogWarning($"[InputManager] Input handler not found: {contextName}");
+            }
+        }
+
+        public IInputHandler GetCurrentInputHandler() => currentInputHandler;
     }
 }

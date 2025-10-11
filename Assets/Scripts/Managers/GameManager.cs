@@ -62,7 +62,29 @@ namespace KowloonBreak.Managers
 
         private void Start()
         {
+            // InputHandlerの初期化（Start()で実行してInputManagerの初期化を待つ）
+            InitializeInputHandlers();
+
             StartGame();
+        }
+
+        private void InitializeInputHandlers()
+        {
+            var inputManager = InputManager.Instance;
+            if (inputManager == null)
+            {
+                Debug.LogWarning("[GameManager] InputManager not found! Input handlers cannot be initialized.");
+                return;
+            }
+
+            // GameplayInputHandlerを作成して登録
+            var gameplayInputHandler = new GameplayInputHandler();
+            inputManager.RegisterInputHandler("Gameplay", gameplayInputHandler);
+
+            // デフォルトでGameplayInputHandlerを有効化
+            inputManager.SwitchInputHandler("Gameplay");
+
+            Debug.Log("[GameManager] Input handlers initialized");
         }
 
         private void Update()
@@ -73,20 +95,20 @@ namespace KowloonBreak.Managers
         private void InitializeGame()
         {
             Debug.Log("Initializing Kowloon Break Game...");
-            
+
             // 依存関係のある他のマネージャーを取得・初期化
             if (phaseManager == null)
                 phaseManager = FindObjectOfType<PhaseManager>();
             if (resourceManager == null)
                 resourceManager = FindObjectOfType<EnhancedResourceManager>();
-                
+
             // ゲーム状態の初期化
             gameTime = 0f;
             currentDay = 1;
-            
+
             isGameInitialized = true;
             OnGameInitialized?.Invoke();
-            
+
             Debug.Log("Game initialization completed!");
         }
 

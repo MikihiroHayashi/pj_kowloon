@@ -46807,6 +46807,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: InteractionPrompt
       objectReference: {fileID: 0}
+    - target: {fileID: 613593935696599199, guid: 919be829145939d44a71731052ffee5b,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6026728523185807774, guid: 919be829145939d44a71731052ffee5b,
         type: 3}
       propertyPath: m_AnchorMax.y
