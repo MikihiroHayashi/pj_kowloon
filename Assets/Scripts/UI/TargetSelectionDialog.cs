@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace KowloonBreak.UI
@@ -9,7 +11,7 @@ namespace KowloonBreak.UI
     /// <summary>
     /// アイテム使用時のターゲット選択ダイアログ
     /// </summary>
-    public class TargetSelectionDialog : MonoBehaviour
+    public class TargetSelectionDialog : MonoBehaviour, IFocusableUI
     {
         [Header("UI References")]
         [SerializeField] private GameObject dialogPanel;
@@ -25,8 +27,15 @@ namespace KowloonBreak.UI
 
         private List<TargetSelectionSlot> activeSlots = new List<TargetSelectionSlot>();
         private Core.InventorySlot currentItem;
+        private bool isInputEnabled = true;
+
         public event Action<object> OnTargetSelected;
         public event Action OnCancelled;
+
+        // IFocusableUI実装
+        public bool IsVisible => dialogPanel != null && dialogPanel.activeSelf;
+        public int Priority => 0; // 最高優先度
+        public string UIName => "TargetSelectionDialog";
 
         private void Awake()
         {
@@ -39,6 +48,15 @@ namespace KowloonBreak.UI
             if (dialogPanel != null)
             {
                 dialogPanel.SetActive(false);
+            }
+        }
+
+        private void Start()
+        {
+            // UIFocusManagerに登録
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.RegisterUI(this);
             }
         }
 
@@ -62,6 +80,15 @@ namespace KowloonBreak.UI
 
             // ターゲットリストを作成
             PopulateTargets();
+
+            // UIFocusManagerにプッシュ（他のUIを自動的に無効化）
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.PushUI(this);
+            }
+
+            // 最初のスロットにフォーカスを移動
+            StartCoroutine(SelectFirstSlot());
         }
 
         /// <summary>
@@ -75,6 +102,12 @@ namespace KowloonBreak.UI
             }
 
             ClearTargetSlots();
+
+            // UIFocusManagerからポップ（他のUIを自動的に有効化）
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.PopUI(this);
+            }
         }
 
         /// <summary>
@@ -236,6 +269,58 @@ namespace KowloonBreak.UI
             }
 
             ClearTargetSlots();
+
+            // UIFocusManagerから登録解除
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.UnregisterUI(this);
+            }
+        }
+
+        /// <summary>
+        /// IFocusableUI実装: 入力の有効/無効を設定
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            isInputEnabled = enabled;
+
+            // キャンセルボタンの有効/無効を制御
+            if (cancelButton != null)
+            {
+                cancelButton.interactable = enabled;
+            }
+
+            // すべてのターゲットスロットの有効/無効を制御
+            foreach (var slot in activeSlots)
+            {
+                if (slot != null)
+                {
+                    var button = slot.GetComponent<Button>();
+                    if (button != null)
+                    {
+                        button.interactable = enabled;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 最初のスロットを選択（1フレーム遅延させる）
+        /// </summary>
+        private IEnumerator SelectFirstSlot()
+        {
+            // UIが完全に構築されるまで1フレーム待つ
+            yield return null;
+
+            if (activeSlots.Count > 0 && activeSlots[0] != null)
+            {
+                EventSystem eventSystem = EventSystem.current;
+                if (eventSystem != null)
+                {
+                    GameObject firstSlot = activeSlots[0].gameObject;
+                    eventSystem.SetSelectedGameObject(firstSlot);
+                }
+            }
         }
 
         /// <summary>

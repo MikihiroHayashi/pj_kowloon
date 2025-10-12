@@ -7,7 +7,7 @@ using KowloonBreak.Managers;
 
 namespace KowloonBreak.UI
 {
-    public class InventoryDialogController : MonoBehaviour
+    public class InventoryDialogController : MonoBehaviour, IFocusableUI
     {
         [Header("UI References")]
         [SerializeField] private GameObject inventoryPanel;
@@ -25,8 +25,14 @@ namespace KowloonBreak.UI
         private ItemSlotUI currentSelectedSlot = null;
         private Coroutine focusCoroutine = null;
         private InventoryInputHandler inventoryInputHandler;
+        private bool isInputEnabled = true;
 
         public bool IsOpen => isOpen;
+
+        // IFocusableUI実装
+        public bool IsVisible => isOpen && inventoryPanel != null && inventoryPanel.activeSelf;
+        public int Priority => 4; // インベントリは中優先度
+        public string UIName => "InventoryDialog";
 
         private void Update()
         {
@@ -36,15 +42,23 @@ namespace KowloonBreak.UI
         
         private void Awake()
         {
+            Debug.Log($"[InventoryDialogController] Awake called on {gameObject.name}");
+
             // デフォルトの参照を設定
             if (inventoryPanel == null)
                 inventoryPanel = transform.Find("InventoryPanel")?.gameObject;
 
+            Debug.Log($"[InventoryDialogController] inventoryPanel found: {inventoryPanel?.name ?? "NULL"}");
+
             if (toolSlotsGrid == null)
                 toolSlotsGrid = transform.Find("InventoryPanel/ToolSlots")?.GetComponent<GridLayoutGroup>();
 
+            Debug.Log($"[InventoryDialogController] toolSlotsGrid found: {(toolSlotsGrid != null ? "Yes" : "NULL")}");
+
             if (materialSlotsGrid == null)
                 materialSlotsGrid = transform.Find("InventoryPanel/MaterialSlots")?.GetComponent<GridLayoutGroup>();
+
+            Debug.Log($"[InventoryDialogController] materialSlotsGrid found: {(materialSlotsGrid != null ? "Yes" : "NULL")}");
 
             if (closeButton == null)
                 closeButton = transform.Find("InventoryPanel/CloseButton")?.GetComponent<Button>();
@@ -58,18 +72,15 @@ namespace KowloonBreak.UI
                 closeButton.onClick.AddListener(CloseInventory);
             }
 
-            // InventoryInputHandlerを作成してInputManagerに登録（Awake()で実行）
+            // InventoryInputHandlerを作成してInputManagerに登録
             inventoryInputHandler = new InventoryInputHandler(this);
             var inputManager = KowloonBreak.Core.InputManager.Instance;
             if (inputManager != null)
             {
                 inputManager.RegisterInputHandler("Inventory", inventoryInputHandler);
-                Debug.Log("[InventoryDialogController] Registered InventoryInputHandler");
             }
-            else
-            {
-                Debug.LogWarning("[InventoryDialogController] InputManager not found in Awake, will retry in Start");
-            }
+
+            Debug.Log("[InventoryDialogController] Awake completed");
         }
         
         private void Start()
@@ -78,9 +89,6 @@ namespace KowloonBreak.UI
 
             if (resourceManager != null)
             {
-                InitializeSlots();
-                UpdateAllSlots();
-
                 // イベント監視
                 resourceManager.OnToolSlotChanged += OnToolSlotChanged;
                 resourceManager.OnMaterialSlotChanged += OnMaterialSlotChanged;
@@ -94,8 +102,13 @@ namespace KowloonBreak.UI
                 if (inputManager != null)
                 {
                     inputManager.RegisterInputHandler("Inventory", inventoryInputHandler);
-                    Debug.Log("[InventoryDialogController] Registered InventoryInputHandler in Start (retry)");
                 }
+            }
+
+            // UIFocusManagerに登録
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.RegisterUI(this);
             }
 
             // 初期状態は非表示
@@ -118,58 +131,158 @@ namespace KowloonBreak.UI
         
         private void CreateToolSlots()
         {
-            if (toolSlotsGrid == null) return;
-            
-            // 既存のスロットをクリア
-            foreach (var slot in toolSlots)
+            if (toolSlotsGrid == null)
             {
-                if (slot != null)
-                    DestroyImmediate(slot.gameObject);
+                Debug.LogWarning("[InventoryDialogController] toolSlotsGrid is null!");
+                return;
             }
+
             toolSlots.Clear();
-            
-            // 新しいスロットを作成
-            for (int i = 0; i < resourceManager.ToolSlots; i++)
+
+            // シーンに既に配置されているスロットを取得
+            ItemSlotUI[] existingSlots = toolSlotsGrid.GetComponentsInChildren<ItemSlotUI>(true);
+            Debug.Log($"[InventoryDialogController] CreateToolSlots: Found {existingSlots.Length} existing tool slots, need {resourceManager.ToolSlots} slots");
+
+            // 既存スロットがある場合は再利用
+            if (existingSlots.Length > 0)
             {
-                GameObject slotObj = CreateSlotObject(toolSlotsGrid.transform);
-                ItemSlotUI slotUI = slotObj.GetComponent<ItemSlotUI>();
-                
-                if (slotUI != null)
+                int slotsToUse = Mathf.Min(existingSlots.Length, resourceManager.ToolSlots);
+
+                for (int i = 0; i < slotsToUse; i++)
                 {
-                    slotUI.Initialize(i);
-                    slotUI.OnSlotClicked += OnToolSlotClicked;
-                    slotUI.OnSlotHoverEnter += (slot) => OnSlotHoverEnter(slot, true);
-                    slotUI.OnSlotHoverExit += OnSlotHoverExit;
-                    toolSlots.Add(slotUI);
+                    ItemSlotUI slotUI = existingSlots[i];
+                    if (slotUI != null)
+                    {
+                        // イベントの重複登録を防ぐため、まず削除
+                        slotUI.OnSlotClicked -= OnToolSlotClicked;
+                        slotUI.OnSlotHoverExit -= OnSlotHoverExit;
+
+                        slotUI.Initialize(i);
+                        slotUI.OnSlotClicked += OnToolSlotClicked;
+                        slotUI.OnSlotHoverEnter += (slot) => OnSlotHoverEnter(slot, true);
+                        slotUI.OnSlotHoverExit += OnSlotHoverExit;
+                        toolSlots.Add(slotUI);
+                        slotUI.gameObject.SetActive(true);
+                    }
+                }
+
+                // 余分なスロットは非アクティブ化
+                for (int i = slotsToUse; i < existingSlots.Length; i++)
+                {
+                    existingSlots[i].gameObject.SetActive(false);
+                }
+
+                // 足りない場合は新規作成
+                for (int i = existingSlots.Length; i < resourceManager.ToolSlots; i++)
+                {
+                    GameObject slotObj = CreateSlotObject(toolSlotsGrid.transform);
+                    ItemSlotUI slotUI = slotObj.GetComponent<ItemSlotUI>();
+
+                    if (slotUI != null)
+                    {
+                        slotUI.Initialize(i);
+                        slotUI.OnSlotClicked += OnToolSlotClicked;
+                        slotUI.OnSlotHoverEnter += (slot) => OnSlotHoverEnter(slot, true);
+                        slotUI.OnSlotHoverExit += OnSlotHoverExit;
+                        toolSlots.Add(slotUI);
+                    }
+                }
+            }
+            else
+            {
+                // 既存スロットがない場合は新規作成
+                for (int i = 0; i < resourceManager.ToolSlots; i++)
+                {
+                    GameObject slotObj = CreateSlotObject(toolSlotsGrid.transform);
+                    ItemSlotUI slotUI = slotObj.GetComponent<ItemSlotUI>();
+
+                    if (slotUI != null)
+                    {
+                        slotUI.Initialize(i);
+                        slotUI.OnSlotClicked += OnToolSlotClicked;
+                        slotUI.OnSlotHoverEnter += (slot) => OnSlotHoverEnter(slot, true);
+                        slotUI.OnSlotHoverExit += OnSlotHoverExit;
+                        toolSlots.Add(slotUI);
+                    }
                 }
             }
         }
         
         private void CreateMaterialSlots()
         {
-            if (materialSlotsGrid == null) return;
-            
-            // 既存のスロットをクリア
-            foreach (var slot in materialSlots)
+            if (materialSlotsGrid == null)
             {
-                if (slot != null)
-                    DestroyImmediate(slot.gameObject);
+                Debug.LogWarning("[InventoryDialogController] materialSlotsGrid is null!");
+                return;
             }
+
             materialSlots.Clear();
-            
-            // 新しいスロットを作成
-            for (int i = 0; i < resourceManager.MaterialSlots; i++)
+
+            // シーンに既に配置されているスロットを取得
+            ItemSlotUI[] existingSlots = materialSlotsGrid.GetComponentsInChildren<ItemSlotUI>(true);
+            Debug.Log($"[InventoryDialogController] CreateMaterialSlots: Found {existingSlots.Length} existing material slots, need {resourceManager.MaterialSlots} slots");
+
+            // 既存スロットがある場合は再利用
+            if (existingSlots.Length > 0)
             {
-                GameObject slotObj = CreateSlotObject(materialSlotsGrid.transform);
-                ItemSlotUI slotUI = slotObj.GetComponent<ItemSlotUI>();
-                
-                if (slotUI != null)
+                int slotsToUse = Mathf.Min(existingSlots.Length, resourceManager.MaterialSlots);
+
+                for (int i = 0; i < slotsToUse; i++)
                 {
-                    slotUI.Initialize(i);
-                    slotUI.OnSlotClicked += OnMaterialSlotClicked;
-                    slotUI.OnSlotHoverEnter += (slot) => OnSlotHoverEnter(slot, false);
-                    slotUI.OnSlotHoverExit += OnSlotHoverExit;
-                    materialSlots.Add(slotUI);
+                    ItemSlotUI slotUI = existingSlots[i];
+                    if (slotUI != null)
+                    {
+                        // イベントの重複登録を防ぐため、まず削除
+                        slotUI.OnSlotClicked -= OnMaterialSlotClicked;
+                        slotUI.OnSlotHoverExit -= OnSlotHoverExit;
+
+                        slotUI.Initialize(i);
+                        slotUI.OnSlotClicked += OnMaterialSlotClicked;
+                        slotUI.OnSlotHoverEnter += (slot) => OnSlotHoverEnter(slot, false);
+                        slotUI.OnSlotHoverExit += OnSlotHoverExit;
+                        materialSlots.Add(slotUI);
+                        slotUI.gameObject.SetActive(true);
+                    }
+                }
+
+                // 余分なスロットは非アクティブ化
+                for (int i = slotsToUse; i < existingSlots.Length; i++)
+                {
+                    existingSlots[i].gameObject.SetActive(false);
+                }
+
+                // 足りない場合は新規作成
+                for (int i = existingSlots.Length; i < resourceManager.MaterialSlots; i++)
+                {
+                    GameObject slotObj = CreateSlotObject(materialSlotsGrid.transform);
+                    ItemSlotUI slotUI = slotObj.GetComponent<ItemSlotUI>();
+
+                    if (slotUI != null)
+                    {
+                        slotUI.Initialize(i);
+                        slotUI.OnSlotClicked += OnMaterialSlotClicked;
+                        slotUI.OnSlotHoverEnter += (slot) => OnSlotHoverEnter(slot, false);
+                        slotUI.OnSlotHoverExit += OnSlotHoverExit;
+                        materialSlots.Add(slotUI);
+                    }
+                }
+            }
+            else
+            {
+                // 既存スロットがない場合は新規作成
+                for (int i = 0; i < resourceManager.MaterialSlots; i++)
+                {
+                    GameObject slotObj = CreateSlotObject(materialSlotsGrid.transform);
+                    ItemSlotUI slotUI = slotObj.GetComponent<ItemSlotUI>();
+
+                    if (slotUI != null)
+                    {
+                        slotUI.Initialize(i);
+                        slotUI.OnSlotClicked += OnMaterialSlotClicked;
+                        slotUI.OnSlotHoverEnter += (slot) => OnSlotHoverEnter(slot, false);
+                        slotUI.OnSlotHoverExit += OnSlotHoverExit;
+                        materialSlots.Add(slotUI);
+                    }
                 }
             }
         }
@@ -286,8 +399,6 @@ namespace KowloonBreak.UI
         
         private void OnToolSlotClicked(ItemSlotUI slotUI)
         {
-            Debug.Log($"Tool slot {slotUI.SlotIndex} clicked");
-
             SelectSlot(slotUI);
 
             if (slotUI.CurrentSlot != null && !slotUI.CurrentSlot.IsEmpty)
@@ -298,8 +409,6 @@ namespace KowloonBreak.UI
 
         private void OnMaterialSlotClicked(ItemSlotUI slotUI)
         {
-            Debug.Log($"Material slot {slotUI.SlotIndex} clicked");
-
             SelectSlot(slotUI);
 
             if (slotUI.CurrentSlot != null && !slotUI.CurrentSlot.IsEmpty)
@@ -313,10 +422,6 @@ namespace KowloonBreak.UI
             if (itemDetailPopup != null && slotUI.CurrentSlot != null && !slotUI.CurrentSlot.IsEmpty)
             {
                 itemDetailPopup.Show(slotUI.CurrentSlot, slotUI, isToolSlot);
-            }
-            else
-            {
-                Debug.LogWarning("[InventoryDialogController] Cannot show item detail popup - popup or slot is null");
             }
         }
 
@@ -349,7 +454,6 @@ namespace KowloonBreak.UI
             if (currentSelectedSlot != null)
             {
                 currentSelectedSlot.SetSelected(true);
-                Debug.Log($"[InventoryDialogController] Selected slot {currentSelectedSlot.SlotIndex}");
             }
         }
 
@@ -359,7 +463,6 @@ namespace KowloonBreak.UI
             {
                 currentSelectedSlot.SetSelected(false);
                 currentSelectedSlot = null;
-                Debug.Log("[InventoryDialogController] Cleared slot selection");
             }
         }
 
@@ -378,8 +481,6 @@ namespace KowloonBreak.UI
                 if (slot != null)
                     slot.SetFocused(false);
             }
-
-            Debug.Log("[InventoryDialogController] Cleared all slot focus");
         }
         
         public void ToggleInventory()
@@ -396,12 +497,26 @@ namespace KowloonBreak.UI
         
         public void OpenInventory()
         {
+            Debug.Log($"[InventoryDialogController] OpenInventory called. GameObject active: {gameObject.activeInHierarchy}, inventoryPanel: {inventoryPanel?.name}, inventoryPanel active: {inventoryPanel?.activeSelf}");
+
             if (inventoryPanel != null)
             {
-                Debug.Log("[InventoryDialogController] OpenInventory called");
-
                 inventoryPanel.SetActive(true);
                 isOpen = true;
+
+                Debug.Log($"[InventoryDialogController] inventoryPanel activated. toolSlots count: {toolSlots.Count}, materialSlots count: {materialSlots.Count}");
+
+                // 初回起動時にスロットが初期化されていない場合は初期化
+                if (toolSlots.Count == 0 || materialSlots.Count == 0)
+                {
+                    Debug.Log("[InventoryDialogController] Initializing slots...");
+                    InitializeSlots();
+                    Debug.Log($"[InventoryDialogController] Slots initialized. toolSlots: {toolSlots.Count}, materialSlots: {materialSlots.Count}");
+                }
+
+                // スロット情報を更新
+                Debug.Log("[InventoryDialogController] Updating all slots...");
+                UpdateAllSlots();
 
                 // InputManagerの入力ハンドラーをInventoryに切り替え
                 var inputManager = KowloonBreak.Core.InputManager.Instance;
@@ -415,20 +530,31 @@ namespace KowloonBreak.UI
                     #pragma warning restore CS0618
                 }
 
-                // UIContextManagerへの通知はUIManagerが行うのでここでは不要
-
                 // 既存のコルーチンを停止
                 if (focusCoroutine != null)
                 {
                     StopCoroutine(focusCoroutine);
                 }
 
-                // コントローラー用: 1フレーム遅延してフォーカスを設定
-                // UIがアクティブになるまで待つ必要がある
-                focusCoroutine = StartCoroutine(SetInitialFocusDelayed());
+                // UIFocusManagerにプッシュ（他のUIを自動的に無効化）
+                if (UIFocusManager.Instance != null)
+                {
+                    UIFocusManager.Instance.PushUI(this);
+                }
 
-                Debug.Log("[InventoryDialogController] Inventory opened");
+                // レイアウト更新とフォーカス設定は次フレームで
+                focusCoroutine = StartCoroutine(PostOpenInventorySetup());
             }
+        }
+
+        private System.Collections.IEnumerator PostOpenInventorySetup()
+        {
+            // 1フレーム待機してUIのレイアウトが確定するのを待つ
+            yield return null;
+
+            // フォーカスを設定
+            SetInitialFocus();
+            focusCoroutine = null;
         }
 
         private System.Collections.IEnumerator SetInitialFocusDelayed()
@@ -436,31 +562,21 @@ namespace KowloonBreak.UI
             // 1フレーム待機
             yield return null;
 
-            Debug.Log("[InventoryDialogController] SetInitialFocusDelayed executing");
             SetInitialFocus();
             focusCoroutine = null;
         }
 
         private void SetInitialFocus()
         {
-            // EventSystemの存在確認
             var eventSystem = UnityEngine.EventSystems.EventSystem.current;
-            if (eventSystem == null)
-            {
-                Debug.LogError("[InventoryDialogController] EventSystem not found! Cannot set focus.");
-                return;
-            }
-
-            Debug.Log($"[InventoryDialogController] Setting initial focus. Tool slots: {toolSlots.Count}, Material slots: {materialSlots.Count}");
+            if (eventSystem == null) return;
 
             // 最初の空でないツールスロットにフォーカス
             foreach (var slot in toolSlots)
             {
                 if (slot != null && slot.CurrentSlot != null && !slot.CurrentSlot.IsEmpty)
                 {
-                    Debug.Log($"[InventoryDialogController] Attempting to focus tool slot {slot.SlotIndex}, GameObject: {slot.gameObject.name}, Active: {slot.gameObject.activeInHierarchy}");
                     eventSystem.SetSelectedGameObject(slot.gameObject);
-                    Debug.Log($"[InventoryDialogController] EventSystem.currentSelectedGameObject: {eventSystem.currentSelectedGameObject?.name}");
                     return;
                 }
             }
@@ -470,9 +586,7 @@ namespace KowloonBreak.UI
             {
                 if (slot != null && slot.CurrentSlot != null && !slot.CurrentSlot.IsEmpty)
                 {
-                    Debug.Log($"[InventoryDialogController] Attempting to focus material slot {slot.SlotIndex}, GameObject: {slot.gameObject.name}, Active: {slot.gameObject.activeInHierarchy}");
                     eventSystem.SetSelectedGameObject(slot.gameObject);
-                    Debug.Log($"[InventoryDialogController] EventSystem.currentSelectedGameObject: {eventSystem.currentSelectedGameObject?.name}");
                     return;
                 }
             }
@@ -480,19 +594,13 @@ namespace KowloonBreak.UI
             // すべて空の場合、最初のツールスロットにフォーカス
             if (toolSlots.Count > 0 && toolSlots[0] != null)
             {
-                Debug.Log($"[InventoryDialogController] All slots empty, focusing first tool slot. GameObject: {toolSlots[0].gameObject.name}, Active: {toolSlots[0].gameObject.activeInHierarchy}");
                 eventSystem.SetSelectedGameObject(toolSlots[0].gameObject);
-                Debug.Log($"[InventoryDialogController] EventSystem.currentSelectedGameObject: {eventSystem.currentSelectedGameObject?.name}");
-            }
-            else
-            {
-                Debug.LogWarning("[InventoryDialogController] No slots available for focus!");
             }
         }
 
         public void CloseInventory()
         {
-            if (inventoryPanel != null)
+            if (inventoryPanel != null && isOpen)
             {
                 // 実行中のコルーチンを停止
                 if (focusCoroutine != null)
@@ -511,6 +619,12 @@ namespace KowloonBreak.UI
                     itemDetailPopup.Hide();
                 }
 
+                // UIFocusManagerからポップ（他のUIを自動的に有効化）
+                if (UIFocusManager.Instance != null)
+                {
+                    UIFocusManager.Instance.PopUI(this);
+                }
+
                 inventoryPanel.SetActive(false);
                 isOpen = false;
 
@@ -525,10 +639,6 @@ namespace KowloonBreak.UI
                     inputManager.SetInventoryOpen(false);
                     #pragma warning restore CS0618
                 }
-
-                // UIContextManagerへの通知はUIManagerが行うのでここでは不要
-
-                Debug.Log("[InventoryDialogController] Inventory closed");
             }
         }
         
@@ -558,6 +668,51 @@ namespace KowloonBreak.UI
             {
                 resourceManager.OnToolSlotChanged -= OnToolSlotChanged;
                 resourceManager.OnMaterialSlotChanged -= OnMaterialSlotChanged;
+            }
+
+            // UIFocusManagerから登録解除
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.UnregisterUI(this);
+            }
+        }
+
+        /// <summary>
+        /// IFocusableUI実装: 入力の有効/無効を設定
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            isInputEnabled = enabled;
+
+            // すべてのスロットボタンの有効/無効を制御
+            foreach (var slot in toolSlots)
+            {
+                if (slot != null)
+                {
+                    var button = slot.GetComponent<Button>();
+                    if (button != null)
+                    {
+                        button.interactable = enabled;
+                    }
+                }
+            }
+
+            foreach (var slot in materialSlots)
+            {
+                if (slot != null)
+                {
+                    var button = slot.GetComponent<Button>();
+                    if (button != null)
+                    {
+                        button.interactable = enabled;
+                    }
+                }
+            }
+
+            // クローズボタンの有効/無効を制御
+            if (closeButton != null)
+            {
+                closeButton.interactable = enabled;
             }
         }
     }

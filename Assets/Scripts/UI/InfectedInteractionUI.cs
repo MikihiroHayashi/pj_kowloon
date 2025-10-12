@@ -9,7 +9,7 @@ using KowloonBreak.Managers;
 
 namespace KowloonBreak.UI
 {
-    public class InfectedInteractionUI : MonoBehaviour
+    public class InfectedInteractionUI : MonoBehaviour, IFocusableUI
     {
         [Header("UI References")]
         [SerializeField] private GameObject interactionPanel;
@@ -26,11 +26,17 @@ namespace KowloonBreak.UI
 
         private CompanionCharacter currentInfectedCharacter;
         private bool isUIActive = false;
+        private bool isInputEnabled = true;
 
         // フォーカス管理は不要 - 毎回セリフを再生
 
         public event Action<CompanionCharacter, InfectionTreatmentType> OnTreatmentSelected;
         public event Action<CompanionCharacter> OnCarrySelected;
+
+        // IFocusableUI実装
+        public bool IsVisible => isUIActive && interactionPanel != null && interactionPanel.activeSelf;
+        public int Priority => 2; // 感染イベントは高優先度
+        public string UIName => "InfectedInteractionUI";
 
         private void Awake()
         {
@@ -41,6 +47,12 @@ namespace KowloonBreak.UI
         {
             SetupButtonListeners();
             HideUI();
+
+            // UIFocusManagerに登録
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.RegisterUI(this);
+            }
         }
 
         private void InitializeUI()
@@ -156,6 +168,12 @@ namespace KowloonBreak.UI
             // 感染者専用カメラに切り替え
             SwitchToInfectedCamera();
 
+            // UIFocusManagerにプッシュ（他のUIを自動的に無効化）
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.PushUI(this);
+            }
+
             // 最初のボタンにフォーカスを設定
             SetDefaultFocus();
 
@@ -171,6 +189,12 @@ namespace KowloonBreak.UI
 
             isUIActive = false;
             currentInfectedCharacter = null;
+
+            // UIFocusManagerからポップ（他のUIを自動的に有効化）
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.PopUI(this);
+            }
 
             // 元のカメラに戻す
             ReturnToPreviousCamera();
@@ -357,6 +381,32 @@ namespace KowloonBreak.UI
 
             if (cancelButton != null)
                 cancelButton.onClick.RemoveAllListeners();
+
+            // UIFocusManagerから登録解除
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.UnregisterUI(this);
+            }
+        }
+
+        /// <summary>
+        /// IFocusableUI実装: 入力の有効/無効を設定
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            isInputEnabled = enabled;
+
+            if (vaccineButton != null)
+                vaccineButton.interactable = enabled;
+
+            if (amputateButton != null)
+                amputateButton.interactable = enabled;
+
+            if (carryButton != null)
+                carryButton.interactable = enabled;
+
+            if (cancelButton != null)
+                cancelButton.interactable = enabled;
         }
     }
 

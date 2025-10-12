@@ -6,32 +6,38 @@ using KowloonBreak.Managers;
 
 namespace KowloonBreak.UI
 {
-    public class ToolSelectionHUDController : MonoBehaviour
+    public class ToolSelectionHUDController : MonoBehaviour, IFocusableUI
     {
         [Header("UI References")]
         [SerializeField] private HorizontalLayoutGroup toolSlotsLayout;
         [SerializeField] private Transform toolSlotsParent;
-        
+
         [Header("Settings")]
         [SerializeField] private int displayToolCount = 8;
         [SerializeField] private float slotSize = 64f;
         [SerializeField] private float spacing = 8f;
-        
+
         [Header("Visual Settings")]
         [SerializeField] private Color selectedColor = Color.yellow;
         [SerializeField] private Color normalColor = Color.white;
         [SerializeField] private Color emptyColor = Color.gray;
-        
+
         private List<ItemSlotUI> toolSlots = new List<ItemSlotUI>();
         private EnhancedResourceManager resourceManager;
         private int selectedToolIndex = 0;
-        
+        private bool isInputEnabled = true; // 入力有効フラグ
+
         public int SelectedToolIndex => selectedToolIndex;
         public InventorySlot SelectedTool => resourceManager?.GetToolSlot(selectedToolIndex);
-        
+
         public System.Action<int, InventorySlot> OnToolSelected;
         public System.Action<int, InventorySlot> OnToolUsed;
-        
+
+        // IFocusableUI実装
+        public bool IsVisible => gameObject.activeInHierarchy;
+        public int Priority => 5; // 最低優先度（常時表示）
+        public string UIName => "ToolSelectionHUD";
+
         private void Awake()
         {
             // デフォルトの参照を設定
@@ -56,15 +62,21 @@ namespace KowloonBreak.UI
         private void Start()
         {
             resourceManager = EnhancedResourceManager.Instance;
-            
+
             if (resourceManager != null)
             {
                 InitializeToolSlots();
                 UpdateAllSlots();
                 UpdateSelection();
-                
+
                 // イベント監視
                 resourceManager.OnToolSlotChanged += OnToolSlotChanged;
+            }
+
+            // UIFocusManagerに登録
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.RegisterUI(this);
             }
         }
         
@@ -75,6 +87,9 @@ namespace KowloonBreak.UI
         
         private void HandleToolSelection()
         {
+            // 入力が無効化されている場合は何もしない
+            if (!isInputEnabled) return;
+
             // インベントリが開いている場合はツール選択を無効化
             var inputManager = KowloonBreak.Core.InputManager.Instance;
             bool inventoryOpen = inputManager != null && inputManager.IsInventoryOpen();
@@ -149,12 +164,6 @@ namespace KowloonBreak.UI
                 }
             }
             
-            // 足りない場合は警告を出す
-            if (existingSlots.Length < displayToolCount)
-            {
-                Debug.LogWarning($"Not enough tool slots in scene. Found: {existingSlots.Length}, Required: {displayToolCount}");
-            }
-            
             // 余分なスロットは非アクティブにする
             for (int i = slotsToUse; i < existingSlots.Length; i++)
             {
@@ -190,29 +199,22 @@ namespace KowloonBreak.UI
         public void SelectTool(int index)
         {
             if (index < 0 || index >= displayToolCount) return;
-            
+
             selectedToolIndex = index;
             UpdateSelection();
-            
+
             var selectedSlot = resourceManager?.GetToolSlot(selectedToolIndex);
             OnToolSelected?.Invoke(selectedToolIndex, selectedSlot);
-            
-            // Debug.Log($"Selected tool slot {selectedToolIndex}: {selectedSlot?.ItemData?.itemName ?? "Empty"}");
         }
-        
+
         public void UseTool(int index)
         {
             if (index < 0 || index >= displayToolCount) return;
-            
+
             var toolSlot = resourceManager?.GetToolSlot(index);
             if (toolSlot != null && !toolSlot.IsEmpty)
             {
                 OnToolUsed?.Invoke(index, toolSlot);
-                // Debug.Log($"Used tool: {toolSlot.ItemData?.itemName ?? "Unknown"} from slot {index}");
-            }
-            else
-            {
-                // Debug.Log($"No tool in slot {index} to use");
             }
         }
         
@@ -280,6 +282,33 @@ namespace KowloonBreak.UI
             if (resourceManager != null)
             {
                 resourceManager.OnToolSlotChanged -= OnToolSlotChanged;
+            }
+
+            // UIFocusManagerから登録解除
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.UnregisterUI(this);
+            }
+        }
+
+        /// <summary>
+        /// IFocusableUI実装: 入力を有効化/無効化する
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            isInputEnabled = enabled;
+
+            // すべてのスロットボタンの有効/無効を制御
+            foreach (var slot in toolSlots)
+            {
+                if (slot != null)
+                {
+                    var button = slot.GetComponent<Button>();
+                    if (button != null)
+                    {
+                        button.interactable = enabled;
+                    }
+                }
             }
         }
     }

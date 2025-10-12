@@ -481,7 +481,28 @@ namespace KowloonBreak.UI
                 // Inventoryパネルの場合は専用コントローラーを使用
                 if (panelName == "Inventory" && inventoryDialogController != null)
                 {
-                    inventoryDialogController.OpenInventory();
+                    Debug.Log($"[UIManager] Opening Inventory. panel: {panel?.name}, panel active before: {panel?.activeSelf}, controller: {inventoryDialogController?.gameObject.name}");
+
+                    try
+                    {
+                        panel.SetActive(true);  // パネルのGameObjectをアクティブ化
+                        Debug.Log($"[UIManager] panel active after SetActive(true): {panel?.activeSelf}");
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"[UIManager] Error activating panel: {e}");
+                    }
+
+                    try
+                    {
+                        inventoryDialogController.OpenInventory();
+                        Debug.Log("[UIManager] inventoryDialogController.OpenInventory() completed");
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"[UIManager] Error opening inventory: {e}");
+                    }
+
                     activePanels[panelName] = panel;
                     OnPanelOpened?.Invoke(panelName);
                 }
@@ -520,6 +541,7 @@ namespace KowloonBreak.UI
                 if (panelName == "Inventory" && inventoryDialogController != null)
                 {
                     inventoryDialogController.CloseInventory();
+                    panel.SetActive(false);  // パネルのGameObjectを非アクティブ化
                 }
                 else
                 {

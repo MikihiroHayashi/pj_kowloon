@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using System;
 
@@ -8,19 +9,22 @@ namespace KowloonBreak.UI
     /// <summary>
     /// ターゲット選択UIの1スロット（キャラクター1人分）
     /// </summary>
-    public class TargetSelectionSlot : MonoBehaviour
+    public class TargetSelectionSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, ISelectHandler, IDeselectHandler
     {
         [Header("UI References")]
         [SerializeField] private Image characterIcon;
         [SerializeField] private TextMeshProUGUI characterNameText;
-        [SerializeField] private Image healthBar;
-        [SerializeField] private Image infectionBar;
+        [SerializeField] private Slider healthBar;
+        [SerializeField] private Slider infectionBar;
         [SerializeField] private Button selectButton;
         [SerializeField] private TextMeshProUGUI healthPercentText;
         [SerializeField] private TextMeshProUGUI infectionPercentText;
+        [SerializeField] private Animator animator;
 
         private object targetCharacter; // PlayerController or CompanionAI
         public event Action<object> OnTargetSelected;
+
+        private static readonly int FocusHash = Animator.StringToHash("Focus");
 
         private void Awake()
         {
@@ -59,10 +63,10 @@ namespace KowloonBreak.UI
             // HPバー
             if (healthBar != null)
             {
-                healthBar.fillAmount = player.HealthPercentage;
-                if (iconData != null)
+                healthBar.value = player.HealthPercentage;
+                if (iconData != null && healthBar.fillRect != null)
                 {
-                    healthBar.color = iconData.healthBarColor;
+                    healthBar.fillRect.GetComponent<Image>().color = iconData.healthBarColor;
                 }
             }
 
@@ -74,10 +78,10 @@ namespace KowloonBreak.UI
             // 感染バー
             if (infectionBar != null)
             {
-                infectionBar.fillAmount = player.InfectionLevel / 100f;
-                if (iconData != null)
+                infectionBar.value = player.InfectionLevel / 100f;
+                if (iconData != null && infectionBar.fillRect != null)
                 {
-                    infectionBar.color = iconData.infectionBarColor;
+                    infectionBar.fillRect.GetComponent<Image>().color = iconData.infectionBarColor;
                 }
             }
 
@@ -117,10 +121,10 @@ namespace KowloonBreak.UI
             float healthPercentage = companion.CurrentHealth / companion.MaxHealth;
             if (healthBar != null)
             {
-                healthBar.fillAmount = healthPercentage;
-                if (iconData != null)
+                healthBar.value = healthPercentage;
+                if (iconData != null && healthBar.fillRect != null)
                 {
-                    healthBar.color = iconData.healthBarColor;
+                    healthBar.fillRect.GetComponent<Image>().color = iconData.healthBarColor;
                 }
             }
 
@@ -139,10 +143,10 @@ namespace KowloonBreak.UI
 
             if (infectionBar != null)
             {
-                infectionBar.fillAmount = infectionLevel / 100f;
-                if (iconData != null)
+                infectionBar.value = infectionLevel / 100f;
+                if (iconData != null && infectionBar.fillRect != null)
                 {
-                    infectionBar.color = iconData.infectionBarColor;
+                    infectionBar.fillRect.GetComponent<Image>().color = iconData.infectionBarColor;
                 }
             }
 
@@ -162,6 +166,49 @@ namespace KowloonBreak.UI
             if (selectButton != null)
             {
                 selectButton.onClick.RemoveListener(OnSelectButtonClicked);
+            }
+        }
+
+        /// <summary>
+        /// マウスホバー時の処理
+        /// </summary>
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            SetFocus(true);
+        }
+
+        /// <summary>
+        /// マウスホバー解除時の処理
+        /// </summary>
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            SetFocus(false);
+        }
+
+        /// <summary>
+        /// ナビゲーション選択時の処理
+        /// </summary>
+        public void OnSelect(BaseEventData eventData)
+        {
+            SetFocus(true);
+        }
+
+        /// <summary>
+        /// ナビゲーション選択解除時の処理
+        /// </summary>
+        public void OnDeselect(BaseEventData eventData)
+        {
+            SetFocus(false);
+        }
+
+        /// <summary>
+        /// フォーカス状態を設定
+        /// </summary>
+        private void SetFocus(bool isFocused)
+        {
+            if (animator != null)
+            {
+                animator.SetBool(FocusHash, isFocused);
             }
         }
     }

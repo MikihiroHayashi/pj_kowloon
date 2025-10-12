@@ -9,7 +9,7 @@ namespace KowloonBreak.UI
     /// ゲームオーバーUIの管理クラス
     /// プレイヤー死亡時にゲームオーバー画面を表示し、リトライ機能を提供
     /// </summary>
-    public class GameOverUI : MonoBehaviour
+    public class GameOverUI : MonoBehaviour, IFocusableUI
     {
         [Header("UI Components")]
         [SerializeField] private Animator gameOverAnimator;
@@ -45,6 +45,7 @@ namespace KowloonBreak.UI
         // State management
         private bool isGameOverActive = false;
         private bool isRetryInProgress = false;
+        private bool isInputEnabled = true;
 
         // Focus management
         private bool shouldMaintainFocus = false;
@@ -54,6 +55,11 @@ namespace KowloonBreak.UI
         // Events
         public System.Action OnRetryRequested;
         public System.Action OnMainMenuRequested;
+
+        // IFocusableUI実装
+        public bool IsVisible => gameObject.activeInHierarchy && isGameOverActive;
+        public int Priority => 1; // ゲームオーバーは高優先度
+        public string UIName => "GameOverPanel";
 
         private void Awake()
         {
@@ -77,6 +83,12 @@ namespace KowloonBreak.UI
             if (fadeCanvasGroup != null)
             {
                 fadeCanvasGroup.alpha = 0f;
+            }
+
+            // UIFocusManagerに登録
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.RegisterUI(this);
             }
         }
 
@@ -207,6 +219,12 @@ namespace KowloonBreak.UI
             // Enable cursor for UI interaction
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            // UIFocusManagerにプッシュ（他のUIを自動的に無効化）
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.PushUI(this);
+            }
 
             // Focus on retry button for keyboard/gamepad navigation
             StartCoroutine(FocusRetryButtonAfterDelay());
@@ -438,6 +456,26 @@ namespace KowloonBreak.UI
 
             if (mainMenuButton != null)
                 mainMenuButton.onClick.RemoveAllListeners();
+
+            // UIFocusManagerから登録解除
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.UnregisterUI(this);
+            }
+        }
+
+        /// <summary>
+        /// IFocusableUI実装: 入力の有効/無効を設定
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            isInputEnabled = enabled;
+
+            if (retryButton != null)
+                retryButton.interactable = enabled;
+
+            if (mainMenuButton != null)
+                mainMenuButton.interactable = enabled;
         }
     }
 }
