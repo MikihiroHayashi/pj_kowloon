@@ -10,11 +10,14 @@ namespace KowloonBreak.UI
 
         private void Update()
         {
-            HandleInventoryInput();
+            // インベントリ入力処理はGameplayInputHandlerに移行済み
+            // HandleInventoryInput();
         }
 
         private void HandleInventoryInput()
         {
+            // この処理はGameplayInputHandlerに移行されたため、無効化されています
+            /*
             // InputManagerを使用してインベントリ入力を検出
             var inputManager = InputManager.Instance;
             if (inputManager != null && inputManager.IsInventoryPressed())
@@ -38,6 +41,7 @@ namespace KowloonBreak.UI
                     }
                 }
             }
+            */
         }
 
         public void SetInventoryController(InventoryDialogController controller)

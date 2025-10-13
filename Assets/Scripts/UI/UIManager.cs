@@ -323,12 +323,7 @@ namespace KowloonBreak.UI
             // GameplayInputHandler経由でのみUI操作を許可
             if (handlerName == "GameplayInputHandler")
             {
-                // インベントリ開閉（Tabキー / Viewボタン）
-                // ※GameplayInputHandlerで処理済みだが、念のため残す
-                if (inputManager.IsInventoryPressed())
-                {
-                    TogglePanel("Inventory");
-                }
+                // インベントリ開閉はGameplayInputHandlerで処理済み（削除）
 
                 // その他のUIショートカット (直接Input.GetKeyDownを使用)
                 if (Input.GetKeyDown(KeyCode.M))
@@ -481,28 +476,8 @@ namespace KowloonBreak.UI
                 // Inventoryパネルの場合は専用コントローラーを使用
                 if (panelName == "Inventory" && inventoryDialogController != null)
                 {
-                    Debug.Log($"[UIManager] Opening Inventory. panel: {panel?.name}, panel active before: {panel?.activeSelf}, controller: {inventoryDialogController?.gameObject.name}");
-
-                    try
-                    {
-                        panel.SetActive(true);  // パネルのGameObjectをアクティブ化
-                        Debug.Log($"[UIManager] panel active after SetActive(true): {panel?.activeSelf}");
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogError($"[UIManager] Error activating panel: {e}");
-                    }
-
-                    try
-                    {
-                        inventoryDialogController.OpenInventory();
-                        Debug.Log("[UIManager] inventoryDialogController.OpenInventory() completed");
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogError($"[UIManager] Error opening inventory: {e}");
-                    }
-
+                    panel.SetActive(true);  // パネルのGameObjectをアクティブ化
+                    inventoryDialogController.OpenInventory();
                     activePanels[panelName] = panel;
                     OnPanelOpened?.Invoke(panelName);
                 }
@@ -651,6 +626,56 @@ namespace KowloonBreak.UI
                 "Pause" => KowloonBreak.Core.UIContext.PauseMenu,
                 _ => KowloonBreak.Core.UIContext.Gameplay
             };
+        }
+
+        private string GetPanelNameFromUIContext(KowloonBreak.Core.UIContext context)
+        {
+            return context switch
+            {
+                KowloonBreak.Core.UIContext.Inventory => "Inventory",
+                KowloonBreak.Core.UIContext.CompanionCommand => "CompanionCommand",
+                KowloonBreak.Core.UIContext.BaseManagement => "BaseManagement",
+                KowloonBreak.Core.UIContext.Map => "Map",
+                KowloonBreak.Core.UIContext.Dialogue => "Dialogue",
+                KowloonBreak.Core.UIContext.Crafting => "Crafting",
+                KowloonBreak.Core.UIContext.TacticalPause => "Tactical",
+                KowloonBreak.Core.UIContext.PauseMenu => "Pause",
+                KowloonBreak.Core.UIContext.TargetSelection => null, // TargetSelectionDialogは独自管理
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// 現在開いている最上位のパネルを閉じる（キャンセル操作用）
+        /// </summary>
+        public void CloseTopPanel()
+        {
+            var contextManager = KowloonBreak.Core.UIContextManager.Instance;
+            if (contextManager == null) return;
+
+            // 現在のUIコンテキストに対応するパネル名を取得
+            var currentContext = contextManager.CurrentContext;
+            Debug.Log($"[UIManager] CloseTopPanel called. CurrentContext: {currentContext}");
+
+            if (currentContext == KowloonBreak.Core.UIContext.Gameplay)
+            {
+                // ゲームプレイ中は何もしない
+                Debug.Log("[UIManager] CloseTopPanel: In Gameplay, doing nothing");
+                return;
+            }
+
+            string panelName = GetPanelNameFromUIContext(currentContext);
+            Debug.Log($"[UIManager] CloseTopPanel: panelName for {currentContext} = {panelName ?? "null"}");
+
+            if (!string.IsNullOrEmpty(panelName))
+            {
+                Debug.Log($"[UIManager] CloseTopPanel: Closing panel {panelName}");
+                ClosePanel(panelName);
+            }
+            else
+            {
+                Debug.Log("[UIManager] CloseTopPanel: panelName is null or empty, doing nothing");
+            }
         }
 
         public void ShowNotification(string message, NotificationType type = NotificationType.Info)

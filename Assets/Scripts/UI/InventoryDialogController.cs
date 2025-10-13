@@ -24,7 +24,6 @@ namespace KowloonBreak.UI
         private bool isOpen = false;
         private ItemSlotUI currentSelectedSlot = null;
         private Coroutine focusCoroutine = null;
-        private InventoryInputHandler inventoryInputHandler;
         private bool isInputEnabled = true;
 
         public bool IsOpen => isOpen;
@@ -72,12 +71,20 @@ namespace KowloonBreak.UI
                 closeButton.onClick.AddListener(CloseInventory);
             }
 
-            // InventoryInputHandlerを作成してInputManagerに登録
-            inventoryInputHandler = new InventoryInputHandler(this);
-            var inputManager = KowloonBreak.Core.InputManager.Instance;
-            if (inputManager != null)
+            // resourceManagerを早期に初期化（OpenInventory()がStart()より前に呼ばれる可能性があるため）
+            resourceManager = EnhancedResourceManager.Instance;
+            if (resourceManager != null)
             {
-                inputManager.RegisterInputHandler("Inventory", inventoryInputHandler);
+                // イベント監視（重複を防ぐため、まず解除してから登録）
+                resourceManager.OnToolSlotChanged -= OnToolSlotChanged;
+                resourceManager.OnMaterialSlotChanged -= OnMaterialSlotChanged;
+                resourceManager.OnToolSlotChanged += OnToolSlotChanged;
+                resourceManager.OnMaterialSlotChanged += OnMaterialSlotChanged;
+                Debug.Log("[InventoryDialogController] ResourceManager initialized in Awake");
+            }
+            else
+            {
+                Debug.LogWarning("[InventoryDialogController] EnhancedResourceManager.Instance is null in Awake");
             }
 
             Debug.Log("[InventoryDialogController] Awake completed");
@@ -85,25 +92,7 @@ namespace KowloonBreak.UI
         
         private void Start()
         {
-            resourceManager = EnhancedResourceManager.Instance;
-
-            if (resourceManager != null)
-            {
-                // イベント監視
-                resourceManager.OnToolSlotChanged += OnToolSlotChanged;
-                resourceManager.OnMaterialSlotChanged += OnMaterialSlotChanged;
-            }
-
-            // Awake()で登録できなかった場合のリトライ
-            if (inventoryInputHandler == null)
-            {
-                inventoryInputHandler = new InventoryInputHandler(this);
-                var inputManager = KowloonBreak.Core.InputManager.Instance;
-                if (inputManager != null)
-                {
-                    inputManager.RegisterInputHandler("Inventory", inventoryInputHandler);
-                }
-            }
+            // resourceManagerの初期化とイベント登録はAwake()に移動済み
 
             // UIFocusManagerに登録
             if (UIFocusManager.Instance != null)
@@ -111,11 +100,8 @@ namespace KowloonBreak.UI
                 UIFocusManager.Instance.RegisterUI(this);
             }
 
-            // 初期状態は非表示
-            if (inventoryPanel != null)
-            {
-                inventoryPanel.SetActive(false);
-            }
+            // GameObjectの初期状態はUIManagerが管理
+            // （ここでSetActive(false)を呼ぶと、UIManagerの管理と競合する）
         }
 
         private void InitializeSlots()
@@ -497,54 +483,56 @@ namespace KowloonBreak.UI
         
         public void OpenInventory()
         {
-            Debug.Log($"[InventoryDialogController] OpenInventory called. GameObject active: {gameObject.activeInHierarchy}, inventoryPanel: {inventoryPanel?.name}, inventoryPanel active: {inventoryPanel?.activeSelf}");
+            Debug.Log($"[InventoryDialogController] OpenInventory called. inventoryPanel: {inventoryPanel?.name}");
 
-            if (inventoryPanel != null)
+            // フォールバック: resourceManagerがnullの場合は再取得を試みる
+            if (resourceManager == null)
             {
-                inventoryPanel.SetActive(true);
-                isOpen = true;
-
-                Debug.Log($"[InventoryDialogController] inventoryPanel activated. toolSlots count: {toolSlots.Count}, materialSlots count: {materialSlots.Count}");
-
-                // 初回起動時にスロットが初期化されていない場合は初期化
-                if (toolSlots.Count == 0 || materialSlots.Count == 0)
+                resourceManager = EnhancedResourceManager.Instance;
+                if (resourceManager != null)
                 {
-                    Debug.Log("[InventoryDialogController] Initializing slots...");
-                    InitializeSlots();
-                    Debug.Log($"[InventoryDialogController] Slots initialized. toolSlots: {toolSlots.Count}, materialSlots: {materialSlots.Count}");
+                    // イベント登録（重複を防ぐため、まず解除してから登録）
+                    resourceManager.OnToolSlotChanged -= OnToolSlotChanged;
+                    resourceManager.OnMaterialSlotChanged -= OnMaterialSlotChanged;
+                    resourceManager.OnToolSlotChanged += OnToolSlotChanged;
+                    resourceManager.OnMaterialSlotChanged += OnMaterialSlotChanged;
+                    Debug.LogWarning("[InventoryDialogController] resourceManager was null in OpenInventory; initialized manually.");
                 }
-
-                // スロット情報を更新
-                Debug.Log("[InventoryDialogController] Updating all slots...");
-                UpdateAllSlots();
-
-                // InputManagerの入力ハンドラーをInventoryに切り替え
-                var inputManager = KowloonBreak.Core.InputManager.Instance;
-                if (inputManager != null)
+                else
                 {
-                    inputManager.SwitchInputHandler("Inventory");
-
-                    // 後方互換性のため残す
-                    #pragma warning disable CS0618 // 型またはメンバーが旧型式です
-                    inputManager.SetInventoryOpen(true);
-                    #pragma warning restore CS0618
+                    Debug.LogError("[InventoryDialogController] Failed to get EnhancedResourceManager.Instance!");
                 }
-
-                // 既存のコルーチンを停止
-                if (focusCoroutine != null)
-                {
-                    StopCoroutine(focusCoroutine);
-                }
-
-                // UIFocusManagerにプッシュ（他のUIを自動的に無効化）
-                if (UIFocusManager.Instance != null)
-                {
-                    UIFocusManager.Instance.PushUI(this);
-                }
-
-                // レイアウト更新とフォーカス設定は次フレームで
-                focusCoroutine = StartCoroutine(PostOpenInventorySetup());
             }
+
+            // GameObjectの有効化はUIManagerが担当
+            // ここではデータとUIの同期のみ行う
+            isOpen = true;
+
+            // 初回起動時にスロットが初期化されていない場合は初期化
+            if (toolSlots.Count == 0 || materialSlots.Count == 0)
+            {
+                Debug.Log("[InventoryDialogController] Initializing slots...");
+                InitializeSlots();
+                Debug.Log($"[InventoryDialogController] Slots initialized. toolSlots: {toolSlots.Count}, materialSlots: {materialSlots.Count}");
+            }
+
+            // スロット情報を更新
+            UpdateAllSlots();
+
+            // 既存のコルーチンを停止
+            if (focusCoroutine != null)
+            {
+                StopCoroutine(focusCoroutine);
+            }
+
+            // UIFocusManagerにプッシュ（他のUIを自動的に無効化）
+            if (UIFocusManager.Instance != null)
+            {
+                UIFocusManager.Instance.PushUI(this);
+            }
+
+            // レイアウト更新とフォーカス設定は次フレームで
+            focusCoroutine = StartCoroutine(PostOpenInventorySetup());
         }
 
         private System.Collections.IEnumerator PostOpenInventorySetup()
@@ -552,9 +540,25 @@ namespace KowloonBreak.UI
             // 1フレーム待機してUIのレイアウトが確定するのを待つ
             yield return null;
 
+            // Canvasレイアウトを強制更新
+            Canvas.ForceUpdateCanvases();
+
             // フォーカスを設定
             SetInitialFocus();
             focusCoroutine = null;
+
+            Debug.Log("[InventoryDialogController] PostOpenInventorySetup: Completed");
+        }
+
+        private int CountVisibleChildren()
+        {
+            if (inventoryPanel == null) return 0;
+            int count = 0;
+            foreach (Transform child in inventoryPanel.transform)
+            {
+                if (child.gameObject.activeSelf) count++;
+            }
+            return count;
         }
 
         private System.Collections.IEnumerator SetInitialFocusDelayed()
@@ -600,7 +604,7 @@ namespace KowloonBreak.UI
 
         public void CloseInventory()
         {
-            if (inventoryPanel != null && isOpen)
+            if (isOpen)
             {
                 // 実行中のコルーチンを停止
                 if (focusCoroutine != null)
@@ -625,20 +629,9 @@ namespace KowloonBreak.UI
                     UIFocusManager.Instance.PopUI(this);
                 }
 
-                inventoryPanel.SetActive(false);
                 isOpen = false;
 
-                // InputManagerの入力ハンドラーをGameplayに戻す
-                var inputManager = KowloonBreak.Core.InputManager.Instance;
-                if (inputManager != null)
-                {
-                    inputManager.SwitchInputHandler("Gameplay");
-
-                    // 後方互換性のため残す
-                    #pragma warning disable CS0618 // 型またはメンバーが旧型式です
-                    inputManager.SetInventoryOpen(false);
-                    #pragma warning restore CS0618
-                }
+                // GameObjectの非アクティブ化はUIManagerが担当
             }
         }
         

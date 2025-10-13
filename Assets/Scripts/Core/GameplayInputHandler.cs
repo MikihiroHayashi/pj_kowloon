@@ -31,23 +31,45 @@ namespace KowloonBreak.Core
             var inputManager = InputManager.Instance;
             if (inputManager == null) return;
 
+            var uiManager = UI.UIManager.Instance;
+            if (uiManager == null) return;
+
+            var contextManager = UIContextManager.Instance;
+
             // インベントリ表示切り替え
+            // ※ゲームプレイ中のみ開く処理を行う（UI開閉の競合を防ぐため先に処理）
             if (inputManager.IsInventoryPressed())
             {
-                // UIManagerを通してインベントリを開く
-                if (UI.UIManager.Instance != null)
+                if (contextManager == null || contextManager.IsInGameplay)
                 {
-                    UI.UIManager.Instance.TogglePanel("Inventory");
+                    uiManager.TogglePanel("Inventory");
+                    return; // 他の処理をスキップ
                 }
             }
 
             // メニュー表示切り替え
+            // ※ゲームプレイ中のみ開く処理を行う
             if (inputManager.IsMenuPressed())
             {
-                // UIManagerを通してメニューを開く
-                if (UI.UIManager.Instance != null)
+                if (contextManager == null || contextManager.IsInGameplay)
                 {
-                    UI.UIManager.Instance.TogglePanel("Menu");
+                    uiManager.TogglePanel("Menu");
+                    return; // 他の処理をスキップ
+                }
+            }
+
+            // キャンセル入力（ESCキーまたはダッジロールボタン）
+            // UIが開いている場合は最上位のUIを閉じる
+            if (inputManager.IsCancelPressed())
+            {
+                if (contextManager != null && !contextManager.IsInGameplay)
+                {
+                    // TargetSelectionは独自のキャンセル処理を持つため、ここでは介入しない
+                    if (contextManager.CurrentContext != UIContext.TargetSelection)
+                    {
+                        uiManager.CloseTopPanel();
+                        return; // 他の処理をスキップ
+                    }
                 }
             }
 

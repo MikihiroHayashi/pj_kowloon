@@ -11,6 +11,9 @@ namespace KowloonBreak.Core
         /// <summary>インベントリ表示中</summary>
         Inventory,
 
+        /// <summary>ターゲット選択ダイアログ表示中</summary>
+        TargetSelection,
+
         /// <summary>会話/ダイアログ表示中</summary>
         Dialogue,
 

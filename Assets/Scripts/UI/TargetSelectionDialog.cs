@@ -81,6 +81,13 @@ namespace KowloonBreak.UI
             // ターゲットリストを作成
             PopulateTargets();
 
+            // UIContextManagerにプッシュ（TargetSelectionコンテキストに変更）
+            var contextManager = Core.UIContextManager.Instance;
+            if (contextManager != null)
+            {
+                contextManager.PushContext(Core.UIContext.TargetSelection);
+            }
+
             // UIFocusManagerにプッシュ（他のUIを自動的に無効化）
             if (UIFocusManager.Instance != null)
             {
@@ -96,12 +103,23 @@ namespace KowloonBreak.UI
         /// </summary>
         public void Hide()
         {
+            Debug.Log("[TargetSelectionDialog] Hide called");
+
             if (dialogPanel != null)
             {
                 dialogPanel.SetActive(false);
             }
 
             ClearTargetSlots();
+
+            // UIContextManagerからポップ（前のコンテキストに戻る）
+            var contextManager = Core.UIContextManager.Instance;
+            if (contextManager != null)
+            {
+                Debug.Log($"[TargetSelectionDialog] PopContext before: {contextManager.CurrentContext}");
+                contextManager.PopContext();
+                Debug.Log($"[TargetSelectionDialog] PopContext after: {contextManager.CurrentContext}");
+            }
 
             // UIFocusManagerからポップ（他のUIを自動的に有効化）
             if (UIFocusManager.Instance != null)
