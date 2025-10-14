@@ -33,31 +33,17 @@ namespace KowloonBreak.UI
         public int Priority => 4; // インベントリは中優先度
         public string UIName => "InventoryDialog";
 
-        private void Update()
-        {
-            // 入力処理はInventoryInputHandlerに移譲
-            // （Update()での直接処理は廃止）
-        }
-        
         private void Awake()
         {
-            Debug.Log($"[InventoryDialogController] Awake called on {gameObject.name}");
-
             // デフォルトの参照を設定
             if (inventoryPanel == null)
                 inventoryPanel = transform.Find("InventoryPanel")?.gameObject;
 
-            Debug.Log($"[InventoryDialogController] inventoryPanel found: {inventoryPanel?.name ?? "NULL"}");
-
             if (toolSlotsGrid == null)
                 toolSlotsGrid = transform.Find("InventoryPanel/ToolSlots")?.GetComponent<GridLayoutGroup>();
 
-            Debug.Log($"[InventoryDialogController] toolSlotsGrid found: {(toolSlotsGrid != null ? "Yes" : "NULL")}");
-
             if (materialSlotsGrid == null)
                 materialSlotsGrid = transform.Find("InventoryPanel/MaterialSlots")?.GetComponent<GridLayoutGroup>();
-
-            Debug.Log($"[InventoryDialogController] materialSlotsGrid found: {(materialSlotsGrid != null ? "Yes" : "NULL")}");
 
             if (closeButton == null)
                 closeButton = transform.Find("InventoryPanel/CloseButton")?.GetComponent<Button>();
@@ -71,37 +57,24 @@ namespace KowloonBreak.UI
                 closeButton.onClick.AddListener(CloseInventory);
             }
 
-            // resourceManagerを早期に初期化（OpenInventory()がStart()より前に呼ばれる可能性があるため）
+            // resourceManagerを早期に初期化
             resourceManager = EnhancedResourceManager.Instance;
             if (resourceManager != null)
             {
-                // イベント監視（重複を防ぐため、まず解除してから登録）
                 resourceManager.OnToolSlotChanged -= OnToolSlotChanged;
                 resourceManager.OnMaterialSlotChanged -= OnMaterialSlotChanged;
                 resourceManager.OnToolSlotChanged += OnToolSlotChanged;
                 resourceManager.OnMaterialSlotChanged += OnMaterialSlotChanged;
-                Debug.Log("[InventoryDialogController] ResourceManager initialized in Awake");
             }
-            else
-            {
-                Debug.LogWarning("[InventoryDialogController] EnhancedResourceManager.Instance is null in Awake");
-            }
-
-            Debug.Log("[InventoryDialogController] Awake completed");
         }
         
         private void Start()
         {
-            // resourceManagerの初期化とイベント登録はAwake()に移動済み
-
             // UIFocusManagerに登録
             if (UIFocusManager.Instance != null)
             {
                 UIFocusManager.Instance.RegisterUI(this);
             }
-
-            // GameObjectの初期状態はUIManagerが管理
-            // （ここでSetActive(false)を呼ぶと、UIManagerの管理と競合する）
         }
 
         private void InitializeSlots()
@@ -127,7 +100,6 @@ namespace KowloonBreak.UI
 
             // シーンに既に配置されているスロットを取得
             ItemSlotUI[] existingSlots = toolSlotsGrid.GetComponentsInChildren<ItemSlotUI>(true);
-            Debug.Log($"[InventoryDialogController] CreateToolSlots: Found {existingSlots.Length} existing tool slots, need {resourceManager.ToolSlots} slots");
 
             // 既存スロットがある場合は再利用
             if (existingSlots.Length > 0)
@@ -206,7 +178,6 @@ namespace KowloonBreak.UI
 
             // シーンに既に配置されているスロットを取得
             ItemSlotUI[] existingSlots = materialSlotsGrid.GetComponentsInChildren<ItemSlotUI>(true);
-            Debug.Log($"[InventoryDialogController] CreateMaterialSlots: Found {existingSlots.Length} existing material slots, need {resourceManager.MaterialSlots} slots");
 
             // 既存スロットがある場合は再利用
             if (existingSlots.Length > 0)
@@ -483,37 +454,25 @@ namespace KowloonBreak.UI
         
         public void OpenInventory()
         {
-            Debug.Log($"[InventoryDialogController] OpenInventory called. inventoryPanel: {inventoryPanel?.name}");
-
-            // フォールバック: resourceManagerがnullの場合は再取得を試みる
+            // フォールバック: resourceManagerがnullの場合は再取得
             if (resourceManager == null)
             {
                 resourceManager = EnhancedResourceManager.Instance;
                 if (resourceManager != null)
                 {
-                    // イベント登録（重複を防ぐため、まず解除してから登録）
                     resourceManager.OnToolSlotChanged -= OnToolSlotChanged;
                     resourceManager.OnMaterialSlotChanged -= OnMaterialSlotChanged;
                     resourceManager.OnToolSlotChanged += OnToolSlotChanged;
                     resourceManager.OnMaterialSlotChanged += OnMaterialSlotChanged;
-                    Debug.LogWarning("[InventoryDialogController] resourceManager was null in OpenInventory; initialized manually.");
-                }
-                else
-                {
-                    Debug.LogError("[InventoryDialogController] Failed to get EnhancedResourceManager.Instance!");
                 }
             }
 
-            // GameObjectの有効化はUIManagerが担当
-            // ここではデータとUIの同期のみ行う
             isOpen = true;
 
             // 初回起動時にスロットが初期化されていない場合は初期化
             if (toolSlots.Count == 0 || materialSlots.Count == 0)
             {
-                Debug.Log("[InventoryDialogController] Initializing slots...");
                 InitializeSlots();
-                Debug.Log($"[InventoryDialogController] Slots initialized. toolSlots: {toolSlots.Count}, materialSlots: {materialSlots.Count}");
             }
 
             // スロット情報を更新
@@ -537,35 +496,8 @@ namespace KowloonBreak.UI
 
         private System.Collections.IEnumerator PostOpenInventorySetup()
         {
-            // 1フレーム待機してUIのレイアウトが確定するのを待つ
             yield return null;
-
-            // Canvasレイアウトを強制更新
             Canvas.ForceUpdateCanvases();
-
-            // フォーカスを設定
-            SetInitialFocus();
-            focusCoroutine = null;
-
-            Debug.Log("[InventoryDialogController] PostOpenInventorySetup: Completed");
-        }
-
-        private int CountVisibleChildren()
-        {
-            if (inventoryPanel == null) return 0;
-            int count = 0;
-            foreach (Transform child in inventoryPanel.transform)
-            {
-                if (child.gameObject.activeSelf) count++;
-            }
-            return count;
-        }
-
-        private System.Collections.IEnumerator SetInitialFocusDelayed()
-        {
-            // 1フレーム待機
-            yield return null;
-
             SetInitialFocus();
             focusCoroutine = null;
         }

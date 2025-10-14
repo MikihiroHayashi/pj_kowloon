@@ -65,11 +65,14 @@ namespace KowloonBreak.Core
                 if (contextManager != null && !contextManager.IsInGameplay)
                 {
                     // TargetSelectionは独自のキャンセル処理を持つため、ここでは介入しない
-                    if (contextManager.CurrentContext != UIContext.TargetSelection)
+                    if (contextManager.CurrentContext == UIContext.TargetSelection)
                     {
-                        uiManager.CloseTopPanel();
-                        return; // 他の処理をスキップ
+                        return; // TargetSelectionDialogが処理するため何もしない
                     }
+
+                    // その他のUIコンテキストでは最上位パネルを閉じる
+                    uiManager.CloseTopPanel();
+                    return; // 他の処理をスキップ
                 }
             }
 

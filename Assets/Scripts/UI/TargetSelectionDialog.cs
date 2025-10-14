@@ -14,7 +14,6 @@ namespace KowloonBreak.UI
     public class TargetSelectionDialog : MonoBehaviour, IFocusableUI
     {
         [Header("UI References")]
-        [SerializeField] private GameObject dialogPanel;
         [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private Transform targetSlotsContainer;
         [SerializeField] private GameObject targetSlotPrefab;
@@ -28,12 +27,13 @@ namespace KowloonBreak.UI
         private List<TargetSelectionSlot> activeSlots = new List<TargetSelectionSlot>();
         private Core.InventorySlot currentItem;
         private bool isInputEnabled = true;
+        private bool isClosing = false; // 閉じる処理中フラグ
 
         public event Action<object> OnTargetSelected;
         public event Action OnCancelled;
 
         // IFocusableUI実装
-        public bool IsVisible => dialogPanel != null && dialogPanel.activeSelf;
+        public bool IsVisible => gameObject.activeInHierarchy;
         public int Priority => 0; // 最高優先度
         public string UIName => "TargetSelectionDialog";
 
@@ -44,11 +44,7 @@ namespace KowloonBreak.UI
                 cancelButton.onClick.AddListener(OnCancelClicked);
             }
 
-            // 初期状態は非表示
-            if (dialogPanel != null)
-            {
-                dialogPanel.SetActive(false);
-            }
+            // GameObjectの初期状態はUIManagerが管理
         }
 
         private void Start()
@@ -61,16 +57,13 @@ namespace KowloonBreak.UI
         }
 
         /// <summary>
-        /// ターゲット選択ダイアログを表示
+        /// ターゲット選択ダイアログを表示（UIManagerから呼ばれる）
+        /// GameObjectの有効化はUIManagerが担当
         /// </summary>
         public void Show(Core.InventorySlot item)
         {
             currentItem = item;
-
-            if (dialogPanel != null)
-            {
-                dialogPanel.SetActive(true);
-            }
+            isClosing = false; // 閉じる処理フラグをリセット
 
             // タイトル設定
             if (titleText != null && item != null)
@@ -99,26 +92,18 @@ namespace KowloonBreak.UI
         }
 
         /// <summary>
-        /// ダイアログを閉じる
+        /// ダイアログを閉じる（UIManagerから呼ばれる）
+        /// GameObjectの非アクティブ化はUIManagerが担当
         /// </summary>
         public void Hide()
         {
-            Debug.Log("[TargetSelectionDialog] Hide called");
-
-            if (dialogPanel != null)
-            {
-                dialogPanel.SetActive(false);
-            }
-
             ClearTargetSlots();
 
             // UIContextManagerからポップ（前のコンテキストに戻る）
             var contextManager = Core.UIContextManager.Instance;
             if (contextManager != null)
             {
-                Debug.Log($"[TargetSelectionDialog] PopContext before: {contextManager.CurrentContext}");
                 contextManager.PopContext();
-                Debug.Log($"[TargetSelectionDialog] PopContext after: {contextManager.CurrentContext}");
             }
 
             // UIFocusManagerからポップ（他のUIを自動的に有効化）
@@ -251,7 +236,12 @@ namespace KowloonBreak.UI
         private void OnSlotSelected(object target)
         {
             OnTargetSelected?.Invoke(target);
-            Hide();
+
+            // UIManager経由で閉じる
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.HideTargetSelection();
+            }
         }
 
         /// <summary>
@@ -259,8 +249,29 @@ namespace KowloonBreak.UI
         /// </summary>
         private void OnCancelClicked()
         {
+            if (isClosing) return; // 二重実行防止
+
+            isClosing = true;
             OnCancelled?.Invoke();
-            Hide();
+
+            // UIManager経由で閉じる（PopContext()は次フレームで実行されるよう遅延）
+            StartCoroutine(CloseWithDelay());
+        }
+
+        /// <summary>
+        /// 遅延付きで閉じる（同一フレーム内での入力競合を防ぐ）
+        /// </summary>
+        private IEnumerator CloseWithDelay()
+        {
+            // 1フレーム待つことで、GameplayInputHandlerが正しくTargetSelectionコンテキストを認識できる
+            yield return null;
+
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.HideTargetSelection();
+            }
+
+            isClosing = false;
         }
 
         /// <summary>
@@ -277,6 +288,25 @@ namespace KowloonBreak.UI
                 }
             }
             activeSlots.Clear();
+        }
+
+        private void Update()
+        {
+            // 閉じる処理中は入力を受け付けない
+            if (isClosing) return;
+
+            // キャンセル入力処理（UIContextがTargetSelectionの場合のみ）
+            var contextManager = Core.UIContextManager.Instance;
+            var inputManager = Core.InputManager.Instance;
+
+            if (contextManager != null && inputManager != null &&
+                contextManager.CurrentContext == Core.UIContext.TargetSelection)
+            {
+                if (inputManager.IsCancelPressed())
+                {
+                    OnCancelClicked();
+                }
+            }
         }
 
         private void OnDestroy()

@@ -27,9 +27,6 @@ namespace KowloonBreak.UI
         [Header("Position Settings")]
         [SerializeField] private Vector2 offset = new Vector2(20f, 0f); // スロットの右側に表示するオフセット
 
-        [Header("Target Selection")]
-        [SerializeField] private TargetSelectionDialog targetSelectionDialog;
-
         private InventorySlot currentSlot;
         private ItemSlotUI sourceSlotUI;
         private bool isToolSlot;
@@ -86,26 +83,29 @@ namespace KowloonBreak.UI
             if (closeButton != null)
                 closeButton.onClick.AddListener(Hide);
 
-            // TargetSelectionDialogのイベント設定
-            if (targetSelectionDialog != null)
-            {
-                targetSelectionDialog.OnTargetSelected += OnTargetSelected;
-                targetSelectionDialog.OnCancelled += OnTargetSelectionCancelled;
-            }
-            else
-            {
-                // 自動検索
-                targetSelectionDialog = GetComponentInChildren<TargetSelectionDialog>(true);
-                if (targetSelectionDialog != null)
-                {
-                    targetSelectionDialog.OnTargetSelected += OnTargetSelected;
-                    targetSelectionDialog.OnCancelled += OnTargetSelectionCancelled;
-                }
-            }
-
             // 初期状態は非表示
             if (popupPanel != null)
                 popupPanel.SetActive(false);
+        }
+
+        private void Start()
+        {
+            // UIManager経由でTargetSelectionDialogのイベントを購読
+            if (UIManager.Instance != null && UIManager.Instance.TargetSelectionDialog != null)
+            {
+                UIManager.Instance.TargetSelectionDialog.OnTargetSelected += OnTargetSelected;
+                UIManager.Instance.TargetSelectionDialog.OnCancelled += OnTargetSelectionCancelled;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // イベント購読解除
+            if (UIManager.Instance != null && UIManager.Instance.TargetSelectionDialog != null)
+            {
+                UIManager.Instance.TargetSelectionDialog.OnTargetSelected -= OnTargetSelected;
+                UIManager.Instance.TargetSelectionDialog.OnCancelled -= OnTargetSelectionCancelled;
+            }
         }
 
         public void Show(InventorySlot slot, ItemSlotUI slotUI, bool isTool)
@@ -320,18 +320,18 @@ namespace KowloonBreak.UI
                  itemData.consumableEffect.HasStaminaEffect ||
                  itemData.consumableEffect.HasInfectionEffect))
             {
-                if (targetSelectionDialog != null)
+                // ItemDetailPopupを一時的に非表示
+                if (popupPanel != null)
                 {
-                    // ItemDetailPopupを一時的に非表示
-                    if (popupPanel != null)
-                    {
-                        popupPanel.SetActive(false);
-                    }
-
-                    // ターゲット選択ダイアログを表示
-                    targetSelectionDialog.Show(currentSlot);
-                    return;
+                    popupPanel.SetActive(false);
                 }
+
+                // ターゲット選択ダイアログを表示（UIManager経由）
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.ShowTargetSelection(currentSlot);
+                }
+                return;
             }
 
             // ターゲット選択が不要な場合、またはダイアログがない場合は直接使用

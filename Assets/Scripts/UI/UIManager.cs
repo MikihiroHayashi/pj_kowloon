@@ -28,9 +28,14 @@ namespace KowloonBreak.UI
         [SerializeField] private GameObject craftingPanel;
         [SerializeField] private GameObject tacticalPanel;
         [SerializeField] private GameObject pauseMenu;
+        [SerializeField] private GameObject targetSelectionPanel;
 
         [Header("Panel Controllers")]
         [SerializeField] private InventoryDialogController inventoryDialogController;
+        [SerializeField] private TargetSelectionDialog targetSelectionDialog;
+
+        // Public accessor for TargetSelectionDialog (for event subscription)
+        public TargetSelectionDialog TargetSelectionDialog => targetSelectionDialog;
 
         [Header("HUD Elements")]
         [SerializeField] private Slider healthSlider;
@@ -111,14 +116,6 @@ namespace KowloonBreak.UI
         [SerializeField] private string commandExecutedPrefix = "命令実行: ";
         [SerializeField] private string commandFailedText = "命令を実行できませんでした";
         [SerializeField] private string noTargetFoundText = "攻撃対象が見つかりません";
-        
-        [Header("Debug - InteractionPrompt Positioning")]
-        [SerializeField] private bool debugPromptPositioning = false;
-        
-        [Header("Debug - Companion Command System")]
-        [SerializeField] private bool debugCompanionDetection = true;
-        [SerializeField] private bool debugCommandExecution = true;
-        [SerializeField] private bool debugPanelControls = false;
 
         private Dictionary<string, GameObject> activePanels;
         private List<GameObject> activeNotifications;
@@ -181,7 +178,6 @@ namespace KowloonBreak.UI
                 player = playerObj.transform;
             }
 
-
             // EventSystemの存在を確認・作成
             EnsureEventSystemExists();
 
@@ -203,15 +199,20 @@ namespace KowloonBreak.UI
         {
             activePanels = new Dictionary<string, GameObject>();
             activeNotifications = new List<GameObject>();
-            
+
             CloseAllPanels();
-            
-            // CompanionCommandPanelを明示的に非表示にする
+
+            // 特定のパネルを明示的に非表示にする
             if (companionCommandPanel != null)
             {
                 companionCommandPanel.SetActive(false);
             }
-            
+
+            if (targetSelectionPanel != null)
+            {
+                targetSelectionPanel.SetActive(false);
+            }
+
             ShowMainHUD();
         }
 
@@ -235,28 +236,37 @@ namespace KowloonBreak.UI
                 resourceManager.OnItemRemoved += OnInventoryItemRemoved;
             }
 
-            
-            // プレイヤーのヘルス・スタミナ・感染レベル変更イベントに直接購読
+
+            // プレイヤーのヘルス・スタミナ・感染レベル変更イベントに購読
             if (enhancedPlayerController != null)
             {
-                enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
-                enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
-                enhancedPlayerController.OnInfectionLevelChanged += UpdatePlayerInfectionBar;
-                enhancedPlayerController.OnStealthAttack += HandleStealthAttack;
-
-                // 初期値を設定
-                UpdateHealthBar(enhancedPlayerController.HealthPercentage);
-                UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
-                UpdateStealthBar(enhancedPlayerController.StealthLevel);
-                UpdatePlayerInfectionBar(enhancedPlayerController.InfectionLevel / 100f);
+                SubscribeToPlayerEvents();
             }
             else
             {
-                // 後から検索を試行
                 StartCoroutine(FindPlayerControllerLater());
             }
         }
-        
+
+        /// <summary>
+        /// プレイヤーコントローラーのイベントに購読し、初期値を設定
+        /// </summary>
+        private void SubscribeToPlayerEvents()
+        {
+            if (enhancedPlayerController == null) return;
+
+            enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
+            enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
+            enhancedPlayerController.OnInfectionLevelChanged += UpdatePlayerInfectionBar;
+            enhancedPlayerController.OnStealthAttack += HandleStealthAttack;
+
+            // 初期値を設定
+            UpdateHealthBar(enhancedPlayerController.HealthPercentage);
+            UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
+            UpdateStealthBar(enhancedPlayerController.StealthLevel);
+            UpdatePlayerInfectionBar(enhancedPlayerController.InfectionLevel / 100f);
+        }
+
         /// <summary>
         /// プレイヤーコントローラーを後から検索
         /// </summary>
@@ -265,25 +275,14 @@ namespace KowloonBreak.UI
             for (int i = 0; i < 10; i++)
             {
                 yield return new WaitForSeconds(0.5f);
-                
+
                 enhancedPlayerController = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
                 if (enhancedPlayerController != null)
                 {
-                    enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
-                    enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
-                    enhancedPlayerController.OnInfectionLevelChanged += UpdatePlayerInfectionBar;
-                    enhancedPlayerController.OnStealthAttack += HandleStealthAttack;
-
-                    // 初期値を設定
-                    UpdateHealthBar(enhancedPlayerController.HealthPercentage);
-                    UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
-                    UpdateStealthBar(enhancedPlayerController.StealthLevel);
-                    UpdatePlayerInfectionBar(enhancedPlayerController.InfectionLevel / 100f);
+                    SubscribeToPlayerEvents();
                     break;
                 }
             }
-            
-            // EnhancedPlayerControllerが見つからない場合はサイレントに終了
         }
         
 
@@ -303,19 +302,9 @@ namespace KowloonBreak.UI
 
         private void HandleInput()
         {
-            if (inputManager == null)
-            {
-                if (debugCommandExecution)
-                return;
-            }
+            if (inputManager == null) return;
 
-            // 入力処理は各InputHandlerに移譲
-            // GameplayInputHandler: インベントリ開閉、UIショートカット
-            // InventoryInputHandler: インベントリ閉じる
-            // その他のInputHandler: 各UI固有の入力処理
-
-            // ここではInputHandlerがアクティブな時のみ処理を実行
-            var currentHandler = inputManager?.GetCurrentInputHandler();
+            var currentHandler = inputManager.GetCurrentInputHandler();
             if (currentHandler == null) return;
 
             string handlerName = currentHandler.GetType().Name;
@@ -323,9 +312,7 @@ namespace KowloonBreak.UI
             // GameplayInputHandler経由でのみUI操作を許可
             if (handlerName == "GameplayInputHandler")
             {
-                // インベントリ開閉はGameplayInputHandlerで処理済み（削除）
-
-                // その他のUIショートカット (直接Input.GetKeyDownを使用)
+                // UIショートカット
                 if (Input.GetKeyDown(KeyCode.M))
                 {
                     TogglePanel("Map");
@@ -352,14 +339,12 @@ namespace KowloonBreak.UI
                 {
                     if (!IsPanelOpen("Inventory"))
                     {
-                        if (debugPanelControls)
-                            Debug.Log("[UIManager] Closing panels via menu key");
                         CloseAllPanels();
                     }
                 }
             }
 
-            // キャンセル入力でアクティブなダイアログを閉じる（全コンテキストで有効）
+            // キャンセル入力でアクティブなダイアログを閉じる
             HandleDialogCancelInput(inputManager);
         }
 
@@ -414,7 +399,6 @@ namespace KowloonBreak.UI
                     break;
             }
         }
-
 
         /// <summary>
         /// プレイヤーの個人的な感染レベルを更新（EnhancedPlayerControllerのイベントから呼び出される）
@@ -572,7 +556,8 @@ namespace KowloonBreak.UI
                 dialoguePanel,
                 craftingPanel,
                 tacticalPanel,
-                pauseMenu
+                pauseMenu,
+                targetSelectionPanel
             };
 
             foreach (var panel in allPanels)
@@ -653,28 +638,49 @@ namespace KowloonBreak.UI
             var contextManager = KowloonBreak.Core.UIContextManager.Instance;
             if (contextManager == null) return;
 
-            // 現在のUIコンテキストに対応するパネル名を取得
             var currentContext = contextManager.CurrentContext;
-            Debug.Log($"[UIManager] CloseTopPanel called. CurrentContext: {currentContext}");
-
             if (currentContext == KowloonBreak.Core.UIContext.Gameplay)
             {
-                // ゲームプレイ中は何もしない
-                Debug.Log("[UIManager] CloseTopPanel: In Gameplay, doing nothing");
                 return;
             }
 
             string panelName = GetPanelNameFromUIContext(currentContext);
-            Debug.Log($"[UIManager] CloseTopPanel: panelName for {currentContext} = {panelName ?? "null"}");
-
             if (!string.IsNullOrEmpty(panelName))
             {
-                Debug.Log($"[UIManager] CloseTopPanel: Closing panel {panelName}");
                 ClosePanel(panelName);
             }
-            else
+        }
+
+        /// <summary>
+        /// ターゲット選択ダイアログを表示
+        /// </summary>
+        public void ShowTargetSelection(Core.InventorySlot item)
+        {
+            if (targetSelectionPanel != null && targetSelectionDialog != null)
             {
-                Debug.Log("[UIManager] CloseTopPanel: panelName is null or empty, doing nothing");
+                // GameObjectをアクティブ化（UIManagerが管理）
+                targetSelectionPanel.SetActive(true);
+
+                // ダイアログコントローラーに表示処理を依頼（データ同期のみ）
+                targetSelectionDialog.Show(item);
+            }
+        }
+
+        /// <summary>
+        /// ターゲット選択ダイアログを非表示
+        /// </summary>
+        public void HideTargetSelection()
+        {
+            if (targetSelectionDialog != null)
+            {
+                // ダイアログコントローラーにクリーンアップ処理を依頼
+                targetSelectionDialog.Hide();
+
+                // GameObjectを非アクティブ化（UIManagerが管理）
+                if (targetSelectionPanel != null)
+                {
+                    targetSelectionPanel.SetActive(false);
+                }
             }
         }
 
@@ -1254,13 +1260,7 @@ namespace KowloonBreak.UI
 
         private void CheckForNearbyCompanions()
         {
-            if (player == null) 
-            {
-                if (debugCompanionDetection)
-                    Debug.LogWarning("[UIManager] CheckForNearbyCompanions: player is null");
-                return;
-            }
-
+            if (player == null) return;
 
             KowloonBreak.Characters.CompanionAI nearestCompanion = null;
             float nearestDistance = float.MaxValue;
@@ -1599,12 +1599,7 @@ namespace KowloonBreak.UI
 
         private void ExecuteCompanionCommand(KowloonBreak.Characters.CompanionCommand command)
         {
-            if (selectedCompanion == null)
-            {
-                Debug.LogError("[UIManager] ExecuteCompanionCommand: selectedCompanion is null");
-                return;
-            }
-
+            if (selectedCompanion == null) return;
 
             bool success = false;
 
@@ -1616,7 +1611,6 @@ namespace KowloonBreak.UI
                     // シンプルなコマンド - 追加パラメーターなし
                     success = selectedCompanion.ExecuteCommand(command);
                     break;
-
 
                 case KowloonBreak.Characters.CompanionCommand.Attack:
                     GameObject nearestEnemy = FindNearestEnemyForCompanion();
@@ -1637,7 +1631,6 @@ namespace KowloonBreak.UI
                     // 防衛モード
                     success = selectedCompanion.ExecuteCommand(command);
                     break;
-
 
                 case KowloonBreak.Characters.CompanionCommand.Retreat:
                     // 撤退
@@ -1670,10 +1663,7 @@ namespace KowloonBreak.UI
                 };
                 
                 ShowNotification($"{commandExecutedPrefix}{commandName}", NotificationType.Success);
-                
-                if (debugPanelControls)
-                    Debug.Log($"[UIManager] Command '{commandName}' executed successfully - closing panel immediately");
-                
+
                 // 成功時は即座にパネルを閉じる
                 ClosePanel("CompanionCommand");
             }
@@ -1719,7 +1709,6 @@ namespace KowloonBreak.UI
                     }
                 }
             }
-
 
             return nearestEnemy;
         }
@@ -1813,7 +1802,6 @@ namespace KowloonBreak.UI
                     canvasCamera,
                     out canvasPosition);
 
-
                 if (success)
                 {
                     // DamageTextと同じようにlocalPositionを使用
@@ -1876,7 +1864,6 @@ namespace KowloonBreak.UI
                 }
                 else
                 {
-                    Debug.LogWarning("[UIManager] EventSystem not found! UI navigation will not work properly.");
                 }
             }
             else
@@ -2028,7 +2015,6 @@ namespace KowloonBreak.UI
         {
             if (companion == null || companionInfectionBarPrefab == null || damageContainer == null)
             {
-                Debug.LogWarning("[UIManager] Cannot create infection bar - missing references");
                 return null;
             }
 
@@ -2055,12 +2041,10 @@ namespace KowloonBreak.UI
                 // 辞書に追加
                 activeInfectionBars[companion] = infectionBarComponent;
 
-                Debug.Log($"[UIManager] Created infection bar for companion: {companion.name}");
                 return infectionBarObj;
             }
             else
             {
-                Debug.LogError("[UIManager] CompanionInfectionBar component not found on prefab");
                 Destroy(infectionBarObj);
                 return null;
             }
@@ -2082,7 +2066,6 @@ namespace KowloonBreak.UI
             }
 
             activeInfectionBars.Remove(companion);
-            Debug.Log($"[UIManager] Removed infection bar for companion: {companion.name}");
         }
 
         /// <summary>
@@ -2101,7 +2084,6 @@ namespace KowloonBreak.UI
                 infectionBar.OnCompanionDestroyed();
             }
 
-            Debug.Log($"[UIManager] Hiding infection bar for companion: {companion.name}");
         }
 
         /// <summary>
@@ -2113,7 +2095,6 @@ namespace KowloonBreak.UI
             if (companion != null && activeInfectionBars.ContainsKey(companion))
             {
                 activeInfectionBars.Remove(companion);
-                Debug.Log($"[UIManager] Infection bar destroyed for companion: {companion.name}");
             }
         }
 
@@ -2269,7 +2250,6 @@ namespace KowloonBreak.UI
             // GameOverUIが見つからない場合は検索
             if (gameOverUI == null)
             {
-                Debug.Log("[UIManager] GameOverUI not assigned, searching in scene...");
                 gameOverUI = FindObjectOfType<GameOverUI>();
             }
 
@@ -2283,18 +2263,15 @@ namespace KowloonBreak.UI
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogWarning($"[UIManager] Error unsubscribing Game Over events: {ex.Message}");
                 }
 
                 // Game Over UIのイベントを購読
                 gameOverUI.OnRetryRequested += HandleRetryRequested;
                 gameOverUI.OnMainMenuRequested += HandleMainMenuRequested;
 
-                Debug.Log("[UIManager] Game Over system initialized successfully");
             }
             else
             {
-                Debug.LogWarning("[UIManager] GameOverUI component not found in scene - fallback mode will be used");
             }
         }
 
@@ -2304,7 +2281,6 @@ namespace KowloonBreak.UI
         public void ShowGameOver()
         {
             // ゲームオーバー時にすべてのUIパネルを強制的に閉じる
-            Debug.Log("[UIManager] Forcing all panels to close before showing Game Over");
             CloseAllPanels();
 
             // コンパニオン関連の状態もリセット
@@ -2320,12 +2296,10 @@ namespace KowloonBreak.UI
             // ゲームオーバーUIを表示
             if (gameOverUI != null)
             {
-                Debug.Log("[UIManager] Showing Game Over screen");
                 gameOverUI.ShowGameOverUI();
             }
             else
             {
-                Debug.LogWarning("[UIManager] GameOverUI not found - using fallback mode");
 
                 // フォールバック: シンプルなゲームオーバー処理
                 ShowFallbackGameOver();
@@ -2348,7 +2322,6 @@ namespace KowloonBreak.UI
         /// </summary>
         private void HandleRetryRequested()
         {
-            Debug.Log("[UIManager] Retry requested - restarting game");
 
             // GameManagerのRestartGame()を呼び出してシーンをリロード
             if (gameManager != null)
@@ -2357,42 +2330,28 @@ namespace KowloonBreak.UI
             }
             else
             {
-                Debug.LogWarning("[UIManager] GameManager not found - direct scene reload");
                 Time.timeScale = 1f;
                 UnityEngine.SceneManagement.SceneManager.LoadScene(
                     UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
             }
         }
 
-
         /// <summary>
         /// メインメニューが要求された時の処理
         /// </summary>
         private void HandleMainMenuRequested()
         {
-            Debug.Log("[UIManager] Main menu requested");
 
             // メインメニューに戻る処理
             // 実装は後で追加（シーン管理が必要）
             ShowNotification("メインメニュー機能は準備中です", NotificationType.Info);
         }
 
-
-
-
-
-
-
-
-
-
-
         /// <summary>
         /// UI要素（スライダー、テキストなど）の参照を再取得
         /// </summary>
         private void RefindUIElements()
         {
-            Debug.Log("[UIManager] Re-finding UI elements in new scene");
 
             // MainHUD再検索（名前検索も試行）
             RefindMainHUD();
@@ -2406,7 +2365,6 @@ namespace KowloonBreak.UI
             // コンテナ要素を再検索
             RefindContainers();
 
-            Debug.Log("[UIManager] UI elements refinding completed");
         }
 
         /// <summary>
@@ -2428,7 +2386,6 @@ namespace KowloonBreak.UI
                     mainHUD = GameObject.Find(hudName);
                     if (mainHUD != null)
                     {
-                        Debug.Log($"[UIManager] Found MainHUD by alternative name: {hudName}");
                         break;
                     }
                 }
@@ -2446,7 +2403,6 @@ namespace KowloonBreak.UI
                     if (hudObj != null)
                     {
                         mainHUD = hudObj.gameObject;
-                        Debug.Log($"[UIManager] Found MainHUD in Canvas: {canvas.name}");
                         break;
                     }
                 }
@@ -2458,7 +2414,6 @@ namespace KowloonBreak.UI
         /// </summary>
         private void RefindSliders()
         {
-            Debug.Log("[UIManager] Re-finding sliders");
 
             // MainHUDから検索
             if (mainHUD != null)
@@ -2518,13 +2473,10 @@ namespace KowloonBreak.UI
             // MainHUDで見つからない場合は全Canvas検索
             if (healthSlider == null || infectionSlider == null)
             {
-                Debug.Log("[UIManager] Sliders not found in MainHUD, searching all Canvases");
                 SearchSlidersInAllCanvases();
             }
 
             // 重要なスライダーのみ確認
-            if (healthSlider == null) Debug.LogWarning("[UIManager] Health Slider not found");
-            if (infectionSlider == null) Debug.LogWarning("[UIManager] Infection Slider not found");
         }
 
         /// <summary>
@@ -2600,7 +2552,6 @@ namespace KowloonBreak.UI
                     if (container != null)
                     {
                         notificationContainer = container;
-                        Debug.Log($"[UIManager] Found NotificationContainer in Canvas: {canvas.name}");
                         break;
                     }
                 }
@@ -2618,20 +2569,17 @@ namespace KowloonBreak.UI
                     if (container != null)
                     {
                         damageContainer = container;
-                        Debug.Log($"[UIManager] Found DamageContainer in Canvas: {canvas.name}");
                         break;
                     }
                 }
             }
         }
 
-
         /// <summary>
         /// フォールバック用のシンプルなゲームオーバー処理
         /// </summary>
         private void ShowFallbackGameOver()
         {
-            Debug.Log("[UIManager] Using fallback Game Over handling");
 
             // 時間を停止
             Time.timeScale = 0f;
@@ -2656,14 +2604,12 @@ namespace KowloonBreak.UI
             {
                 if (Input.GetKeyDown(KeyCode.R))
                 {
-                    Debug.Log("[UIManager] Fallback retry triggered by R key");
                     HandleRetryRequested();
                     yield break;
                 }
 
                 if (Input.GetKeyDown(KeyCode.Escape))
                 {
-                    Debug.Log("[UIManager] Fallback quit triggered by ESC key");
                     Application.Quit();
                     yield break;
                 }
@@ -2699,7 +2645,6 @@ namespace KowloonBreak.UI
             }
             else
             {
-                Debug.LogError("[UIManager] InfectedInteractionUI not assigned!");
             }
         }
 
@@ -2814,10 +2759,7 @@ namespace KowloonBreak.UI
         /// </summary>
         private void UpdateToolInventoryUI(int slotIndex, InventorySlot slot)
         {
-            Debug.Log($"[UIManager] Tool inventory slot {slotIndex} updated: {(slot.IsEmpty ? "Empty" : $"{slot.ItemData.itemName} x{slot.Quantity}")}");
-
-            // TODO: 実際のツールインベントリUIコンポーネントを取得して更新
-            // Example: toolInventoryUI?.UpdateSlot(slotIndex, slot);
+            // InventoryDialogControllerが自動的に更新するため、ここでは何もしない
         }
 
         /// <summary>
@@ -2825,10 +2767,7 @@ namespace KowloonBreak.UI
         /// </summary>
         private void UpdateMaterialInventoryUI(int slotIndex, InventorySlot slot)
         {
-            Debug.Log($"[UIManager] Material inventory slot {slotIndex} updated: {(slot.IsEmpty ? "Empty" : $"{slot.ItemData.itemName} x{slot.Quantity}")}");
-
-            // TODO: 実際のマテリアルインベントリUIコンポーネントを取得して更新
-            // Example: materialInventoryUI?.UpdateSlot(slotIndex, slot);
+            // InventoryDialogControllerが自動的に更新するため、ここでは何もしない
         }
 
         /// <summary>
@@ -2838,7 +2777,6 @@ namespace KowloonBreak.UI
         {
             string message = $"{itemData.itemName} x{quantity} を獲得しました";
             ShowNotification(message, NotificationType.Success);
-            Debug.Log($"[UIManager] Item added: {message}");
         }
 
         /// <summary>
@@ -2848,13 +2786,11 @@ namespace KowloonBreak.UI
         {
             string message = $"{itemData.itemName} x{quantity} を消費しました";
             ShowNotification(message, NotificationType.Info);
-            Debug.Log($"[UIManager] Item removed: {message}");
         }
 
         #endregion
 
         #region Debug and Diagnostics
-
 
         #endregion
     }
