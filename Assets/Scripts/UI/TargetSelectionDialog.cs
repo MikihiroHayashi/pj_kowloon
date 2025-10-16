@@ -99,17 +99,29 @@ namespace KowloonBreak.UI
         {
             ClearTargetSlots();
 
-            // UIContextManagerからポップ（前のコンテキストに戻る）
-            var contextManager = Core.UIContextManager.Instance;
-            if (contextManager != null)
-            {
-                contextManager.PopContext();
-            }
-
             // UIFocusManagerからポップ（他のUIを自動的に有効化）
             if (UIFocusManager.Instance != null)
             {
                 UIFocusManager.Instance.PopUI(this);
+            }
+
+            // UIContextManagerからポップ（コルーチンで遅延実行）
+            StartCoroutine(PopContextAfterDelay());
+        }
+
+        /// <summary>
+        /// PopContext()を遅延実行（GameplayInputHandlerとの競合を回避）
+        /// </summary>
+        private IEnumerator PopContextAfterDelay()
+        {
+            // 2フレーム待ってGameplayInputHandlerが確実にTargetSelectionコンテキストを認識できるようにする
+            yield return null;
+            yield return null;
+
+            var contextManager = Core.UIContextManager.Instance;
+            if (contextManager != null)
+            {
+                contextManager.PopContext();
             }
         }
 

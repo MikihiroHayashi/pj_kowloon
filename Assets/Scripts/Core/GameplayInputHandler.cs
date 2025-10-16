@@ -70,6 +70,12 @@ namespace KowloonBreak.Core
                         return; // TargetSelectionDialogが処理するため何もしない
                     }
 
+                    // コンテキストが変更された直後は処理をスキップ（PopContext直後の競合を防ぐ）
+                    if (contextManager.ContextJustChanged)
+                    {
+                        return;
+                    }
+
                     // その他のUIコンテキストでは最上位パネルを閉じる
                     uiManager.CloseTopPanel();
                     return; // 他の処理をスキップ

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 namespace KowloonBreak.Core
 {
+    [DefaultExecutionOrder(-100)]
     public class InputManager : MonoBehaviour
     {
         public static InputManager Instance { get; private set; }

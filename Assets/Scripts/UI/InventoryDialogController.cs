@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using KowloonBreak.Core;
 using KowloonBreak.Managers;
@@ -638,6 +639,40 @@ namespace KowloonBreak.UI
             if (closeButton != null)
             {
                 closeButton.interactable = enabled;
+            }
+
+            // 有効化時にEventSystemの選択が外れていればスロットにフォーカスを戻す
+            if (enabled)
+            {
+                var es = EventSystem.current;
+                if (es != null)
+                {
+                    bool needsFocus = es.currentSelectedGameObject == null ||
+                        (es.currentSelectedGameObject != null &&
+                         !(inventoryPanel != null ? es.currentSelectedGameObject.transform.IsChildOf(inventoryPanel.transform) : es.currentSelectedGameObject.transform.IsChildOf(transform)));
+
+                    if (needsFocus)
+                    {
+                        GameObject target = null;
+                        if (currentSelectedSlot != null)
+                        {
+                            target = currentSelectedSlot.gameObject;
+                        }
+                        else if (toolSlots.Count > 0 && toolSlots[0] != null)
+                        {
+                            target = toolSlots[0].gameObject;
+                        }
+                        else if (materialSlots.Count > 0 && materialSlots[0] != null)
+                        {
+                            target = materialSlots[0].gameObject;
+                        }
+
+                        if (target != null)
+                        {
+                            es.SetSelectedGameObject(target);
+                        }
+                    }
+                }
             }
         }
     }

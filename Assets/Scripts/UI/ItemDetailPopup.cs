@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using KowloonBreak.Core;
 using KowloonBreak.Managers;
@@ -349,6 +350,11 @@ namespace KowloonBreak.UI
             if (popupPanel != null && currentSlot != null && !currentSlot.IsEmpty)
             {
                 popupPanel.SetActive(true);
+                // フォーカスを元のスロットに戻す
+                if (sourceSlotUI != null && EventSystem.current != null)
+                {
+                    EventSystem.current.SetSelectedGameObject(sourceSlotUI.gameObject);
+                }
             }
         }
 
@@ -361,6 +367,11 @@ namespace KowloonBreak.UI
             if (popupPanel != null)
             {
                 popupPanel.SetActive(true);
+                // フォーカスを元のスロットに戻す
+                if (sourceSlotUI != null && EventSystem.current != null)
+                {
+                    EventSystem.current.SetSelectedGameObject(sourceSlotUI.gameObject);
+                }
             }
         }
 

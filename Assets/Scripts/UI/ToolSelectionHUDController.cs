@@ -73,10 +73,14 @@ namespace KowloonBreak.UI
                 resourceManager.OnToolSlotChanged += OnToolSlotChanged;
             }
 
-            // UIFocusManagerに登録
+            // UIFocusManagerに登録 + 初期トップ(UIが無い場合)としてプッシュ
             if (UIFocusManager.Instance != null)
             {
                 UIFocusManager.Instance.RegisterUI(this);
+                if (UIFocusManager.Instance.GetActiveUI() == null)
+                {
+                    UIFocusManager.Instance.PushUI(this);
+                }
             }
         }
         
@@ -96,10 +100,36 @@ namespace KowloonBreak.UI
 
             if (inventoryOpen) return;
 
+            // Controller inputs via InputManager (tool direct/select prev-next)
+            if (inputManager != null)
+            {
+                int sel = inputManager.GetToolSelectionInput();
+                if (sel >= 0 && sel < displayToolCount)
+                {
+                    SelectTool(sel);
+                    return;
+                }
+
+                if (inputManager.IsToolPreviousPressed())
+                {
+                    int newIndex = selectedToolIndex - 1;
+                    if (newIndex < 0) newIndex = displayToolCount - 1;
+                    SelectTool(newIndex);
+                    return;
+                }
+                if (inputManager.IsToolNextPressed())
+                {
+                    int newIndex = (selectedToolIndex + 1) % displayToolCount;
+                    SelectTool(newIndex);
+                    return;
+                }
+            }
+
+            // Note: duplicate input block removed
             // 1-8キーで道具選択
             for (int i = 0; i < displayToolCount; i++)
             {
-                if (Input.GetKeyDown(KeyCode.Alpha1 + i))
+                if (Input.GetKeyDown(KeyCode.Alpha1 + i) || Input.GetKeyDown(KeyCode.Keypad1 + i))
                 {
                     SelectTool(i);
                     break;
@@ -107,6 +137,21 @@ namespace KowloonBreak.UI
             }
 
             // 矢印キーでフォーカス移動
+
+            // Q/E でも左右移動をサポート（慣例対応）
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                int newIndex = selectedToolIndex - 1;
+                if (newIndex < 0) newIndex = displayToolCount - 1;
+                SelectTool(newIndex);
+                return;
+            }
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                int newIndex = (selectedToolIndex + 1) % displayToolCount;
+                SelectTool(newIndex);
+                return;
+            }
             if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
                 int newIndex = selectedToolIndex - 1;
@@ -313,3 +358,4 @@ namespace KowloonBreak.UI
         }
     }
 }
+

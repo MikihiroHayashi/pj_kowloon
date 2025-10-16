@@ -21,12 +21,16 @@ namespace KowloonBreak.Core
         // コンテキストスタック（複数UIが重なった場合の管理）
         private Stack<UIContext> contextStack = new Stack<UIContext>();
 
+        // コンテキスト変更直後フラグ（入力競合を防ぐ）
+        private int contextChangedFrameCount = 0;
+
         // イベント
         public event Action<UIContext, UIContext> OnContextChanged; // (previous, current)
 
         public UIContext CurrentContext => currentContext;
         public bool IsInGameplay => currentContext == UIContext.Gameplay;
         public bool IsInUI => currentContext != UIContext.Gameplay;
+        public bool ContextJustChanged => contextChangedFrameCount > 0;
 
         private void Awake()
         {
@@ -44,6 +48,15 @@ namespace KowloonBreak.Core
             else
             {
                 Destroy(gameObject);
+            }
+        }
+
+        private void Update()
+        {
+            // コンテキスト変更フラグを減少
+            if (contextChangedFrameCount > 0)
+            {
+                contextChangedFrameCount--;
             }
         }
 
@@ -84,6 +97,9 @@ namespace KowloonBreak.Core
             {
                 currentContext = UIContext.Gameplay;
             }
+
+            // コンテキスト変更直後フラグを設定（3フレーム間）
+            contextChangedFrameCount = 3;
 
             NotifyContextChange(previousContext, currentContext);
 

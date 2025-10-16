@@ -306,20 +306,22 @@ namespace KowloonBreak.Managers
             for (int i = 0; i < toolSlots; i++)
             {
                 toolInventory[i] = new InventorySlot();
-                toolInventory[i].OnSlotChanged += (slot) => OnToolSlotChanged?.Invoke(i, slot);
+                int index = i; // capture per-iteration index for event
+                toolInventory[i].OnSlotChanged += (slot) => OnToolSlotChanged?.Invoke(index, slot);
             }
             
             for (int i = 0; i < materialSlots; i++)
             {
                 materialInventory[i] = new InventorySlot();
-                materialInventory[i].OnSlotChanged += (slot) => OnMaterialSlotChanged?.Invoke(i, slot);
+                int index = i; // capture per-iteration index for event
+                materialInventory[i].OnSlotChanged += (slot) => OnMaterialSlotChanged?.Invoke(index, slot);
             }
 
             // アイテムデータベース作成
             CreateItemDatabase();
             
-            // 初期アイテム追加
-            AddInitialItems();
+            // 初期アイテム追加（SO参照対応版）
+            AddInitialItemsV2();
         }
 
         private void CreateItemDatabase()
@@ -360,99 +362,39 @@ namespace KowloonBreak.Managers
             // フォールバック：アセットが設定されていない場合はランタイムで作成
             if (itemList.Count == 0)
             {
-                Debug.LogWarning("ScriptableObject assets not assigned. Creating default items at runtime.");
-                CreateRuntimeFallbackItems(itemList);
+                Debug.LogWarning("No ItemData ScriptableObjects assigned; default items will not be created.");
+                // CreateRuntimeFallbackItems(itemList); // removed legacy fallback
             }
 
             availableItems = itemList.ToArray();
         }
 
-        private void CreateRuntimeFallbackItems(List<ItemData> itemList)
+        // 新しい初期アイテム適用（ScriptableObject参照対応）
+        private void AddInitialItemsV2()
         {
-            // 基本ツール
-            var pickaxe = ScriptableObject.CreateInstance<ItemData>();
-            pickaxe.itemName = "つるはし";
-            pickaxe.itemType = ItemType.Tool;
-            pickaxe.description = "鉄塊を破壊するための道具";
-            pickaxe.toolType = ToolType.Pickaxe;
-            pickaxe.durability = 100;
-            pickaxe.attackDamage = 2f;
-            pickaxe.attackRange = 1.5f;
-            pickaxe.maxStackSize = 1;
-
-            var ironPipe = ScriptableObject.CreateInstance<ItemData>();
-            ironPipe.itemName = "鉄パイプ";
-            ironPipe.itemType = ItemType.Tool;
-            ironPipe.description = "汎用的な武器として使用可能";
-            ironPipe.toolType = ToolType.IronPipe;
-            ironPipe.durability = 80;
-            ironPipe.attackDamage = 1.5f;
-            ironPipe.attackRange = 1.2f;
-            ironPipe.maxStackSize = 1;
-
-            var scrap = ScriptableObject.CreateInstance<ItemData>();
-            scrap.itemName = "ガラクタ";
-            scrap.itemType = ItemType.Material;
-            scrap.description = "鉄塊から採取された金属片";
-            scrap.materialType = MaterialType.Scrap;
-            scrap.value = 1f;
-            scrap.maxStackSize = 99;
-
-            // 回復アイテム
-            var vaccine = ScriptableObject.CreateInstance<ItemData>();
-            vaccine.itemName = "ワクチン";
-            vaccine.description = "感染を完全に治療する薬剤";
-            vaccine.itemType = ItemType.Consumable;
-            vaccine.maxStackSize = 5;
-            vaccine.consumableEffect = new ConsumableEffect();
-            vaccine.consumableEffect.effectType = ConsumableType.InfectionCure;
-            vaccine.consumableEffect.infectionTreatment = 100f;
-            vaccine.consumableEffect.useMessage = "ワクチンを使用しました。感染が完全に治癒されました。";
-
-            var cannedFood = ScriptableObject.CreateInstance<ItemData>();
-            cannedFood.itemName = "缶詰";
-            cannedFood.description = "栄養豊富な保存食品";
-            cannedFood.itemType = ItemType.Consumable;
-            cannedFood.maxStackSize = 10;
-            cannedFood.consumableEffect = new ConsumableEffect();
-            cannedFood.consumableEffect.effectType = ConsumableType.HealthRestore;
-            cannedFood.consumableEffect.healthRestore = 50f;
-            cannedFood.consumableEffect.useMessage = "缶詰を食べました。体力が回復しました。";
-
-            var bandage = ScriptableObject.CreateInstance<ItemData>();
-            bandage.itemName = "包帯";
-            bandage.description = "応急処置用の医療用品";
-            bandage.itemType = ItemType.Consumable;
-            bandage.maxStackSize = 20;
-            bandage.consumableEffect = new ConsumableEffect();
-            bandage.consumableEffect.effectType = ConsumableType.HealthRestore;
-            bandage.consumableEffect.healthRestore = 25f;
-            bandage.consumableEffect.useMessage = "包帯を使用しました。傷が手当てされました。";
-
-            itemList.AddRange(new ItemData[] { pickaxe, ironPipe, scrap, vaccine, cannedFood, bandage });
-        }
-
-        private void AddInitialItems()
-        {
-            if (initialItems == null || initialItems.Length == 0)
+            if (initialItems != null && initialItems.Length > 0)
             {
-                // デフォルトの初期アイテム
-                AddItem("つるはし", 1);
-                AddItem("鉄パイプ", 1);
-
-                // テスト用の回復アイテム
-                AddItem("ワクチン", 3);
-                AddItem("缶詰", 5);
-                AddItem("包帯", 10);
-            }
-            else
-            {
-                foreach (var initialItem in initialItems)
+                foreach (var ii in initialItems)
                 {
-                    AddItem(initialItem.itemName, initialItem.quantity);
+                    if (ii == null) continue;
+                    if (ii.itemData != null)
+                    {
+                        AddItem(ii.itemData, ii.quantity, ii.durability);
+                    }
+                    else if (!string.IsNullOrEmpty(ii.itemName))
+                    {
+                        AddItem(ii.itemName, ii.quantity, ii.durability);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[EnhancedResourceManager] Initial item entry has neither itemData nor itemName.");
+                    }
                 }
             }
+            // If no initial items configured, start empty.
         }
+
+
 
         public ItemData GetItemData(string itemName)
         {
@@ -703,7 +645,8 @@ namespace KowloonBreak.Managers
     [Serializable]
     public class InitialItemData
     {
-        public string itemName;
+        public ItemData itemData;  // 推奨: ScriptableObject参照
+        public string itemName;    // 互換: 名前指定
         public int quantity = 1;
         public int durability = -1;
     }
