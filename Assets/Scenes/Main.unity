@@ -28947,7 +28947,23 @@ MonoBehaviour:
   vaccineItem: {fileID: 11400000, guid: c2c6e3cd4dbb4494eb4c01b5764d92cf, type: 2}
   cannedFoodItem: {fileID: 11400000, guid: 95abb2bc6637a7748b2c06867e5e0ace, type: 2}
   bandageItem: {fileID: 11400000, guid: 5b5887cd3cc3f0746a63b87ef1eca209, type: 2}
-  initialItems: []
+  initialItems:
+  - itemData: {fileID: 11400000, guid: ef5e06915eaab8b4e993d603a1eccfa5, type: 2}
+    itemName: 
+    quantity: 1
+    durability: 0
+  - itemData: {fileID: 11400000, guid: 92557f4d3c842bb45becd158fe7c11cf, type: 2}
+    itemName: 
+    quantity: 1
+    durability: 0
+  - itemData: {fileID: 11400000, guid: 5b5887cd3cc3f0746a63b87ef1eca209, type: 2}
+    itemName: 
+    quantity: 3
+    durability: 0
+  - itemData: {fileID: 11400000, guid: c2c6e3cd4dbb4494eb4c01b5764d92cf, type: 2}
+    itemName: 
+    quantity: 3
+    durability: 0
 --- !u!1 &1270373921
 GameObject:
   m_ObjectHideFlags: 0

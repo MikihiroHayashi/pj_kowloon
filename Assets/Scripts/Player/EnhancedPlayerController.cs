@@ -1109,14 +1109,14 @@ namespace KowloonBreak.Player
 
         private void HandleToolSelection()
         {
-            // LB/RB (Q/E) でツール切り替え
+            // LB/RB (Q/E) でツール切り替え（左右を逆方向に変更）
             if (InputManagerInstance.IsToolPreviousPressed())
             {
-                SelectPreviousTool();
+                SelectNextTool();
             }
             else if (InputManagerInstance.IsToolNextPressed())
             {
-                SelectNextTool();
+                SelectPreviousTool();
             }
             
             // レガシー: 1-8キーでの直接選択も残す

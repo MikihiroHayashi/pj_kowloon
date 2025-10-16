@@ -91,8 +91,9 @@ namespace KowloonBreak.UI
         
         private void HandleToolSelection()
         {
-            // 入力が無効化されている場合は何もしない
-            if (!isInputEnabled) return;
+            // クリック等のUI操作はフォーカス制御に従うが、
+            // キーボード/コントローラによるスロット選択はUIContextで判定するため継続
+            // （isInputEnabledはクリック用にのみ意味を持たせる）
 
             // インベントリが開いている場合はツール選択を無効化
             var inputManager = KowloonBreak.Core.InputManager.Instance;
@@ -110,16 +111,17 @@ namespace KowloonBreak.UI
                     return;
                 }
 
+                // Controller左右を逆方向に変更（Previousで右/Nextで左）
                 if (inputManager.IsToolPreviousPressed())
                 {
-                    int newIndex = selectedToolIndex - 1;
-                    if (newIndex < 0) newIndex = displayToolCount - 1;
+                    int newIndex = (selectedToolIndex + 1) % displayToolCount; // move right
                     SelectTool(newIndex);
                     return;
                 }
                 if (inputManager.IsToolNextPressed())
                 {
-                    int newIndex = (selectedToolIndex + 1) % displayToolCount;
+                    int newIndex = selectedToolIndex - 1; // move left
+                    if (newIndex < 0) newIndex = displayToolCount - 1;
                     SelectTool(newIndex);
                     return;
                 }
@@ -267,7 +269,10 @@ namespace KowloonBreak.UI
         {
             for (int i = 0; i < toolSlots.Count; i++)
             {
-                toolSlots[i].SetSelected(i == selectedToolIndex);
+                bool isSelected = (i == selectedToolIndex);
+                toolSlots[i].SetSelected(isSelected);
+                // 選択中スロットはキーボード/パッド操作時もフォーカスONにしてAnimatorの "Focus" を反映
+                toolSlots[i].SetFocused(isSelected);
             }
         }
         
