@@ -25,7 +25,11 @@ namespace KowloonBreak.UI
         private List<ItemSlotUI> toolSlots = new List<ItemSlotUI>();
         private EnhancedResourceManager resourceManager;
         private int selectedToolIndex = 0;
-        private bool isInputEnabled = true; // 入力有効フラグ
+        private bool isInputEnabled = true; // input enable flag
+
+        [Header("Input Handling")]
+        [Tooltip("If true, HUD handles prev/next inputs; otherwise player handles.")]
+        [SerializeField] private bool handlePrevNextInput = false;
 
         public int SelectedToolIndex => selectedToolIndex;
         public InventorySlot SelectedTool => resourceManager?.GetToolSlot(selectedToolIndex);
@@ -33,24 +37,22 @@ namespace KowloonBreak.UI
         public System.Action<int, InventorySlot> OnToolSelected;
         public System.Action<int, InventorySlot> OnToolUsed;
 
-        // IFocusableUI実装
+        // IFocusableUI
         public bool IsVisible => gameObject.activeInHierarchy;
-        public int Priority => 5; // 最低優先度（常時表示）
+        public int Priority => 5;
         public string UIName => "ToolSelectionHUD";
 
         private void Awake()
         {
-            // デフォルトの参照を設定
             if (toolSlotsLayout == null)
                 toolSlotsLayout = GetComponent<HorizontalLayoutGroup>();
-            
+
             if (toolSlotsParent == null)
                 toolSlotsParent = toolSlotsLayout != null ? toolSlotsLayout.transform : transform;
-            
+
             if (toolSlotsLayout == null)
                 toolSlotsLayout = gameObject.AddComponent<HorizontalLayoutGroup>();
-            
-            // レイアウト設定
+
             toolSlotsLayout.spacing = spacing;
             toolSlotsLayout.childAlignment = TextAnchor.MiddleCenter;
             toolSlotsLayout.childControlWidth = false;
@@ -58,7 +60,7 @@ namespace KowloonBreak.UI
             toolSlotsLayout.childForceExpandWidth = false;
             toolSlotsLayout.childForceExpandHeight = false;
         }
-        
+
         private void Start()
         {
             resourceManager = EnhancedResourceManager.Instance;
@@ -68,12 +70,9 @@ namespace KowloonBreak.UI
                 InitializeToolSlots();
                 UpdateAllSlots();
                 UpdateSelection();
-
-                // イベント監視
                 resourceManager.OnToolSlotChanged += OnToolSlotChanged;
             }
 
-            // UIFocusManagerに登録 + 初期トップ(UIが無い場合)としてプッシュ
             if (UIFocusManager.Instance != null)
             {
                 UIFocusManager.Instance.RegisterUI(this);
@@ -83,26 +82,19 @@ namespace KowloonBreak.UI
                 }
             }
         }
-        
+
         private void Update()
         {
             HandleToolSelection();
         }
-        
+
         private void HandleToolSelection()
         {
-            // クリック等のUI操作はフォーカス制御に従うが、
-            // キーボード/コントローラによるスロット選択はUIContextで判定するため継続
-            // （isInputEnabledはクリック用にのみ意味を持たせる）
-
-            // インベントリが開いている場合はツール選択を無効化
             var inputManager = KowloonBreak.Core.InputManager.Instance;
             bool inventoryOpen = inputManager != null && inputManager.IsInventoryOpen();
-
             if (inventoryOpen) return;
 
-            // Controller inputs via InputManager (tool direct/select prev-next)
-            if (inputManager != null)
+            if (handlePrevNextInput && inputManager != null)
             {
                 int sel = inputManager.GetToolSelectionInput();
                 if (sel >= 0 && sel < displayToolCount)
@@ -111,125 +103,103 @@ namespace KowloonBreak.UI
                     return;
                 }
 
-                // Controller左右を逆方向に変更（Previousで右/Nextで左）
                 if (inputManager.IsToolPreviousPressed())
                 {
-                    int newIndex = (selectedToolIndex + 1) % displayToolCount; // move right
+                    int newIndex = selectedToolIndex - 1;
+                    if (newIndex < 0) newIndex = displayToolCount - 1;
                     SelectTool(newIndex);
                     return;
                 }
                 if (inputManager.IsToolNextPressed())
                 {
-                    int newIndex = selectedToolIndex - 1; // move left
-                    if (newIndex < 0) newIndex = displayToolCount - 1;
+                    int newIndex = (selectedToolIndex + 1) % displayToolCount;
                     SelectTool(newIndex);
                     return;
                 }
             }
 
-            // Note: duplicate input block removed
-            // 1-8キーで道具選択
-            for (int i = 0; i < displayToolCount; i++)
+            if (handlePrevNextInput)
             {
-                if (Input.GetKeyDown(KeyCode.Alpha1 + i) || Input.GetKeyDown(KeyCode.Keypad1 + i))
+                // 1-8 direct selection
+                for (int i = 0; i < displayToolCount; i++)
                 {
-                    SelectTool(i);
-                    break;
+                    if (Input.GetKeyDown(KeyCode.Alpha1 + i) || Input.GetKeyDown(KeyCode.Keypad1 + i))
+                    {
+                        SelectTool(i);
+                        break;
+                    }
+                }
+
+                // Q/E or Arrow keys
+                if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.LeftArrow))
+                {
+                    int newIndex = selectedToolIndex - 1;
+                    if (newIndex < 0) newIndex = displayToolCount - 1;
+                    SelectTool(newIndex);
+                    return;
+                }
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.RightArrow))
+                {
+                    int newIndex = (selectedToolIndex + 1) % displayToolCount;
+                    SelectTool(newIndex);
+                    return;
+                }
+
+                // Mouse wheel
+                float scroll = Input.GetAxis("Mouse ScrollWheel");
+                if (scroll != 0f)
+                {
+                    int direction = scroll > 0f ? -1 : 1;
+                    int newIndex = (selectedToolIndex + direction) % displayToolCount;
+                    if (newIndex < 0) newIndex = displayToolCount - 1;
+                    SelectTool(newIndex);
                 }
             }
 
-            // 矢印キーでフォーカス移動
-
-            // Q/E でも左右移動をサポート（慣例対応）
-            if (Input.GetKeyDown(KeyCode.Q))
-            {
-                int newIndex = selectedToolIndex - 1;
-                if (newIndex < 0) newIndex = displayToolCount - 1;
-                SelectTool(newIndex);
-                return;
-            }
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                int newIndex = (selectedToolIndex + 1) % displayToolCount;
-                SelectTool(newIndex);
-                return;
-            }
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
-            {
-                int newIndex = selectedToolIndex - 1;
-                if (newIndex < 0) newIndex = displayToolCount - 1;
-                SelectTool(newIndex);
-            }
-            else if (Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                int newIndex = (selectedToolIndex + 1) % displayToolCount;
-                SelectTool(newIndex);
-            }
-
-            // Enterキーまたはスペースキーで選択されたツールを使用
+            // Confirm selection
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
             {
                 UseTool(selectedToolIndex);
             }
-            
-            // マウスホイールで道具選択
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (scroll != 0f)
-            {
-                int direction = scroll > 0f ? -1 : 1;
-                int newIndex = (selectedToolIndex + direction) % displayToolCount;
-                if (newIndex < 0) newIndex = displayToolCount - 1;
-                
-                SelectTool(newIndex);
-            }
         }
-        
+
         private void InitializeToolSlots()
         {
             if (resourceManager == null) return;
-            
+
             toolSlots.Clear();
-            
-            // シーンに配置されたスロットを取得
             ItemSlotUI[] existingSlots = toolSlotsParent.GetComponentsInChildren<ItemSlotUI>(true);
-            
-            // displayToolCountまでのスロットを使用
             int slotsToUse = Mathf.Min(existingSlots.Length, displayToolCount);
-            
+
             for (int i = 0; i < slotsToUse; i++)
             {
                 ItemSlotUI slotUI = existingSlots[i];
-                
                 if (slotUI != null)
                 {
                     slotUI.Initialize(i);
                     slotUI.OnSlotClicked += OnToolSlotClicked;
                     toolSlots.Add(slotUI);
-                    
-                    // スロットをアクティブにする
                     slotUI.gameObject.SetActive(true);
                 }
             }
-            
-            // 余分なスロットは非アクティブにする
+
             for (int i = slotsToUse; i < existingSlots.Length; i++)
             {
                 existingSlots[i].gameObject.SetActive(false);
             }
         }
-        
-        
+
         private void UpdateAllSlots()
         {
             if (resourceManager == null) return;
-            
+
             for (int i = 0; i < toolSlots.Count; i++)
             {
                 var slot = resourceManager.GetToolSlot(i);
                 toolSlots[i].SetSlot(slot);
             }
         }
-        
+
         private void OnToolSlotChanged(int index, InventorySlot slot)
         {
             if (index >= 0 && index < toolSlots.Count)
@@ -237,12 +207,12 @@ namespace KowloonBreak.UI
                 toolSlots[index].SetSlot(slot);
             }
         }
-        
+
         private void OnToolSlotClicked(ItemSlotUI slotUI)
         {
             SelectTool(slotUI.SlotIndex);
         }
-        
+
         public void SelectTool(int index)
         {
             if (index < 0 || index >= displayToolCount) return;
@@ -264,33 +234,32 @@ namespace KowloonBreak.UI
                 OnToolUsed?.Invoke(index, toolSlot);
             }
         }
-        
+
         private void UpdateSelection()
         {
             for (int i = 0; i < toolSlots.Count; i++)
             {
                 bool isSelected = (i == selectedToolIndex);
                 toolSlots[i].SetSelected(isSelected);
-                // 選択中スロットはキーボード/パッド操作時もフォーカスONにしてAnimatorの "Focus" を反映
                 toolSlots[i].SetFocused(isSelected);
             }
         }
-        
+
         public InventorySlot GetSelectedTool()
         {
             return resourceManager?.GetToolSlot(selectedToolIndex);
         }
-        
+
         public bool HasSelectedTool()
         {
             var selectedSlot = GetSelectedTool();
             return selectedSlot != null && !selectedSlot.IsEmpty;
         }
-        
+
         public void SetSlotSize(float size)
         {
             slotSize = size;
-            
+
             foreach (var slot in toolSlots)
             {
                 if (slot != null)
@@ -300,7 +269,7 @@ namespace KowloonBreak.UI
                 }
             }
         }
-        
+
         public void SetSpacing(float newSpacing)
         {
             spacing = newSpacing;
@@ -309,7 +278,7 @@ namespace KowloonBreak.UI
                 toolSlotsLayout.spacing = newSpacing;
             }
         }
-        
+
         public void SetDisplayToolCount(int count)
         {
             displayToolCount = Mathf.Clamp(count, 1, 8);
@@ -320,13 +289,13 @@ namespace KowloonBreak.UI
                 UpdateSelection();
             }
         }
-        
+
         public void RefreshDisplay()
         {
             UpdateAllSlots();
             UpdateSelection();
         }
-        
+
         private void OnDestroy()
         {
             if (resourceManager != null)
@@ -334,7 +303,6 @@ namespace KowloonBreak.UI
                 resourceManager.OnToolSlotChanged -= OnToolSlotChanged;
             }
 
-            // UIFocusManagerから登録解除
             if (UIFocusManager.Instance != null)
             {
                 UIFocusManager.Instance.UnregisterUI(this);
@@ -342,13 +310,12 @@ namespace KowloonBreak.UI
         }
 
         /// <summary>
-        /// IFocusableUI実装: 入力を有効化/無効化する
+        /// IFocusableUI: enable/disable input
         /// </summary>
         public void SetInputEnabled(bool enabled)
         {
             isInputEnabled = enabled;
 
-            // すべてのスロットボタンの有効/無効を制御
             foreach (var slot in toolSlots)
             {
                 if (slot != null)
@@ -363,4 +330,3 @@ namespace KowloonBreak.UI
         }
     }
 }
-

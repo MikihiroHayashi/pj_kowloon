@@ -46,6 +46,12 @@ namespace KowloonBreak.UI
         [SerializeField] private TextMeshProUGUI phaseText;
         [SerializeField] private TextMeshProUGUI timeText;
 
+        [Header("HUD Animation Settings")]
+        [SerializeField] private float healthBarTweenDuration = 0.25f;
+        [SerializeField] private float infectionBarTweenDuration = 0.25f;
+        private Coroutine healthBarTween;
+        private Coroutine infectionBarTween;
+
         [Header("Resource Display")]
         [SerializeField] private TextMeshProUGUI foodText;
         [SerializeField] private TextMeshProUGUI waterText;
@@ -255,16 +261,16 @@ namespace KowloonBreak.UI
         {
             if (enhancedPlayerController == null) return;
 
-            enhancedPlayerController.OnHealthChanged += UpdateHealthBar;
+            enhancedPlayerController.OnHealthChanged += TweenedUpdateHealthBar;
             enhancedPlayerController.OnStaminaChanged += UpdateStaminaBar;
-            enhancedPlayerController.OnInfectionLevelChanged += UpdatePlayerInfectionBar;
+            enhancedPlayerController.OnInfectionLevelChanged += TweenedUpdatePlayerInfectionBar;
             enhancedPlayerController.OnStealthAttack += HandleStealthAttack;
 
             // 初期値を設定
-            UpdateHealthBar(enhancedPlayerController.HealthPercentage);
+            TweenedUpdateHealthBar(enhancedPlayerController.HealthPercentage);
             UpdateStaminaBar(enhancedPlayerController.CurrentStamina);
             UpdateStealthBar(enhancedPlayerController.StealthLevel);
-            UpdatePlayerInfectionBar(enhancedPlayerController.InfectionLevel / 100f);
+            TweenedUpdatePlayerInfectionBar(enhancedPlayerController.InfectionLevel / 100f);
         }
 
         /// <summary>
@@ -662,6 +668,11 @@ namespace KowloonBreak.UI
                 targetSelectionPanel.SetActive(true);
 
                 // ダイアログコントローラーに表示処理を依頼（データ同期のみ）
+                var popup = FindObjectOfType<KowloonBreak.UI.ItemDetailPopup>();
+                if (popup != null)
+                {
+                    popup.EnsureTargetSelectionSubscribed();
+                }
                 targetSelectionDialog.Show(item);
             }
         }
@@ -2775,6 +2786,65 @@ namespace KowloonBreak.UI
         }
 
         #endregion
+
+        // Tweened HUD updates
+        private void TweenedUpdateHealthBar(float healthPercentage)
+        {
+            if (healthSlider == null) return;
+            float target = Mathf.Clamp01(healthPercentage);
+            if (healthBarTween != null) StopCoroutine(healthBarTween);
+            healthBarTween = StartCoroutine(TweenSliderValue(healthSlider, target, healthBarTweenDuration, UpdateHealthBarColor));
+        }
+
+        private void TweenedUpdatePlayerInfectionBar(float infectionLevel)
+        {
+            if (infectionSlider == null) return;
+            float target = Mathf.Clamp01(infectionLevel);
+            if (infectionBarTween != null) StopCoroutine(infectionBarTween);
+            infectionBarTween = StartCoroutine(TweenSliderValue(infectionSlider, target, infectionBarTweenDuration, UpdateInfectionBarColor));
+        }
+
+        private void UpdateInfectionBarColor(float infectionLevel)
+        {
+            Color sliderColor = infectionLevel switch
+            {
+                >= 0.8f => Color.red,
+                >= 0.6f => new Color(1f, 0.5f, 0f),
+                >= 0.4f => Color.yellow,
+                >= 0.2f => new Color(0.5f, 1f, 0.5f),
+                _ => Color.white
+            };
+
+            var fillArea = infectionSlider?.fillRect?.GetComponent<Image>();
+            if (fillArea != null)
+            {
+                fillArea.color = sliderColor;
+            }
+        }
+
+        private System.Collections.IEnumerator TweenSliderValue(Slider slider, float target, float duration, System.Action<float> onProgressColorUpdate)
+        {
+            float start = slider.value;
+            if (Mathf.Approximately(start, target) || duration <= 0f)
+            {
+                slider.value = target;
+                onProgressColorUpdate?.Invoke(target);
+                yield break;
+            }
+
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float p = Mathf.Clamp01(t / duration);
+                float val = Mathf.Lerp(start, target, p);
+                slider.value = val;
+                onProgressColorUpdate?.Invoke(val);
+                yield return null;
+            }
+            slider.value = target;
+            onProgressColorUpdate?.Invoke(target);
+        }
 
         #region Inventory UI Updates
 

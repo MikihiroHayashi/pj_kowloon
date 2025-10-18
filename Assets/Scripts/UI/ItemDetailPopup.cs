@@ -588,5 +588,17 @@ namespace KowloonBreak.UI
                 // キャンセルはInventoryDialogControllerで処理
             }
         }
+
+        // Ensure subscription to TargetSelectionDialog events at runtime
+        public void EnsureTargetSelectionSubscribed()
+        {
+            if (UIManager.Instance != null && UIManager.Instance.TargetSelectionDialog != null)
+            {
+                UIManager.Instance.TargetSelectionDialog.OnTargetSelected -= OnTargetSelected;
+                UIManager.Instance.TargetSelectionDialog.OnCancelled -= OnTargetSelectionCancelled;
+                UIManager.Instance.TargetSelectionDialog.OnTargetSelected += OnTargetSelected;
+                UIManager.Instance.TargetSelectionDialog.OnCancelled += OnTargetSelectionCancelled;
+            }
+        }
     }
 }

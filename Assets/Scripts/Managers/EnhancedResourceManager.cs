@@ -377,13 +377,14 @@ namespace KowloonBreak.Managers
                 foreach (var ii in initialItems)
                 {
                     if (ii == null) continue;
+                    int initDurability = (ii.durability > 0) ? ii.durability : -1; // 0 or negative means use SO default
                     if (ii.itemData != null)
                     {
-                        AddItem(ii.itemData, ii.quantity, ii.durability);
+                        AddItem(ii.itemData, ii.quantity, initDurability);
                     }
                     else if (!string.IsNullOrEmpty(ii.itemName))
                     {
-                        AddItem(ii.itemName, ii.quantity, ii.durability);
+                        AddItem(ii.itemName, ii.quantity, initDurability);
                     }
                     else
                     {
@@ -415,6 +416,9 @@ namespace KowloonBreak.Managers
         public bool AddItem(ItemData itemData, int quantity = 1, int durability = -1)
         {
             if (itemData == null || quantity <= 0) return false;
+
+            // Normalize durability: 0 or negative means use item's default durability
+            if (durability <= 0) durability = -1;
 
             InventorySlot[] targetInventory = GetTargetInventory(itemData);
             int remainingQuantity = quantity;

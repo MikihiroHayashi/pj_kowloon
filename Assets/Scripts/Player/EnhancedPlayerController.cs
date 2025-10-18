@@ -1109,25 +1109,24 @@ namespace KowloonBreak.Player
 
         private void HandleToolSelection()
         {
-            // LB/RB (Q/E) でツール切り替え（左右を逆方向に変更）
+            // LB/RB (Q/E): previous = left, next = right
             if (InputManagerInstance.IsToolPreviousPressed())
-            {
-                SelectNextTool();
-            }
-            else if (InputManagerInstance.IsToolNextPressed())
             {
                 SelectPreviousTool();
             }
-            
-            // レガシー: 1-8キーでの直接選択も残す
+            else if (InputManagerInstance.IsToolNextPressed())
+            {
+                SelectNextTool();
+            }
+
+            // Legacy: direct selection via 1-8 keys
             int selectedTool = InputManagerInstance.GetToolSelectionInput();
             if (selectedTool >= 0)
             {
                 SelectTool(selectedTool);
             }
         }
-
-        private void SelectTool(int index)
+private void SelectTool(int index)
         {
             if (index < 0 || index >= 8) return;
             
@@ -2400,3 +2399,7 @@ namespace KowloonBreak.Player
         void Interact(EnhancedPlayerController player);
     }
 }
+
+
+
+
