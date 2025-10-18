@@ -32,6 +32,13 @@ namespace KowloonBreak.UI
         private ItemSlotUI sourceSlotUI;
         private bool isToolSlot;
         private RectTransform rectTransform;
+        
+        // Detail-only: Raise events for actions; actual handling is delegated to inventory
+        public System.Action<InventorySlot> OnUseRequested;
+        public System.Action<InventorySlot> OnDiscardRequested;
+
+        public bool IsVisible => popupPanel != null && popupPanel.activeSelf;
+
 
         private void Awake()
         {
@@ -40,6 +47,9 @@ namespace KowloonBreak.UI
             // デフォルト参照設定
             if (popupPanel == null)
                 popupPanel = transform.Find("PopupPanel")?.gameObject;
+            // フォールバック: パネルが見つからない場合は自身をパネルとして扱う
+            if (popupPanel == null)
+                popupPanel = this.gameObject;
 
             if (itemIcon == null)
                 itemIcon = transform.Find("PopupPanel/ItemIcon")?.GetComponent<Image>();
@@ -84,29 +94,19 @@ namespace KowloonBreak.UI
             if (closeButton != null)
                 closeButton.onClick.AddListener(Hide);
 
-            // 初期状態は非表示
+            // 初期状態は非表示（自身をパネルとして扱う場合も統一）
             if (popupPanel != null)
                 popupPanel.SetActive(false);
         }
 
         private void Start()
         {
-            // UIManager経由でTargetSelectionDialogのイベントを購読
-            if (UIManager.Instance != null && UIManager.Instance.TargetSelectionDialog != null)
-            {
-                UIManager.Instance.TargetSelectionDialog.OnTargetSelected += OnTargetSelected;
-                UIManager.Instance.TargetSelectionDialog.OnCancelled += OnTargetSelectionCancelled;
-            }
+            // Detail-only: no subscription here; InventoryDialogController handles dialog events
         }
 
         private void OnDestroy()
         {
-            // イベント購読解除
-            if (UIManager.Instance != null && UIManager.Instance.TargetSelectionDialog != null)
-            {
-                UIManager.Instance.TargetSelectionDialog.OnTargetSelected -= OnTargetSelected;
-                UIManager.Instance.TargetSelectionDialog.OnCancelled -= OnTargetSelectionCancelled;
-            }
+            // Detail-only: nothing to unsubscribe here
         }
 
         public void Show(InventorySlot slot, ItemSlotUI slotUI, bool isTool)
@@ -120,12 +120,21 @@ namespace KowloonBreak.UI
             currentSlot = slot;
             sourceSlotUI = slotUI;
             isToolSlot = isTool;
+            // reset any internal flags (none)
 
-            UpdatePopupContent();
-            UpdatePosition();
-
+            // 先に表示してから内容更新（例外で途中中断しても可視状態を担保）
             if (popupPanel != null)
                 popupPanel.SetActive(true);
+
+            try
+            {
+                UpdatePopupContent();
+                UpdatePosition();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[ItemDetailPopup] Failed to update content/position: {ex.Message}\n{ex.StackTrace}");
+            }
 
             Debug.Log($"[ItemDetailPopup] Showing details for {slot.ItemData.itemName}");
         }
@@ -167,6 +176,12 @@ namespace KowloonBreak.UI
 
         public void Hide()
         {
+            // 既に非表示なら処理しない（ログ抑制）
+            if (popupPanel != null && !popupPanel.activeSelf)
+            {
+                return;
+            }
+
             if (popupPanel != null)
                 popupPanel.SetActive(false);
 
@@ -244,10 +259,10 @@ namespace KowloonBreak.UI
             // 使用ボタン（消耗品の場合のみ表示）
             if (useButton != null)
             {
-                bool canUse = itemData.IsConsumable();
-                useButton.gameObject.SetActive(canUse);
+                bool isConsumable = itemData.IsConsumable();
+                useButton.gameObject.SetActive(isConsumable);
 
-                if (canUse)
+                if (isConsumable)
                 {
                     // 使用ボタンのテキストを更新
                     var useButtonText = useButton.GetComponentInChildren<TextMeshProUGUI>();
@@ -256,13 +271,40 @@ namespace KowloonBreak.UI
                         useButtonText.text = "使用 [E]";
                     }
 
+                    // 使用可能可否をConsumableManagerに問い合わせて活性/非活性を制御
+                    bool interactable = true;
+                    var cm = KowloonBreak.Managers.ConsumableManager.Instance;
+                    if (cm != null)
+                    {
+                        interactable = cm.CanUseConsumableItem(itemData);
+                        // クールダウン中は非活性
+                        if (cm.IsOnCooldown(itemData))
+                        {
+                            interactable = false;
+                        }
+                    }
+                    useButton.interactable = interactable;
+
                     // 効果説明を追加
                     if (itemDescriptionText != null && itemData.consumableEffect != null)
                     {
                         string effectText = GetConsumableEffectText(itemData.consumableEffect);
                         if (!string.IsNullOrEmpty(effectText))
                         {
-                            itemDescriptionText.text += "\n\n<color=#88FF88>効果:</color>\n" + effectText;
+                            itemDescriptionText.text += "<color=#88FF88>効果:</color>" + effectText;
+                        }
+                        // クールダウン表示
+                        if (cm != null && itemData.cooldownSeconds > 0f)
+                        {
+                            float remain = cm.GetRemainingCooldown(itemData);
+                            if (remain > 0f)
+                            {
+                                itemDescriptionText.text += $"\n<color=#FFCC66>クールダウン中: {remain:F1}s</color>";
+                            }
+                            else
+                            {
+                                itemDescriptionText.text += $"\n<color=#CCCCCC>クールダウン: {itemData.cooldownSeconds:F1}s</color>";
+                            }
                         }
                     }
                 }
@@ -287,318 +329,65 @@ namespace KowloonBreak.UI
 
             if (effect.HasHealthEffect)
             {
-                effectText += $"・体力 +{effect.healthRestore}\n";
+                effectText += $"・体力 +{effect.healthRestore}";
             }
 
             if (effect.HasStaminaEffect)
             {
-                effectText += $"・スタミナ +{effect.staminaRestore}\n";
+                effectText += $"・スタミナ +{effect.staminaRestore}";
             }
 
             if (effect.HasInfectionEffect)
             {
-                effectText += $"・感染治療 -{effect.infectionTreatment}\n";
+                effectText += $"・感染治療 -{effect.infectionTreatment}";
             }
 
-            return effectText.TrimEnd('\n');
-        }
+            return effectText.TrimEnd();
+            }
 
         private void OnUseButtonClicked()
         {
             if (currentSlot == null || currentSlot.IsEmpty) return;
-
-            ItemData itemData = currentSlot.ItemData;
-
-            if (!itemData.IsConsumable())
-            {
-                Debug.LogWarning("[ItemDetailPopup] This item is not consumable");
-                return;
-            }
-
-            // 回復アイテムの場合はターゲット選択ダイアログを表示
-            if (itemData.consumableEffect != null &&
-                (itemData.consumableEffect.HasHealthEffect ||
-                 itemData.consumableEffect.HasStaminaEffect ||
-                 itemData.consumableEffect.HasInfectionEffect))
-            {
-                // ItemDetailPopupを一時的に非表示
-                if (popupPanel != null)
-                {
-                    popupPanel.SetActive(false);
-                }
-
-                // ターゲット選択ダイアログを表示（UIManager経由）
-                if (UIManager.Instance != null)
-                {
-                    UIManager.Instance.ShowTargetSelection(currentSlot);
-                }
-                return;
-            }
-
-            // ターゲット選択が不要な場合、またはダイアログがない場合は直接使用
-            UseItemOnTarget(null);
+            OnUseRequested?.Invoke(currentSlot);
         }
 
         /// <summary>
         /// ターゲットが選択された時の処理
         /// </summary>
-        private void OnTargetSelected(object target)
-        {
-            UseItemOnTarget(target);
-
-            // ItemDetailPopupを再表示
-            if (popupPanel != null && currentSlot != null && !currentSlot.IsEmpty)
-            {
-                popupPanel.SetActive(true);
-                // フォーカスを元のスロットに戻す
-                if (sourceSlotUI != null && EventSystem.current != null)
-                {
-                    EventSystem.current.SetSelectedGameObject(sourceSlotUI.gameObject);
-                }
-            }
-        }
+        // Removed: Target selection handling is delegated to InventoryDialogController
 
         /// <summary>
         /// ターゲット選択がキャンセルされた時の処理
         /// </summary>
-        private void OnTargetSelectionCancelled()
-        {
-            // ItemDetailPopupを再表示
-            if (popupPanel != null)
-            {
-                popupPanel.SetActive(true);
-                // フォーカスを元のスロットに戻す
-                if (sourceSlotUI != null && EventSystem.current != null)
-                {
-                    EventSystem.current.SetSelectedGameObject(sourceSlotUI.gameObject);
-                }
-            }
-        }
+        // Removed: Cancellation is handled by InventoryDialogController
 
         /// <summary>
         /// アイテムを指定ターゲットに使用
         /// </summary>
-        private void UseItemOnTarget(object target)
-        {
-            if (currentSlot == null || currentSlot.IsEmpty) return;
-
-            ItemData itemData = currentSlot.ItemData;
-            bool success = false;
-
-            // ターゲットがプレイヤーの場合
-            if (target is Player.EnhancedPlayerController player)
-            {
-                success = UseItemOnPlayer(player);
-            }
-            // ターゲットがコンパニオンの場合
-            else if (target is Characters.CompanionAI companion)
-            {
-                success = UseItemOnCompanion(companion);
-            }
-            // ターゲット指定なし（プレイヤー自身に使用）
-            else
-            {
-                // ConsumableManagerを通じて使用（従来の処理）
-                success = currentSlot.UseConsumable();
-            }
-
-            if (success)
-            {
-                Debug.Log($"[ItemDetailPopup] Used {itemData.itemName}");
-
-                // スロットが空になった場合はポップアップを閉じる
-                if (currentSlot.IsEmpty)
-                {
-                    Hide();
-                }
-                else
-                {
-                    // 内容を更新
-                    UpdatePopupContent();
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"[ItemDetailPopup] Failed to use {itemData.itemName}");
-            }
-        }
+        // Removed: Item use logic is delegated to InventoryDialogController
 
         /// <summary>
         /// プレイヤーにアイテムを使用
         /// </summary>
-        private bool UseItemOnPlayer(Player.EnhancedPlayerController player)
-        {
-            if (player == null || currentSlot == null) return false;
-
-            ItemData itemData = currentSlot.ItemData;
-            ConsumableEffect effect = itemData.consumableEffect;
-
-            if (effect == null) return false;
-
-            // 体力回復
-            if (effect.HasHealthEffect)
-            {
-                player.Heal(effect.healthRestore);
-                Debug.Log($"[ItemDetailPopup] Player healed {effect.healthRestore} HP");
-            }
-
-            // スタミナ回復（現在のシステムに応じて実装）
-            if (effect.HasStaminaEffect)
-            {
-                // プレイヤーにスタミナ回復メソッドがあれば呼び出し
-                player.RestoreFullStamina(); // 仮実装
-                Debug.Log($"[ItemDetailPopup] Player restored stamina");
-            }
-
-            // 感染治療
-            if (effect.HasInfectionEffect)
-            {
-                player.TreatInfection(effect.infectionTreatment);
-                Debug.Log($"[ItemDetailPopup] Player treated infection -{effect.infectionTreatment}");
-            }
-
-            // アイテムを消費
-            currentSlot.RemoveItem(1);
-
-            // UI通知
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowNotification($"{itemData.itemName}を使用しました", NotificationType.Success);
-            }
-
-            return true;
-        }
+        // Removed
 
         /// <summary>
         /// コンパニオンにアイテムを使用
         /// </summary>
-        private bool UseItemOnCompanion(Characters.CompanionAI companion)
-        {
-            if (companion == null || currentSlot == null) return false;
-
-            ItemData itemData = currentSlot.ItemData;
-            ConsumableEffect effect = itemData.consumableEffect;
-
-            if (effect == null) return false;
-
-            // 体力回復
-            if (effect.HasHealthEffect)
-            {
-                companion.Heal(effect.healthRestore);
-                Debug.Log($"[ItemDetailPopup] Companion healed {effect.healthRestore} HP");
-            }
-
-            // スタミナ回復（コンパニオンにスタミナシステムがあれば）
-            if (effect.HasStaminaEffect)
-            {
-                // コンパニオン用のスタミナ回復処理（実装に応じて調整）
-                Debug.Log($"[ItemDetailPopup] Companion stamina restored");
-            }
-
-            // 感染治療（CompanionCharacterから取得）
-            if (effect.HasInfectionEffect)
-            {
-                var companionCharacter = companion.GetComponent<Characters.CompanionCharacter>();
-                if (companionCharacter != null && companionCharacter.Infection != null)
-                {
-                    companionCharacter.Infection.TreatInfection(effect.infectionTreatment);
-                    Debug.Log($"[ItemDetailPopup] Companion treated infection -{effect.infectionTreatment}");
-                }
-            }
-
-            // アイテムを消費
-            currentSlot.RemoveItem(1);
-
-            // UI通知
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowNotification($"{companion.name}に{itemData.itemName}を使用しました", NotificationType.Success);
-            }
-
-            return true;
-        }
+        // Removed
 
         private void OnDiscardButtonClicked()
         {
             if (currentSlot == null || currentSlot.IsEmpty) return;
-
-            ItemData itemData = currentSlot.ItemData;
-
-            // 確認ダイアログを表示するのが理想的だが、今回はシンプルに1個破棄
-            bool success = DiscardItem();
-
-            if (success)
-            {
-                Debug.Log($"[ItemDetailPopup] Discarded 1x {itemData.itemName}");
-
-                // スロットが空になった場合はポップアップを閉じる
-                if (currentSlot.IsEmpty)
-                {
-                    Hide();
-                }
-                else
-                {
-                    // 内容を更新
-                    UpdatePopupContent();
-                }
-            }
+            OnDiscardRequested?.Invoke(currentSlot);
         }
 
-        private bool DiscardItem()
-        {
-            if (currentSlot == null || currentSlot.IsEmpty) return false;
+        // Removed: discard handling is delegated
 
-            ItemData itemData = currentSlot.ItemData;
-
-            // スロットから直接アイテムを削除
-            bool success = currentSlot.RemoveItem(1);
-
-            if (success)
-            {
-                Debug.Log($"[ItemDetailPopup] Discarded 1x {itemData.itemName}");
-            }
-            else
-            {
-                Debug.LogWarning($"[ItemDetailPopup] Failed to discard {itemData.itemName}");
-            }
-
-            return success;
-        }
-
-        private void Update()
-        {
-            // InputManagerを使用した入力処理
-            if (popupPanel != null && popupPanel.activeSelf)
-            {
-                var inputManager = KowloonBreak.Core.InputManager.Instance;
-                if (inputManager == null) return;
-
-                // 使用ボタン (A / E)
-                if (inputManager.IsUseItemPressed() && currentSlot != null && currentSlot.ItemData.IsConsumable())
-                {
-                    OnUseButtonClicked();
-                }
-
-                // 破棄ボタン (Y / Q)
-                if (inputManager.IsDiscardItemPressed())
-                {
-                    OnDiscardButtonClicked();
-                }
-
-                // キャンセルはInventoryDialogControllerで処理
-            }
-        }
+        // Removed: input handled by Inventory/Focus flow
 
         // Ensure subscription to TargetSelectionDialog events at runtime
-        public void EnsureTargetSelectionSubscribed()
-        {
-            if (UIManager.Instance != null && UIManager.Instance.TargetSelectionDialog != null)
-            {
-                UIManager.Instance.TargetSelectionDialog.OnTargetSelected -= OnTargetSelected;
-                UIManager.Instance.TargetSelectionDialog.OnCancelled -= OnTargetSelectionCancelled;
-                UIManager.Instance.TargetSelectionDialog.OnTargetSelected += OnTargetSelected;
-                UIManager.Instance.TargetSelectionDialog.OnCancelled += OnTargetSelectionCancelled;
-            }
-        }
+        // Removed
+
     }
 }

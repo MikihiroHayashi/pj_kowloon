@@ -24,6 +24,13 @@ namespace KowloonBreak.UI
         private object targetCharacter; // PlayerController or CompanionAI
         public event Action<object> OnTargetSelected;
 
+        [Header("Tween Settings")]
+        [SerializeField] private float barTweenDuration = 0.25f; // 悪化方向
+        [SerializeField] private float barRecoveryTweenDuration = 1.0f; // 回復方向
+
+        private Coroutine healthTweenCo;
+        private Coroutine infectionTweenCo;
+
         private static readonly int FocusHash = Animator.StringToHash("Focus");
 
         private void Awake()
@@ -60,34 +67,28 @@ namespace KowloonBreak.UI
                 characterIcon.enabled = false;
             }
 
-            // HPバー
+            // HPバー（ダイアログ表示時は即時反映）
             if (healthBar != null)
             {
-                healthBar.value = player.HealthPercentage;
                 if (iconData != null && healthBar.fillRect != null)
                 {
                     healthBar.fillRect.GetComponent<Image>().color = iconData.healthBarColor;
                 }
+                float hp = player.HealthPercentage;
+                healthBar.value = hp;
+                if (healthPercentText != null) healthPercentText.text = $"{Mathf.RoundToInt(hp * 100)}%";
             }
 
-            if (healthPercentText != null)
-            {
-                healthPercentText.text = $"{Mathf.RoundToInt(player.HealthPercentage * 100)}%";
-            }
-
-            // 感染バー
+            // 感染バー（ダイアログ表示時は即時反映）
             if (infectionBar != null)
             {
-                infectionBar.value = player.InfectionLevel / 100f;
                 if (iconData != null && infectionBar.fillRect != null)
                 {
                     infectionBar.fillRect.GetComponent<Image>().color = iconData.infectionBarColor;
                 }
-            }
-
-            if (infectionPercentText != null)
-            {
-                infectionPercentText.text = $"{Mathf.RoundToInt(player.InfectionLevel)}%";
+                float inf = player.InfectionLevel / 100f;
+                infectionBar.value = inf;
+                if (infectionPercentText != null) infectionPercentText.text = $"{Mathf.RoundToInt(inf * 100)}%";
             }
         }
 
@@ -121,16 +122,12 @@ namespace KowloonBreak.UI
             float healthPercentage = companion.CurrentHealth / companion.MaxHealth;
             if (healthBar != null)
             {
-                healthBar.value = healthPercentage;
                 if (iconData != null && healthBar.fillRect != null)
                 {
                     healthBar.fillRect.GetComponent<Image>().color = iconData.healthBarColor;
                 }
-            }
-
-            if (healthPercentText != null)
-            {
-                healthPercentText.text = $"{Mathf.RoundToInt(healthPercentage * 100)}%";
+                healthBar.value = healthPercentage;
+                if (healthPercentText != null) healthPercentText.text = $"{Mathf.RoundToInt(healthPercentage * 100)}%";
             }
 
             // 感染バー（CompanionCharacterから取得）
@@ -143,16 +140,13 @@ namespace KowloonBreak.UI
 
             if (infectionBar != null)
             {
-                infectionBar.value = infectionLevel / 100f;
                 if (iconData != null && infectionBar.fillRect != null)
                 {
                     infectionBar.fillRect.GetComponent<Image>().color = iconData.infectionBarColor;
                 }
-            }
-
-            if (infectionPercentText != null)
-            {
-                infectionPercentText.text = $"{Mathf.RoundToInt(infectionLevel)}%";
+                float inf = infectionLevel / 100f;
+                infectionBar.value = inf;
+                if (infectionPercentText != null) infectionPercentText.text = $"{Mathf.RoundToInt(inf * 100)}%";
             }
         }
 
@@ -161,12 +155,104 @@ namespace KowloonBreak.UI
             OnTargetSelected?.Invoke(targetCharacter);
         }
 
+        public void SetInteractable(bool interactable)
+        {
+            if (selectButton != null)
+            {
+                selectButton.interactable = interactable;
+            }
+            if (!interactable && animator != null)
+            {
+                animator.SetTrigger("Disable");
+            }
+        }
+
         private void OnDestroy()
         {
             if (selectButton != null)
             {
                 selectButton.onClick.RemoveListener(OnSelectButtonClicked);
             }
+        }
+
+        public void RefreshFromTarget()
+        {
+            if (targetCharacter is Player.EnhancedPlayerController player)
+            {
+                TweenHealth(player.HealthPercentage);
+                TweenInfection(player.InfectionLevel / 100f);
+            }
+            else if (targetCharacter is Characters.CompanionAI companion)
+            {
+                float healthPercentage = companion.CurrentHealth / companion.MaxHealth;
+                TweenHealth(healthPercentage);
+
+                float infectionLevel = 0f;
+                var compChar = companion.GetComponent<Characters.CompanionCharacter>();
+                if (compChar != null && compChar.Infection != null)
+                {
+                    infectionLevel = compChar.Infection.CurrentInfection;
+                }
+                TweenInfection(infectionLevel / 100f);
+            }
+        }
+
+        private void TweenHealth(float target)
+        {
+            if (healthBar == null)
+            {
+                if (healthPercentText != null)
+                    healthPercentText.text = $"{Mathf.RoundToInt(target * 100)}%";
+                return;
+            }
+            float current = healthBar.value;
+            float duration = target > current ? barRecoveryTweenDuration : barTweenDuration;
+            if (healthTweenCo != null) StopCoroutine(healthTweenCo);
+            healthTweenCo = StartCoroutine(TweenSlider(healthBar, target, duration, (v) =>
+            {
+                if (healthPercentText != null) healthPercentText.text = $"{Mathf.RoundToInt(v * 100)}%";
+            }));
+        }
+
+        private void TweenInfection(float target)
+        {
+            if (infectionBar == null)
+            {
+                if (infectionPercentText != null)
+                    infectionPercentText.text = $"{Mathf.RoundToInt(target * 100)}%";
+                return;
+            }
+            float current = infectionBar.value;
+            float duration = target < current ? barRecoveryTweenDuration : barTweenDuration; // 減少=回復
+            if (infectionTweenCo != null) StopCoroutine(infectionTweenCo);
+            infectionTweenCo = StartCoroutine(TweenSlider(infectionBar, target, duration, (v) =>
+            {
+                if (infectionPercentText != null) infectionPercentText.text = $"{Mathf.RoundToInt(v * 100)}%";
+            }));
+        }
+
+        private System.Collections.IEnumerator TweenSlider(Slider slider, float target, float duration, Action<float> onProgress)
+        {
+            float start = slider.value;
+            if (Mathf.Approximately(start, target) || duration <= 0f)
+            {
+                slider.value = target;
+                onProgress?.Invoke(target);
+                yield break;
+            }
+            float t = 0f;
+            while (t < duration)
+            {
+                // ポーズ中でもUIは進行させる
+                t += Time.unscaledDeltaTime;
+                float p = Mathf.Clamp01(t / duration);
+                float v = Mathf.Lerp(start, target, p);
+                slider.value = v;
+                onProgress?.Invoke(v);
+                yield return null;
+            }
+            slider.value = target;
+            onProgress?.Invoke(target);
         }
 
         /// <summary>

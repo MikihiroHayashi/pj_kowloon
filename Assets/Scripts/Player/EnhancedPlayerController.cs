@@ -1038,6 +1038,13 @@ namespace KowloonBreak.Player
             playerStats.Heal(healAmount);
         }
 
+        // Consumable support: expose stamina regeneration API
+        public void RegenerateStamina(float amount)
+        {
+            currentStamina = Mathf.Min(maxStamina, currentStamina + amount);
+            OnStaminaChanged?.Invoke(currentStamina);
+        }
+
         public void SetMovementEnabled(bool enabled)
         {
             canMove = enabled;
@@ -1046,6 +1053,23 @@ namespace KowloonBreak.Player
             if (!enabled && currentMovementState == MovementState.Dodging)
             {
                 SetMovementState(MovementState.Normal);
+            }
+        }
+
+        // Consumable support: play animations via PlayerAnimatorController
+        public void TriggerHealAnimation()
+        {
+            if (animatorController != null)
+            {
+                animatorController.TriggerHeal();
+            }
+        }
+
+        public void TriggerUseItemAnimation()
+        {
+            if (animatorController != null)
+            {
+                animatorController.TriggerUseItem();
             }
         }
 

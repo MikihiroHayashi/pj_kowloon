@@ -5,12 +5,12 @@ namespace KowloonBreak.Debugging
 {
     public class HealthBarDebugger : MonoBehaviour
     {
-        private PlayerStats playerStats;
+        private EnhancedPlayerController player;
         
         private void Start()
         {
-            playerStats = FindObjectOfType<PlayerStats>();
-            UnityEngine.Debug.Log($"[HealthBarDebugger] PlayerStats found: {playerStats != null}");
+            player = FindObjectOfType<EnhancedPlayerController>();
+            UnityEngine.Debug.Log($"[HealthBarDebugger] EnhancedPlayerController found: {player != null}");
         }
         
         private void Update()
@@ -18,43 +18,43 @@ namespace KowloonBreak.Debugging
             // Xキーでダメージ
             if (Input.GetKeyDown(KeyCode.X))
             {
-                if (playerStats != null)
+                if (player != null)
                 {
                     UnityEngine.Debug.Log("[HealthBarDebugger] Manual damage test - pressing X");
-                    playerStats.TakeDamage(10f);
+                    player.TakeDamage(10f);
                 }
             }
             
             // Hキーで回復
             if (Input.GetKeyDown(KeyCode.H))
             {
-                if (playerStats != null)
+                if (player != null)
                 {
                     UnityEngine.Debug.Log("[HealthBarDebugger] Manual heal test - pressing H");
-                    playerStats.Heal(10f);
+                    player.Heal(10f);
                 }
             }
         }
         
         private void OnGUI()
         {
-            if (playerStats == null) return;
+            if (player == null) return;
             
             GUILayout.BeginArea(new Rect(10, 10, 300, 200));
-            GUILayout.Label($"Health: {playerStats.Health:F1}/{playerStats.MaxHealth:F1}");
-            GUILayout.Label($"Health %: {playerStats.HealthPercentage:F2}");
-            GUILayout.Label($"Is Alive: {playerStats.IsAlive}");
+            GUILayout.Label($"Health: {player.Health:F1}/{player.MaxHealth:F1}");
+            GUILayout.Label($"Health %: {player.HealthPercentage:F2}");
+            GUILayout.Label($"Is Alive: {player.IsAlive}");
             
             if (GUILayout.Button("Damage -10"))
             {
                 UnityEngine.Debug.Log("[HealthBarDebugger] Manual damage button clicked");
-                playerStats.TakeDamage(10f);
+                player.TakeDamage(10f);
             }
             
             if (GUILayout.Button("Heal +10"))
             {
                 UnityEngine.Debug.Log("[HealthBarDebugger] Manual heal button clicked");
-                playerStats.Heal(10f);
+                player.Heal(10f);
             }
             
             GUILayout.EndArea();

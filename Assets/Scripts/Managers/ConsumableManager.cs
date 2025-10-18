@@ -8,8 +8,11 @@ namespace KowloonBreak.Managers
     {
         public static ConsumableManager Instance { get; private set; }
 
-        private PlayerStats playerStats;
+        private EnhancedPlayerController playerController;
         private EnhancedResourceManager resourceManager;
+
+        // Per-item cooldown tracking (Time.time when cooldown ends)
+        private readonly System.Collections.Generic.Dictionary<ItemData, float> cooldownUntil = new System.Collections.Generic.Dictionary<ItemData, float>();
 
         private void Awake()
         {
@@ -30,12 +33,12 @@ namespace KowloonBreak.Managers
 
         private void Start()
         {
-            playerStats = FindObjectOfType<PlayerStats>();
+            playerController = FindObjectOfType<EnhancedPlayerController>();
             resourceManager = EnhancedResourceManager.Instance;
 
-            if (playerStats == null)
+            if (playerController == null)
             {
-                Debug.LogWarning("[ConsumableManager] PlayerStatsが見つかりません");
+                Debug.LogWarning("[ConsumableManager] EnhancedPlayerControllerが見つかりません");
             }
 
             if (resourceManager == null)
@@ -58,9 +61,16 @@ namespace KowloonBreak.Managers
                 return false;
             }
 
-            if (playerStats == null)
+            if (playerController == null)
             {
-                Debug.LogError("[ConsumableManager] PlayerStatsが利用できません");
+                Debug.LogError("[ConsumableManager] EnhancedPlayerControllerが利用できません");
+                return false;
+            }
+
+            // Cooldown check
+            if (IsOnCooldown(itemData))
+            {
+                Debug.Log($"[ConsumableManager] {itemData.itemName} はクールダウン中です。残り {GetRemainingCooldown(itemData):F1}s");
                 return false;
             }
 
@@ -75,12 +85,14 @@ namespace KowloonBreak.Managers
             // 体力回復効果
             if (effect.HasHealthEffect)
             {
-                float currentHealth = playerStats.Health;
-                float maxHealth = playerStats.MaxHealth;
+                float currentHealth = playerController.Health;
+                float maxHealth = playerController.MaxHealth;
 
                 if (currentHealth < maxHealth)
                 {
-                    playerStats.Heal(effect.healthRestore);
+                    playerController.Heal(effect.healthRestore);
+                    // 回復アニメーション
+                    playerController.TriggerHealAnimation();
                     Debug.Log($"[ConsumableManager] 体力を{effect.healthRestore}回復しました");
                     effectApplied = true;
                 }
@@ -93,9 +105,11 @@ namespace KowloonBreak.Managers
             // 感染治療効果
             if (effect.HasInfectionEffect)
             {
-                if (playerStats.IsInfected || playerStats.InfectionLevel > 0)
+                if (playerController.IsInfected || playerController.InfectionLevel > 0)
                 {
-                    playerStats.TreatInfection(effect.infectionTreatment);
+                    playerController.TreatInfection(effect.infectionTreatment);
+                    // 使用アニメーション（回復系と同一で良ければTriggerHealAnimationでも可）
+                    playerController.TriggerUseItemAnimation();
                     Debug.Log($"[ConsumableManager] 感染を{effect.infectionTreatment}治療しました");
                     effectApplied = true;
                 }
@@ -108,12 +122,15 @@ namespace KowloonBreak.Managers
             // スタミナ回復効果
             if (effect.HasStaminaEffect)
             {
-                float currentStamina = playerStats.Stamina;
-                float maxStamina = playerStats.MaxStamina;
+                float currentStamina = playerController.CurrentStamina;
+                float maxStamina = playerController.MaxStamina;
 
                 if (currentStamina < maxStamina)
                 {
-                    playerStats.RegenerateStamina(effect.staminaRestore);
+                    // EnhancedPlayerControllerに回復APIを委譲
+                    playerController.RegenerateStamina(effect.staminaRestore);
+                    // 使用アニメーション
+                    playerController.TriggerUseItemAnimation();
                     Debug.Log($"[ConsumableManager] スタミナを{effect.staminaRestore}回復しました");
                     effectApplied = true;
                 }
@@ -123,11 +140,23 @@ namespace KowloonBreak.Managers
                 }
             }
 
-            // 使用メッセージを表示
-            if (effectApplied && !string.IsNullOrEmpty(effect.useMessage))
+            if (effectApplied)
             {
-                Debug.Log($"[ConsumableManager] {effect.useMessage}");
-                // TODO: UIに使用メッセージを表示
+                // Set cooldown if configured
+                if (itemData.cooldownSeconds > 0f)
+                {
+                    cooldownUntil[itemData] = Time.time + itemData.cooldownSeconds;
+                }
+
+                // 使用メッセージを表示
+                if (!string.IsNullOrEmpty(effect.useMessage))
+                {
+                    Debug.Log($"[ConsumableManager] {effect.useMessage}");
+                    if (KowloonBreak.UI.UIManager.Instance != null)
+                    {
+                        KowloonBreak.UI.UIManager.Instance.ShowNotification(effect.useMessage, KowloonBreak.UI.NotificationType.Success);
+                    }
+                }
             }
 
             return effectApplied;
@@ -135,26 +164,44 @@ namespace KowloonBreak.Managers
 
         public bool CanUseConsumableItem(ItemData itemData)
         {
-            if (itemData == null || !itemData.IsConsumable() || playerStats == null)
+            if (itemData == null || !itemData.IsConsumable() || playerController == null)
                 return false;
 
             var effect = itemData.consumableEffect;
             if (effect == null || !effect.HasAnyEffect)
                 return false;
 
+            // Cooldown gate
+            if (IsOnCooldown(itemData))
+                return false;
+
             // 体力回復アイテムの場合、体力が満タンでないか確認
-            if (effect.HasHealthEffect && playerStats.Health < playerStats.MaxHealth)
+            if (effect.HasHealthEffect && playerController.Health < playerController.MaxHealth)
                 return true;
 
             // 感染治療アイテムの場合、感染しているか確認
-            if (effect.HasInfectionEffect && (playerStats.IsInfected || playerStats.InfectionLevel > 0))
+            if (effect.HasInfectionEffect && (playerController.IsInfected || playerController.InfectionLevel > 0))
                 return true;
 
             // スタミナ回復アイテムの場合、スタミナが満タンでないか確認
-            if (effect.HasStaminaEffect && playerStats.Stamina < playerStats.MaxStamina)
+            if (effect.HasStaminaEffect && playerController.CurrentStamina < playerController.MaxStamina)
                 return true;
 
             return false;
+        }
+
+        public bool IsOnCooldown(ItemData itemData)
+        {
+            if (itemData == null || itemData.cooldownSeconds <= 0f) return false;
+            if (!cooldownUntil.TryGetValue(itemData, out var until)) return false;
+            return Time.time < until;
+        }
+
+        public float GetRemainingCooldown(ItemData itemData)
+        {
+            if (itemData == null || itemData.cooldownSeconds <= 0f) return 0f;
+            if (!cooldownUntil.TryGetValue(itemData, out var until)) return 0f;
+            return Mathf.Max(0f, until - Time.time);
         }
     }
 }

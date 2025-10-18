@@ -43,20 +43,20 @@ namespace KowloonBreak.Debugging
 
         private void ApplyTestDamage()
         {
-            var playerStats = FindObjectOfType<KowloonBreak.Player.PlayerStats>();
-            if (playerStats != null)
+            var player = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
+            if (player != null)
             {
-                playerStats.TakeDamage(damageAmount);
+                player.TakeDamage(damageAmount);
                 Debug.Log($"[ConsumableItemTester] テスト用ダメージ {damageAmount} を与えました");
             }
         }
 
         private void ApplyTestInfection()
         {
-            var playerStats = FindObjectOfType<KowloonBreak.Player.PlayerStats>();
-            if (playerStats != null)
+            var player = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
+            if (player != null)
             {
-                playerStats.SetInfectionStatus(true);
+                player.SetInfectionStatus(true);
                 Debug.Log("[ConsumableItemTester] テスト用感染を適用しました");
             }
         }
@@ -78,12 +78,12 @@ namespace KowloonBreak.Debugging
             GUILayout.Label("※ アイテム使用はインベントリから行ってください");
 
             // プレイヤー状態表示
-            var playerStats = FindObjectOfType<KowloonBreak.Player.PlayerStats>();
-            if (playerStats != null)
+            var player = FindObjectOfType<KowloonBreak.Player.EnhancedPlayerController>();
+            if (player != null)
             {
                 GUILayout.Label("");
-                GUILayout.Label($"体力: {playerStats.Health:F1}/{playerStats.MaxHealth}");
-                GUILayout.Label($"感染: {(playerStats.IsInfected ? "感染中" : "健康")} ({playerStats.InfectionLevel:F1}%)");
+                GUILayout.Label($"体力: {player.Health:F1}/{player.MaxHealth}");
+                GUILayout.Label($"感染: {(player.IsInfected ? "感染中" : "健康")} ({player.InfectionLevel:F1}%)");
             }
             GUILayout.EndArea();
         }

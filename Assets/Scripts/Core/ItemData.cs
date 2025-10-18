@@ -27,6 +27,10 @@ namespace KowloonBreak.Core
         [Header("Consumable Specific")]
         public ConsumableEffect consumableEffect;
 
+        [Header("Consumable Cooldown")]
+        [Tooltip("使用後のクールダウン秒数。0 でクールダウンなし。")]
+        public float cooldownSeconds = 0f;
+
         [Header("Drop Settings")]
         public GameObject droppedItemPrefab;  // ドロップ時に生成されるプレハブ
         public float dropWeight = 1f;        // ドロップ重み（確率計算用）

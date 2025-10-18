@@ -47,8 +47,14 @@ namespace KowloonBreak.UI
         [SerializeField] private TextMeshProUGUI timeText;
 
         [Header("HUD Animation Settings")]
+        [Tooltip("ダメージ・悪化時の標準Tween時間（秒）")]
         [SerializeField] private float healthBarTweenDuration = 0.25f;
+        [Tooltip("ダメージ・悪化時の標準Tween時間（秒）")]
         [SerializeField] private float infectionBarTweenDuration = 0.25f;
+        [Tooltip("回復時のTween時間（秒） - 体力が増える方向")]
+        [SerializeField] private float healthBarRecoveryTweenDuration = 1.0f;
+        [Tooltip("回復時のTween時間（秒） - 感染が減る方向")]
+        [SerializeField] private float infectionBarRecoveryTweenDuration = 1.0f;
         private Coroutine healthBarTween;
         private Coroutine infectionBarTween;
 
@@ -666,13 +672,6 @@ namespace KowloonBreak.UI
             {
                 // GameObjectをアクティブ化（UIManagerが管理）
                 targetSelectionPanel.SetActive(true);
-
-                // ダイアログコントローラーに表示処理を依頼（データ同期のみ）
-                var popup = FindObjectOfType<KowloonBreak.UI.ItemDetailPopup>();
-                if (popup != null)
-                {
-                    popup.EnsureTargetSelectionSubscribed();
-                }
                 targetSelectionDialog.Show(item);
             }
         }
@@ -692,23 +691,20 @@ namespace KowloonBreak.UI
                 {
                     targetSelectionPanel.SetActive(false);
                 }
-
-                // Ensure UIContext pops even if dialog coroutine stopped
-                StartCoroutine(PopTargetSelectionContextAfterDelay());
             }
         }
 
-        private System.Collections.IEnumerator PopTargetSelectionContextAfterDelay()
+        // Utility: schedule an action to run on the next frame on an always-active runner
+        public void RunNextFrame(System.Action action)
         {
-            // Delay a couple frames to avoid contention
-            yield return null;
-            yield return null;
+            if (action == null) return;
+            StartCoroutine(RunNextFrameCo(action));
+        }
 
-            var contextManager = KowloonBreak.Core.UIContextManager.Instance;
-            if (contextManager != null && contextManager.CurrentContext == KowloonBreak.Core.UIContext.TargetSelection)
-            {
-                contextManager.PopContext();
-            }
+        private System.Collections.IEnumerator RunNextFrameCo(System.Action action)
+        {
+            yield return null;
+            action?.Invoke();
         }
 
         public void ShowNotification(string message, NotificationType type = NotificationType.Info)
@@ -2792,16 +2788,22 @@ namespace KowloonBreak.UI
         {
             if (healthSlider == null) return;
             float target = Mathf.Clamp01(healthPercentage);
+            float current = healthSlider.value;
+            bool isRecovery = target > current; // 体力が増える方向 = 回復
+            float duration = isRecovery ? healthBarRecoveryTweenDuration : healthBarTweenDuration;
             if (healthBarTween != null) StopCoroutine(healthBarTween);
-            healthBarTween = StartCoroutine(TweenSliderValue(healthSlider, target, healthBarTweenDuration, UpdateHealthBarColor));
+            healthBarTween = StartCoroutine(TweenSliderValue(healthSlider, target, duration, UpdateHealthBarColor));
         }
 
         private void TweenedUpdatePlayerInfectionBar(float infectionLevel)
         {
             if (infectionSlider == null) return;
             float target = Mathf.Clamp01(infectionLevel);
+            float current = infectionSlider.value;
+            bool isRecovery = target < current; // 感染が減る方向 = 回復
+            float duration = isRecovery ? infectionBarRecoveryTweenDuration : infectionBarTweenDuration;
             if (infectionBarTween != null) StopCoroutine(infectionBarTween);
-            infectionBarTween = StartCoroutine(TweenSliderValue(infectionSlider, target, infectionBarTweenDuration, UpdateInfectionBarColor));
+            infectionBarTween = StartCoroutine(TweenSliderValue(infectionSlider, target, duration, UpdateInfectionBarColor));
         }
 
         private void UpdateInfectionBarColor(float infectionLevel)
@@ -2835,7 +2837,8 @@ namespace KowloonBreak.UI
             float t = 0f;
             while (t < duration)
             {
-                t += Time.deltaTime;
+                // UIはポーズ中でもアニメーションしたいのでunscaled時間を使用
+                t += Time.unscaledDeltaTime;
                 float p = Mathf.Clamp01(t / duration);
                 float val = Mathf.Lerp(start, target, p);
                 slider.value = val;

@@ -105,25 +105,22 @@ namespace KowloonBreak.UI
                 UIFocusManager.Instance.PopUI(this);
             }
 
-            // UIContextManagerからポップ（コルーチンで遅延実行）
-            StartCoroutine(PopContextAfterDelay());
+            // UIContextManagerからポップ（次フレーム、UIManagerの常駐Runnerで実行）
+            var contextManager = Core.UIContextManager.Instance;
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.RunNextFrame(() => { contextManager?.PopContext(); });
+            }
+            else
+            {
+                contextManager?.PopContext();
+            }
         }
 
         /// <summary>
         /// PopContext()を遅延実行（GameplayInputHandlerとの競合を回避）
         /// </summary>
-        private IEnumerator PopContextAfterDelay()
-        {
-            // 2フレーム待ってGameplayInputHandlerが確実にTargetSelectionコンテキストを認識できるようにする
-            yield return null;
-            yield return null;
-
-            var contextManager = Core.UIContextManager.Instance;
-            if (contextManager != null)
-            {
-                contextManager.PopContext();
-            }
-        }
+        // Removed: PopContextAfterDelay (moved to UIManager runner to avoid coroutine cancellation on deactivate)
 
         /// <summary>
         /// ターゲットリストを生成
@@ -158,8 +155,7 @@ namespace KowloonBreak.UI
             TargetSelectionSlot slot = slotObj.GetComponent<TargetSelectionSlot>();
             if (slot != null)
             {
-                slot.SetTarget(player, playerIconData);
-                slot.OnTargetSelected += OnSlotSelected;
+                slot.SetTarget(player, playerIconData); slot.OnTargetSelected += OnSlotSelected; if (currentItem != null && currentItem.ItemData != null && currentItem.ItemData.IsConsumable()) { var eff = currentItem.ItemData.consumableEffect; if (eff != null) { bool dis = (eff.HasHealthEffect && player.HealthPercentage >= 1f) && (eff.HasInfectionEffect ? player.InfectionLevel <= 0f : true); if (dis) slot.SetInteractable(false); } }
                 activeSlots.Add(slot);
             }
         }
@@ -177,8 +173,7 @@ namespace KowloonBreak.UI
             {
                 // アイコンデータを取得
                 Core.CharacterIconData iconData = GetCompanionIconData(companion);
-                slot.SetTarget(companion, iconData);
-                slot.OnTargetSelected += OnSlotSelected;
+                slot.SetTarget(companion, iconData); slot.OnTargetSelected += OnSlotSelected; if (currentItem != null && currentItem.ItemData != null && currentItem.ItemData.IsConsumable()) { var eff = currentItem.ItemData.consumableEffect; if (eff != null) { float hpPct = companion.CurrentHealth / companion.MaxHealth; var cc = companion.GetComponent<KowloonBreak.Characters.CompanionCharacter>(); float inf = (cc != null && cc.Infection != null) ? cc.Infection.CurrentInfection : 0f; bool dis = (eff.HasHealthEffect && hpPct >= 1f) && (eff.HasInfectionEffect ? inf <= 0f : true); if (dis) slot.SetInteractable(false); } }
                 activeSlots.Add(slot);
             }
         }
@@ -247,13 +242,10 @@ namespace KowloonBreak.UI
         /// </summary>
         private void OnSlotSelected(object target)
         {
+            if (isClosing) return;
+            // 対象選択時はダイアログを閉じない（ユーザーがキャンセルするまで開いたまま）
+            // スロットの更新は使用処理（購読側）完了後に呼んでもらう（順序を担保）
             OnTargetSelected?.Invoke(target);
-
-            // UIManager経由で閉じる
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.HideTargetSelection();
-            }
         }
 
         /// <summary>
@@ -300,6 +292,17 @@ namespace KowloonBreak.UI
                 }
             }
             activeSlots.Clear();
+        }
+
+        public void RefreshSlots()
+        {
+            foreach (var slot in activeSlots)
+            {
+                if (slot != null)
+                {
+                    slot.RefreshFromTarget();
+                }
+            }
         }
 
         private void Update()
@@ -395,3 +398,7 @@ namespace KowloonBreak.UI
         }
     }
 }
+
+
+
+

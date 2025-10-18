@@ -26,6 +26,8 @@ namespace KowloonBreak.Player
         [SerializeField] private string dodgeParameterName = "Dodge";
         [SerializeField] private string crouchParameterName = "Crouch";
         [SerializeField] private string resetParameterName = "Reset";
+        [SerializeField] private string healParameterName = "Heal";
+        [SerializeField] private string useItemParameterName = "UseItem";
         
         [Header("Speed Values - Actual Velocities")]
         [Tooltip("しきい値: 停止状態の最大速度 (単位/秒)")]
@@ -47,6 +49,8 @@ namespace KowloonBreak.Player
         private int dodgeParameterHash;
         private int crouchParameterHash;
         private int resetParameterHash;
+        private int healParameterHash;
+        private int useItemParameterHash;
         
         // パラメータ存在フラグ
         private bool hasAngleParameter;
@@ -57,6 +61,8 @@ namespace KowloonBreak.Player
         private bool hasDodgeParameter;
         private bool hasCrouchParameter;
         private bool hasResetParameter;
+        private bool hasHealParameter;
+        private bool hasUseItemParameter;
         
         // 速度しきい値のプロパティ
         public float IdleSpeedThreshold => idleSpeedThreshold;
@@ -183,6 +189,8 @@ namespace KowloonBreak.Player
             dodgeParameterHash = Animator.StringToHash(dodgeParameterName);
             crouchParameterHash = Animator.StringToHash(crouchParameterName);
             resetParameterHash = Animator.StringToHash(resetParameterName);
+            healParameterHash = Animator.StringToHash(healParameterName);
+            useItemParameterHash = Animator.StringToHash(useItemParameterName);
 
             // パラメータの存在チェック
             hasAngleParameter = HasParameter(angleParameterName);
@@ -193,6 +201,8 @@ namespace KowloonBreak.Player
             hasDodgeParameter = HasParameter(dodgeParameterName);
             hasCrouchParameter = HasParameter(crouchParameterName);
             hasResetParameter = HasParameter(resetParameterName);
+            hasHealParameter = HasParameter(healParameterName);
+            hasUseItemParameter = HasParameter(useItemParameterName);
             
             // 存在しないパラメータをログ出力（重要な警告のみ）
             if (!hasAngleParameter) Debug.LogWarning($"[PlayerAnimatorController] Parameter '{angleParameterName}' not found in Animator");
@@ -491,6 +501,28 @@ namespace KowloonBreak.Player
             if (animator != null && hasDodgeParameter)
             {
                 animator.SetTrigger(dodgeParameterHash);
+            }
+        }
+
+        /// <summary>
+        /// 回復アニメーションを再生
+        /// </summary>
+        public void TriggerHeal()
+        {
+            if (animator != null && hasHealParameter)
+            {
+                animator.SetTrigger(healParameterHash);
+            }
+        }
+
+        /// <summary>
+        /// アイテム使用アニメーションを再生
+        /// </summary>
+        public void TriggerUseItem()
+        {
+            if (animator != null && hasUseItemParameter)
+            {
+                animator.SetTrigger(useItemParameterHash);
             }
         }
         

@@ -193,6 +193,15 @@ namespace KowloonBreak.Setup
                 GameObject resourceManagerObj = new GameObject("ResourceManager");
                 resourceManager = resourceManagerObj.AddComponent<EnhancedResourceManager>();
             }
+
+            // ConsumableManagerの確認（消費アイテム使用の中核）
+            ConsumableManager consumableManager = FindObjectOfType<ConsumableManager>();
+            if (consumableManager == null)
+            {
+                Debug.Log("Creating ConsumableManager...");
+                GameObject consumableManagerObj = new GameObject("ConsumableManager");
+                consumableManager = consumableManagerObj.AddComponent<ConsumableManager>();
+            }
         }
         
         [ContextMenu("Clear Test Scene")]

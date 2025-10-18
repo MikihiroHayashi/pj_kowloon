@@ -26,6 +26,10 @@ namespace KowloonBreak.UI
         private ItemSlotUI currentSelectedSlot = null;
         private Coroutine focusCoroutine = null;
         private bool isInputEnabled = true;
+        // Pending state for target selection flow
+        private InventorySlot pendingUseSlot = null;
+        private ItemSlotUI pendingSourceSlotUI = null;
+        private bool pendingIsTool = false;
 
         public bool IsOpen => isOpen;
 
@@ -51,6 +55,18 @@ namespace KowloonBreak.UI
 
             if (itemDetailPopup == null)
                 itemDetailPopup = GetComponentInChildren<ItemDetailPopup>(true);
+            // フォールバック: 階層外にある場合に備えてシーン全体から検索
+            if (itemDetailPopup == null)
+                itemDetailPopup = FindObjectOfType<ItemDetailPopup>(true);
+            if (itemDetailPopup == null)
+                Debug.LogWarning("[InventoryDialogController] ItemDetailPopup not found in children or scene. Detail popup will be unavailable.");
+
+            // Subscribe to detail popup actions
+            if (itemDetailPopup != null)
+            {
+                itemDetailPopup.OnUseRequested += HandleUseRequested;
+                itemDetailPopup.OnDiscardRequested += HandleDiscardRequested;
+            }
 
             // クローズボタンのイベント設定
             if (closeButton != null)
@@ -75,6 +91,40 @@ namespace KowloonBreak.UI
             if (UIFocusManager.Instance != null)
             {
                 UIFocusManager.Instance.RegisterUI(this);
+            }
+        }
+
+        private void Update()
+        {
+            if (!isOpen || !isInputEnabled) return;
+            var input = KowloonBreak.Core.InputManager.Instance;
+            var contextManager = KowloonBreak.Core.UIContextManager.Instance;
+            if (input == null) return;
+            if (contextManager != null && contextManager.CurrentContext != KowloonBreak.Core.UIContext.Inventory) return;
+
+            // Keyboard/controller shortcuts for use/discard while detail is open
+            if (input.IsUseItemPressed())
+            {
+                var slot = currentSelectedSlot != null ? currentSelectedSlot.CurrentSlot : null;
+                if (slot != null && !slot.IsEmpty)
+                {
+                    HandleUseRequested(slot);
+                }
+            }
+            if (input.IsDiscardItemPressed())
+            {
+                var slot = currentSelectedSlot != null ? currentSelectedSlot.CurrentSlot : null;
+                if (slot != null && !slot.IsEmpty)
+                {
+                    HandleDiscardRequested(slot);
+                }
+            }
+
+            // Auto-hide detail popup if no item in the selected slot (only if currently visible)
+            var selSlot = currentSelectedSlot != null ? currentSelectedSlot.CurrentSlot : null;
+            if (itemDetailPopup != null && itemDetailPopup.IsVisible && (selSlot == null || selSlot.IsEmpty))
+            {
+                itemDetailPopup.Hide();
             }
         }
 
@@ -344,6 +394,18 @@ namespace KowloonBreak.UI
             if (index >= 0 && index < toolSlots.Count)
             {
                 toolSlots[index].SetSlot(slot);
+                // If the changed slot is currently selected, update or hide the detail popup
+                if (currentSelectedSlot == toolSlots[index])
+                {
+                    if (slot == null || slot.IsEmpty)
+                    {
+                        itemDetailPopup?.Hide();
+                    }
+                    else
+                    {
+                        itemDetailPopup?.Show(slot, currentSelectedSlot, true);
+                    }
+                }
             }
         }
         
@@ -352,27 +414,31 @@ namespace KowloonBreak.UI
             if (index >= 0 && index < materialSlots.Count)
             {
                 materialSlots[index].SetSlot(slot);
+                // If the changed slot is currently selected, update or hide the detail popup
+                if (currentSelectedSlot == materialSlots[index])
+                {
+                    if (slot == null || slot.IsEmpty)
+                    {
+                        itemDetailPopup?.Hide();
+                    }
+                    else
+                    {
+                        itemDetailPopup?.Show(slot, currentSelectedSlot, false);
+                    }
+                }
             }
         }
         
         private void OnToolSlotClicked(ItemSlotUI slotUI)
         {
+            // クリックは選択のみ行い、詳細ポップアップはホバーで制御
             SelectSlot(slotUI);
-
-            if (slotUI.CurrentSlot != null && !slotUI.CurrentSlot.IsEmpty)
-            {
-                ShowItemDetailPopup(slotUI, true);
-            }
         }
 
         private void OnMaterialSlotClicked(ItemSlotUI slotUI)
         {
+            // クリックは選択のみ行い、詳細ポップアップはホバーで制御
             SelectSlot(slotUI);
-
-            if (slotUI.CurrentSlot != null && !slotUI.CurrentSlot.IsEmpty)
-            {
-                ShowItemDetailPopup(slotUI, false);
-            }
         }
 
         private void ShowItemDetailPopup(ItemSlotUI slotUI, bool isToolSlot)
@@ -381,6 +447,195 @@ namespace KowloonBreak.UI
             {
                 itemDetailPopup.Show(slotUI.CurrentSlot, slotUI, isToolSlot);
             }
+        }
+
+        private void HandleUseRequested(InventorySlot slot)
+        {
+            if (slot == null || slot.IsEmpty) return;
+            var itemData = slot.ItemData;
+            if (itemData == null || !itemData.IsConsumable())
+            {
+                Debug.LogWarning("[InventoryDialog] This item is not consumable");
+                return;
+            }
+
+            bool needsTarget = itemData.consumableEffect != null &&
+                               (itemData.consumableEffect.HasHealthEffect ||
+                                itemData.consumableEffect.HasStaminaEffect ||
+                                itemData.consumableEffect.HasInfectionEffect);
+
+            pendingUseSlot = slot;
+            pendingSourceSlotUI = currentSelectedSlot;
+            pendingIsTool = (pendingSourceSlotUI != null && toolSlots.Contains(pendingSourceSlotUI));
+
+            if (needsTarget && UIManager.Instance != null)
+            {
+                var dialog = UIManager.Instance.TargetSelectionDialog;
+                if (dialog != null)
+                {
+                    dialog.OnTargetSelected -= OnTargetSelectedFromDialog;
+                    dialog.OnCancelled -= OnTargetSelectionCancelledFromDialog;
+                    dialog.OnTargetSelected += OnTargetSelectedFromDialog;
+                    dialog.OnCancelled += OnTargetSelectionCancelledFromDialog;
+                }
+                if (dialog != null)
+                {
+                    UIManager.Instance.ShowTargetSelection(slot);
+                }
+                else
+                {
+                    Debug.LogWarning("[InventoryDialog] TargetSelectionDialog is not assigned; using item on player directly.");
+                    bool usedDirect = UseOnPlayer(slot);
+                    AfterUseUpdate(usedDirect);
+                }
+                return;
+            }
+
+            bool used = UseOnPlayer(slot);
+            AfterUseUpdate(used);
+        }
+
+        private void HandleDiscardRequested(InventorySlot slot)
+        {
+            if (slot == null || slot.IsEmpty) return;
+            var itemData = slot.ItemData;
+            bool success = slot.RemoveItem(1);
+            if (success)
+            {
+                Debug.Log($"[InventoryDialog] Discarded 1x {itemData.itemName}");
+                RefreshInventory();
+                if (slot.IsEmpty) itemDetailPopup?.Hide(); else itemDetailPopup?.Show(slot, currentSelectedSlot, toolSlots.Contains(currentSelectedSlot));
+            }
+            else
+            {
+                Debug.LogWarning($"[InventoryDialog] Failed to discard {itemData.itemName}");
+            }
+        }
+
+        private void OnTargetSelectedFromDialog(object target)
+        {
+            bool used = false;
+            if (pendingUseSlot == null || pendingUseSlot.IsEmpty)
+            {
+                used = false;
+            }
+            else if (target is Player.EnhancedPlayerController)
+            {
+                used = UseOnPlayer(pendingUseSlot);
+            }
+            else if (target is KowloonBreak.Characters.CompanionAI companion)
+            {
+                used = UseOnCompanion(pendingUseSlot, companion);
+            }
+            AfterUseUpdate(used);
+
+            // 使用が完了した直後にターゲット選択ダイアログのスロットを更新（回復アニメーションを即時反映）
+            var dialog = UIManager.Instance != null ? UIManager.Instance.TargetSelectionDialog : null;
+            if (dialog != null && dialog.IsVisible)
+            {
+                // 値更新が揺れないよう次フレームで実行（UIはunscaledでTween）
+                UIManager.Instance.RunNextFrame(() => dialog.RefreshSlots());
+            }
+        }
+
+        private void OnTargetSelectionCancelledFromDialog()
+        {
+            if (pendingUseSlot != null && pendingSourceSlotUI != null)
+            {
+                itemDetailPopup?.Show(pendingUseSlot, pendingSourceSlotUI, pendingIsTool);
+            }
+            ClearPendingUse();
+        }
+
+        private void ClearPendingUse()
+        {
+            var dialog = UIManager.Instance != null ? UIManager.Instance.TargetSelectionDialog : null;
+            if (dialog != null)
+            {
+                dialog.OnTargetSelected -= OnTargetSelectedFromDialog;
+                dialog.OnCancelled -= OnTargetSelectionCancelledFromDialog;
+            }
+            pendingUseSlot = null;
+            pendingSourceSlotUI = null;
+            pendingIsTool = false;
+        }
+
+        private void AfterUseUpdate(bool used)
+        {
+            if (used)
+            {
+                RefreshInventory();
+                if (pendingUseSlot != null)
+                {
+                    if (pendingUseSlot.IsEmpty) itemDetailPopup?.Hide(); else itemDetailPopup?.Show(pendingUseSlot, pendingSourceSlotUI, pendingIsTool);
+                }
+            }
+            else
+            {
+                if (pendingUseSlot != null && pendingSourceSlotUI != null)
+                {
+                    itemDetailPopup?.Show(pendingUseSlot, pendingSourceSlotUI, pendingIsTool);
+                }
+            }
+            // ターゲット選択ダイアログを開いたままにする要件: ダイアログが可視の間は pendingUse を維持
+            var dialog = UIManager.Instance != null ? UIManager.Instance.TargetSelectionDialog : null;
+            bool dialogVisible = dialog != null && dialog.IsVisible;
+            if (!dialogVisible)
+            {
+                ClearPendingUse();
+            }
+        }
+
+        private bool UseOnPlayer(InventorySlot slot)
+        {
+            if (slot == null || slot.IsEmpty) return false;
+            var item = slot.ItemData;
+            if (item == null || !item.IsConsumable()) return false;
+            bool used = slot.UseConsumable();
+            if (!used)
+            {
+                var erm = EnhancedResourceManager.Instance != null ? EnhancedResourceManager.Instance : FindObjectOfType<EnhancedResourceManager>();
+                if (erm != null)
+                {
+                    used = erm.UseConsumableItem(item);
+                }
+            }
+            if (used && UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowNotification($"{item.itemName}を使用しました", NotificationType.Success);
+            }
+            return used;
+        }
+
+        private bool UseOnCompanion(InventorySlot slot, KowloonBreak.Characters.CompanionAI companion)
+        {
+            if (slot == null || slot.IsEmpty || companion == null) return false;
+            var item = slot.ItemData;
+            var effect = item != null ? item.consumableEffect : null;
+            if (item == null || effect == null) return false;
+
+            if (effect.HasHealthEffect)
+            {
+                companion.Heal(effect.healthRestore);
+            }
+            if (effect.HasStaminaEffect)
+            {
+                // Optional stamina logic if available
+            }
+            if (effect.HasInfectionEffect)
+            {
+                var compChar = companion.GetComponent<Characters.CompanionCharacter>();
+                if (compChar != null && compChar.Infection != null)
+                {
+                    compChar.Infection.TreatInfection(effect.infectionTreatment);
+                }
+            }
+            slot.RemoveItem(1);
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowNotification($"{companion.name}に{item.itemName}を使用しました", NotificationType.Success);
+            }
+            return true;
         }
 
         private void OnSlotHoverEnter(ItemSlotUI slotUI, bool isToolSlot)
@@ -393,10 +648,8 @@ namespace KowloonBreak.UI
 
         private void OnSlotHoverExit(ItemSlotUI slotUI)
         {
-            if (itemDetailPopup != null)
-            {
-                itemDetailPopup.Hide();
-            }
+            // ホバーを外したら詳細ポップアップを閉じる（ホバーで表示/非表示を統一）
+            itemDetailPopup?.Hide();
         }
 
         private void SelectSlot(ItemSlotUI slotUI)
