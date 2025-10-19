@@ -109,6 +109,7 @@ namespace KowloonBreak.Player
         private HealthStatus playerHealth;
         private PlayerAnimatorController animatorController;
         private PlayerAnimationEventHandler animationEventHandler;
+        private Animator animator; // Cached animator to ensure consistent triggers/resets
 
         // Health Events
         public event Action<float> OnHealthChanged;
@@ -248,6 +249,12 @@ namespace KowloonBreak.Player
             characterController = GetComponent<CharacterController>();
             audioSource = GetComponent<AudioSource>();
             animatorController = GetComponent<PlayerAnimatorController>();
+            // Cache animator consistently (prefer on self, fallback to children)
+            animator = GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>();
+            }
             
             // PlayerAnimationEventHandlerの設定
             SetupAnimationEventHandler();
@@ -1225,13 +1232,9 @@ private void SelectTool(int index)
 
         private void HandleToolUsage()
         {
-            if (isUsingTool)
-            {
-                if (Time.time - lastToolUsageTime >= toolUsageCooldown)
-                {
-                    isUsingTool = false;
-                }
-            }
+            // Movement lock during tool/attack usage is controlled by animation end events
+            // via OnToolUsageAnimationEnd()/OnAttackAnimationEnd().
+            // Do not auto-clear isUsingTool by cooldown to avoid unlocking mid-animation.
         }
 
         private void TryUseTool()
@@ -1727,10 +1730,16 @@ private void SelectTool(int index)
             {
                 // PlayerAnimatorControllerには直接アクセスメソッドがないため、
                 // GetComponentでAnimatorを取得
-                var animator = GetComponent<Animator>();
                 if (animator != null)
                 {
-                    animator.SetTrigger("Infection");
+                    try
+                    {
+                        animator.SetTrigger("Infection");
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning($"[EnhancedPlayerController] Failed to trigger Infection animation: {ex.Message}");
+                    }
                 }
             }
 
@@ -1748,8 +1757,7 @@ private void SelectTool(int index)
         {
             isCarrying = carrying;
 
-            // Animatorに反映
-            var animator = GetComponent<Animator>();
+            // Animatorに反映（キャッシュ参照を使用）
             if (animator != null)
             {
                 animator.SetBool("Carry", carrying);
@@ -1841,6 +1849,50 @@ private void SelectTool(int index)
                 {
                     infectionLevel = 0f;
                     OnInfectionLevelChanged?.Invoke(0f);
+
+                    // Ensure gameplay fully recovers from infection state
+                    // 1) Restore movement capability/state
+                    canMove = true;
+                    isUsingTool = false;
+                    currentUsedTool = null;
+                    if (currentMovementState != MovementState.Dead)
+                    {
+                        SetMovementState(MovementState.Normal);
+                    }
+
+                    // 2) Reset animator out of any infection loop/state
+                    try
+                    {
+                        // Prefer controller reset
+                        if (animatorController != null)
+                        {
+                            animatorController.ResetAnimatorToDefault();
+                        }
+                        // Always also issue a direct Reset trigger on the cached Animator as a safety net
+                        if (animator != null)
+                        {
+                            animator.ResetTrigger("Infection");
+                            animator.SetTrigger("Reset");
+                            // Ensure base layer returns to default state
+                            animator.Play(0, 0, 0f);
+                        }
+
+                        // 3) Ensure UI does not keep blocking input (e.g., infected UI)
+                        var ui = UI.UIManager.Instance;
+                        if (ui != null && ui.IsInfectedInteractionUIActive())
+                        {
+                            ui.HideInfectedInteractionUI();
+                        }
+                        // Restore timescale in case UI had paused it
+                        if (Time.timeScale == 0f)
+                        {
+                            Time.timeScale = 1f;
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning($"[EnhancedPlayerController] Failed to reset animator after curing infection: {ex.Message}");
+                    }
                 }
                 OnInfectionStatusChanged?.Invoke(isInfected);
             }
@@ -2337,10 +2389,9 @@ private void SelectTool(int index)
             }
 
             // Animatorを取得
-            Animator playerAnimator = GetComponent<Animator>();
 
             // ノックバックシステムを初期化
-            knockbackSystem.Initialize(this, playerRigidbody, playerAnimator);
+            knockbackSystem.Initialize(this, playerRigidbody, animator);
         }
 
         /// <summary>

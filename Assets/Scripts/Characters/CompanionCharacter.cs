@@ -126,6 +126,7 @@ namespace KowloonBreak.Characters
             stats.OnDeath += HandleCharacterDeath;
             infection.OnBecameInfected += HandleCharacterTurned;
             infection.OnInfectionDialogueTriggered += HandleInfectionDialogue;
+            infection.OnCured += HandleCharacterCured;
         }
 
         private void UpdateCharacter()
@@ -356,6 +357,43 @@ namespace KowloonBreak.Characters
             }
 
             OnCharacterTurned?.Invoke(this);
+        }
+
+        private void HandleCharacterCured()
+        {
+            // 可用状態に戻す
+            isAvailable = true;
+
+            // アニメーターを感染ループから確実に離脱させる
+            if (animator == null)
+            {
+                animator = GetComponent<Animator>();
+            }
+            if (animator != null)
+            {
+                try
+                {
+                    // 感染トリガーをリセットしてベースステートに戻す
+                    animator.ResetTrigger("Infection");
+                    // Resetトリガーが設定されている場合に備えて発火（存在しない場合は無害）
+                    try { animator.SetTrigger("Reset"); } catch { }
+                    // ベースレイヤーをデフォルトへ
+                    animator.Play(0, 0, 0f);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[CompanionCharacter] Failed to reset animator on cure: {ex.Message}");
+                }
+            }
+
+            // 攻撃/使用中フラグをクリア（アニメイベントの連打を止める）
+            var ai = GetComponent<CompanionAI>();
+            if (ai != null)
+            {
+                ai.OnToolUsageAnimationEnd();
+            }
+
+            Debug.Log($"{characterName} cured - reset animator and availability");
         }
 
         private void HandleInfectionDialogue(InfectionDialogueType dialogueType)

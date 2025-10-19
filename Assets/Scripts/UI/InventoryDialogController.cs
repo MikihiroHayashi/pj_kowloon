@@ -120,11 +120,14 @@ namespace KowloonBreak.UI
                 }
             }
 
-            // Auto-hide detail popup if no item in the selected slot (only if currently visible)
-            var selSlot = currentSelectedSlot != null ? currentSelectedSlot.CurrentSlot : null;
-            if (itemDetailPopup != null && itemDetailPopup.IsVisible && (selSlot == null || selSlot.IsEmpty))
+            // Auto-hide detail popup if the popup-bound slot becomes empty (independent of selection)
+            if (itemDetailPopup != null && itemDetailPopup.IsVisible)
             {
-                itemDetailPopup.Hide();
+                var bound = itemDetailPopup.BoundSlot;
+                if (bound == null || bound.IsEmpty)
+                {
+                    itemDetailPopup.Hide();
+                }
             }
         }
 

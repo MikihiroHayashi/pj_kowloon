@@ -38,6 +38,8 @@ namespace KowloonBreak.UI
         public System.Action<InventorySlot> OnDiscardRequested;
 
         public bool IsVisible => popupPanel != null && popupPanel.activeSelf;
+        public InventorySlot BoundSlot => currentSlot;
+        public ItemSlotUI SourceSlot => sourceSlotUI;
 
 
         private void Awake()

@@ -82,6 +82,32 @@ namespace KowloonBreak.Managers
             var effect = itemData.consumableEffect;
             bool effectApplied = false;
 
+            // Early handling: vaccine (full cure) should reset infection state completely
+            if (effect.HasInfectionEffect && effect.effectType == ConsumableType.InfectionCure)
+            {
+                if (playerController.IsInfected || playerController.InfectionLevel > 0)
+                {
+                    playerController.SetInfectionStatus(false);
+                    playerController.TriggerUseItemAnimation();
+                    Debug.Log("[ConsumableManager] Vaccine used: infection fully cured");
+
+                    // Apply cooldown and message then return early to avoid partial-treat block below
+                    if (itemData.cooldownSeconds > 0f)
+                    {
+                        cooldownUntil[itemData] = Time.time + itemData.cooldownSeconds;
+                    }
+                    if (!string.IsNullOrEmpty(effect.useMessage))
+                    {
+                        Debug.Log($"[ConsumableManager] {effect.useMessage}");
+                        if (KowloonBreak.UI.UIManager.Instance != null)
+                        {
+                            KowloonBreak.UI.UIManager.Instance.ShowNotification(effect.useMessage, KowloonBreak.UI.NotificationType.Success);
+                        }
+                    }
+                    return true;
+                }
+            }
+
             // 体力回復効果
             if (effect.HasHealthEffect)
             {

@@ -605,6 +605,8 @@ MonoBehaviour:
   healthPercentText: {fileID: 3447474042081241436}
   infectionPercentText: {fileID: 5471962702091155832}
   animator: {fileID: 1210001192966294221}
+  barTweenDuration: 0.25
+  barRecoveryTweenDuration: 1
 --- !u!114 &47730035695812152
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -661,7 +663,7 @@ Animator:
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 5d0dc03f2334f7a46a1b3f16393fc953, type: 2}
   m_CullingMode: 0
-  m_UpdateMode: 0
+  m_UpdateMode: 2
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
